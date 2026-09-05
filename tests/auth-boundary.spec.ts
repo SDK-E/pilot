@@ -1,0 +1,57 @@
+import { expect, test } from "@playwright/test";
+
+test("public page renders with usable mobile navigation", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(
+    "Get things done",
+  );
+  await expect(
+    page.getByRole("link", { name: "Sign in to Pilot" }),
+  ).toHaveAttribute("href", "/sign-in");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test("sign-in sets PKCE state and redirects to WorkOS", async ({ request }) => {
+  const response = await request.get("/sign-in", { maxRedirects: 0 });
+  expect(response.status()).toBe(307);
+  const destination = new URL(response.headers().location);
+  expect(destination.hostname).toBe("api.workos.com");
+  expect(destination.searchParams.get("code_challenge_method")).toBe("S256");
+  expect(destination.searchParams.get("state")).toBeTruthy();
+  expect(response.headers()["set-cookie"]).toContain("HttpOnly");
+});
+
+test("anonymous and forged sessions cannot access a workspace", async ({
+  request,
+}) => {
+  for (const cookie of ["", "wos-session=forged-session"]) {
+    const response = await request.get("/workspace", {
+      maxRedirects: 0,
+      headers: { cookie },
+    });
+    expect(response.status()).toBe(307);
+    expect(new URL(response.headers().location).hostname).toBe(
+      "api.workos.com",
+    );
+  }
+});
+
+test("callback without OAuth state cannot establish a session", async ({
+  request,
+}) => {
+  const response = await request.get("/auth/callback?code=invalid", {
+    maxRedirects: 0,
+  });
+  expect(response.status()).toBeGreaterThanOrEqual(400);
+  expect(response.headers()["set-cookie"] ?? "").not.toMatch(
+    /wos-session=[^;]/,
+  );
+});

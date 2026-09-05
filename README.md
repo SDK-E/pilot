@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pilot by SDK Enterprises
 
-## Getting Started
+An open-source AI workforce platform in early development. The current slice implements WorkOS authentication, organization access, and persistent worker configuration. Durable execution is not implemented yet. See [implementation status](docs/progress.md) and [architecture decisions](docs/decisions/0001-platform-boundaries.md).
 
-First, run the development server:
+## Run locally
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
+Use Node.js 24 and pnpm 11.25.0.
+
+```sh
+pnpm install --frozen-lockfile
+cp .env.example .env.local
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Configure your own WorkOS application's API key and client ID, a random cookie encryption secret of at least 32 characters, and the callback `http://localhost:3000/auth/callback`. Set the application's initiate-login URL to `http://localhost:3000/sign-in`, and homepage/sign-out URL to `http://localhost:3000`. Use an active organization membership to enter a workspace. Do not reuse another application's client ID. See the [official AuthKit guide](https://workos.com/docs/authkit/nextjs).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+For the SDK Enterprises deployment, the project is linked to `sdk-enterprises/pilot`. After setup is complete, authorized maintainers can use `vercel env pull .env.local --environment development` to retrieve development configuration. Never pull production secrets into a local test environment.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Verify
 
-## Learn More
+```sh
+pnpm check
+pnpm build
+pnpm exec playwright install chromium
+pnpm test
+pnpm test:db
+pnpm audit --audit-level high
+```
 
-To learn more about Next.js, take a look at the following resources:
+The Playwright suite starts the production build on port 3100 with explicit test-only credentials. It checks public rendering and unauthenticated security boundaries. Successful hosted login, organization switching and logout must also be verified with a real WorkOS development environment; this suite does not prove those flows.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`pnpm test:db` uses the development Neon database to verify worker persistence and organization isolation, then removes its randomized fixtures. Apply committed schema changes with `pnpm db:migrate`; it uses `DATABASE_URL_UNPOOLED` when present. Never use development credentials to migrate preview or production.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
+Vercel is the target platform. Use the Next.js framework preset, Node.js 24, and environment-scoped WorkOS secrets. Neon database credentials are separate for development, preview and production. The initial Worker schema is migrated in each environment; worker runtime integration remains pending. The app can run with `pnpm build && pnpm start` on another Node host, but authentication currently depends on WorkOS.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Do not treat the current state as production-ready. Track remaining work and provisioning verification in [progress](docs/progress.md).

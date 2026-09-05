@@ -7,3 +7,15 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Pilot
+
+Read `docs/progress.md` and `docs/decisions/0001-platform-boundaries.md` before continuing. Keep them synchronized with verified implementation and environment changes.
+
+- WorkOS is the required auth provider. Use application-specific credentials. Authenticate and authorize every server mutation; never trust a submitted organization ID or model decision as authorization.
+- Use current official documentation and inspect installed types/source before choosing APIs. Prefer maintained packages, Mastra runtime capabilities and official shadcn components over custom infrastructure.
+- Keep product/domain logic in Pilot, Mastra implementation in `pilot-ai`, integration adapters in `pilot-integrations`, and shared design-system sources in `pilot-ui`.
+- Keep local, preview and production secrets separate. Never log or commit credentials. Do not expose worker capabilities until system-enforced permissions and approval behavior exist.
+- Run `pnpm check`, `pnpm build`, `pnpm test`, `pnpm test:db`, and `pnpm audit --audit-level high` for a completed persistence slice. Browser tests require a fresh build; `test:db` uses the isolated development Neon database and removes its randomized fixtures. A green build is not evidence of successful authentication or durable execution.
+- No `getSignInUrl()` or cookie-writing helpers during Server Component rendering. Use proxy, Route Handlers or Server Actions. Sign-out is a POST Server Action.
+- Complete one worker end-to-end before adding broad secondary features. Keep unimplemented behavior explicit in documentation.
