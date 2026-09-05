@@ -29,18 +29,20 @@ test("sign-in sets PKCE state and redirects to WorkOS", async ({ request }) => {
   expect(response.headers()["set-cookie"]).toContain("HttpOnly");
 });
 
-test("anonymous and forged sessions cannot access a workspace", async ({
+test("anonymous and forged sessions cannot access workspace routes", async ({
   request,
 }) => {
-  for (const cookie of ["", "wos-session=forged-session"]) {
-    const response = await request.get("/workspace", {
-      maxRedirects: 0,
-      headers: { cookie },
-    });
-    expect(response.status()).toBe(307);
-    expect(new URL(response.headers().location).hostname).toBe(
-      "api.workos.com",
-    );
+  for (const path of ["/workspace", "/workspace/workers/forged-worker"]) {
+    for (const cookie of ["", "wos-session=forged-session"]) {
+      const response = await request.get(path, {
+        maxRedirects: 0,
+        headers: { cookie },
+      });
+      expect(response.status()).toBe(307);
+      expect(new URL(response.headers().location).hostname).toBe(
+        "api.workos.com",
+      );
+    }
   }
 });
 
