@@ -40,4 +40,4 @@ Neon projects belong to SDK Enterprises, use PostgreSQL 18 in `aws-eu-central-1`
 6. Add a persistent conversation and memory boundary for a selected worker.
 7. Prove Mastra durable execution across requests/restarts before building protected actions, approval, suspension/resume and the rest of the one-worker milestone.
 
-`pilot-ai` is initialized with Mastra but has no registered agent, model, tool, local storage, or runtime connection to Pilot. `pilot-integrations` and `pilot-ui` remain package stubs. There are no conversations, tasks, runtime, approvals, memory or integration capabilities yet.
+`pilot-ai` is under parallel initialization and has no approved runtime contract or connection to Pilot. It must not be deployed or called until Pilot can provide tenant-scoped authorization, a model gateway, and Neon-backed durable storage. `pilot-integrations` and `pilot-ui` remain package stubs. There are no conversations, tasks, runtime, approvals, memory or integration capabilities yet.
