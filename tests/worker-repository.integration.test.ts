@@ -5,6 +5,10 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { organizations } from "@/db/schema";
 import {
+  createConversation,
+  listConversations,
+} from "@/conversations/conversation-repository";
+import {
   createWorker,
   getWorker,
   listWorkers,
@@ -44,6 +48,27 @@ test("workers are persisted and isolated by organization", async (t) => {
   assert.equal(fetched?.id, created.id);
   assert.equal(fetched?.instructions, "Return concise research with sources.");
   assert.equal(await getWorker(otherOrganizationId, created.id), undefined);
+
+  const conversation = await createConversation({
+    organizationId,
+    workerId: created.id,
+    createdByWorkosUserId: `user_${suffix}`,
+  });
+  assert.ok(conversation);
+  assert.equal(
+    await createConversation({
+      organizationId: otherOrganizationId,
+      workerId: created.id,
+      createdByWorkosUserId: `user_${suffix}`,
+    }),
+    undefined,
+  );
+  assert.deepEqual(
+    (await listConversations(organizationId, created.id)).map(
+      (item) => item.id,
+    ),
+    [conversation.id],
+  );
 
   const organizationWorkers = await listWorkers(organizationId);
   assert.deepEqual(
