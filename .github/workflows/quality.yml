@@ -1,0 +1,50 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://pilot:pilot@localhost:5432/pilot
+      DATABASE_URL_UNPOOLED: postgresql://pilot:pilot@localhost:5432/pilot
+      NEXT_PUBLIC_WORKOS_REDIRECT_URI: http://localhost:3100/auth/callback
+      WORKOS_API_KEY: sk_test_pilot_ci
+      WORKOS_CLIENT_ID: client_pilot_ci
+      WORKOS_COOKIE_PASSWORD: pilot-ci-cookie-password-with-at-least-32-characters
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run static checks
+        run: pnpm check
+
+      - name: Build production application
+        run: pnpm build
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser tests
+        run: pnpm test
+
+      - name: Check known vulnerabilities
+        run: pnpm audit --audit-level high

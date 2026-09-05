@@ -31,6 +31,8 @@ The Playwright suite starts the production build on port 3100 with explicit test
 
 `pnpm test:db` uses the development Neon database to verify worker persistence and organization isolation, then removes its randomized fixtures. Apply committed schema changes with `pnpm db:migrate`; it uses `DATABASE_URL_UNPOOLED` when present. Never use development credentials to migrate preview or production.
 
+GitHub Actions runs `pnpm check`, production build, Playwright browser tests, and the high-severity audit for pull requests and `main`. It supplies test-only configuration and does not connect to Neon; run `pnpm test:db` before merging a persistence change.
+
 ## Deployment
 
 Vercel is the target platform. Use the Next.js framework preset, Node.js 24, and environment-scoped WorkOS secrets. Neon database credentials are separate for development, preview and production. The initial Worker schema is migrated in each environment; worker runtime integration remains pending. The app can run with `pnpm build && pnpm start` on another Node host, but authentication currently depends on WorkOS.
