@@ -22,7 +22,7 @@ Not verified: successful hosted WorkOS sign-in through callback, organization sw
 
 - Vercel project: `sdk-enterprises/pilot`, ID `prj_RZRmVOvddx1yCNe6j25Cj4w3ugZn`. Node 24 and the `nextjs` framework preset are configured. The GitHub connection to `SDK-E/pilot` is verified, with `main` as the production branch and automatic deployment creation enabled. No deployment exists yet.
 - Production origin: `https://pilot.sdk.enterprises`. Its Cloudflare DNS zone has an unproxied automatic-TTL A record to Vercel's required `76.76.21.21`; Vercel verified the project domain. The parent domain remains on its existing Cloudflare nameservers.
-- WorkOS production environment: `environment_01KX6CY4Y7671HC2VRQ5ADYGBA`. SDK Pilot application `app_01M1R77E90YV8T78ZPY7WC8JSM`, client `client_01M1R77E8ZZ7689T03CF1SANDY`. Callback `/auth/callback`, initiate-login `/sign-in`, homepage and sign-out at the production origin were saved and read back.
+- WorkOS production environment: `environment_01KX6CY4Y7671HC2VRQ5ADYGBA`. SDK Pilot application `app_01M1R77E90YV8T78ZPY7WC8JSM`, client `client_01M1R77E8ZZ7689T03CF1SANDY`. Its application API key and cookie password are sensitive Vercel production variables. Callback `/auth/callback`, initiate-login `/sign-in`, homepage and sign-out at the production origin were saved and read back.
 - WorkOS local environment: `environment_01M1QD1AE9B8TKKBT4VWH8N60T`. SDK Pilot application `app_01M1S3YKJ0TBQYPA2J3T9GSDTC`, client `client_01M1S3YKJ02RNG615NFDW51FHH`. It has an application-scoped local API key stored only in local/Vercel development configuration. Callback URIs allow `http://localhost:3000/auth/callback` and the current machine's `http://localhost:3001/auth/callback`; homepage and sign-out are `http://localhost:3000`; initiate login is `http://localhost:3000/sign-in`.
 - Neon production: `empty-fog-95658984` (`sdk-pilot`).
 - Neon development: `wandering-shadow-84624750` (`sdk-pilot-local`).
@@ -32,7 +32,7 @@ Neon projects belong to SDK Enterprises, use PostgreSQL 18 in `aws-eu-central-1`
 
 ## Next acceptance steps
 
-1. Create the production WorkOS application API key, store it as a sensitive production Vercel secret, and configure a preview WorkOS application with isolated preview credentials and allowed preview URLs.
+1. Configure a preview WorkOS application with isolated preview credentials and allowed preview URLs.
 2. Verify the authenticated flow against the real local environment, including membership rejection and logout.
 3. Deploy the tested source and verify the production origin.
 4. Verify the authenticated creation form with a real active membership, including a rejected/revoked membership and sign-out.
