@@ -48,13 +48,13 @@ If a required credential, approval, or external action is missing, continue with
 
 ## Infrastructure status
 
-- Vercel project: `sdk-enterprises/pilot`; GitHub `SDK-E/pilot`, production branch `main`.
+- Vercel project: `sdk-enterprises/pilot`; GitHub `SDK-E/pilot`, production branch `main`. The deployment for `1f9efcb` is Ready.
 - Production origin: `https://pilot.sdk.enterprises`.
 - Production WorkOS application: SDK Pilot, client `client_01M1R77E8ZZ7689T03CF1SANDY`; key, client ID, cookie password, and callback URI are configured in Vercel Production.
 - Development uses a separate WorkOS application and Neon project. Preview has only its isolated Neon credentials; its inherited WorkOS API key, cookie password, and local client ID were removed on 2026-09-06. Preview still needs its own WorkOS application/client/key and allowed callback URL. Never reuse production credentials in preview/development.
 - Neon projects: production `empty-fog-95658984`, development `wandering-shadow-84624750`, preview `proud-wildflower-67913684`.
 
-Before relying on deployment, inspect the current Vercel deployment and logs. The initial production deployment failed because pnpm blocked `esbuild`; `7eb4588` explicitly allows it. Commit `f9c3ff3` then deployed successfully to `https://pilot.sdk.enterprises`; verify the latest deployment rather than assuming a later push passed.
+Before relying on deployment, inspect the current Vercel deployment and logs. The initial production deployment failed because pnpm blocked `esbuild`; `7eb4588` explicitly allows it. Commit `1f9efcb` deployed successfully; verify the latest deployment rather than assuming a later push passed.
 
 ## Required checks for a completed persistence slice
 
