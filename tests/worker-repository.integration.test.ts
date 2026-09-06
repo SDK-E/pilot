@@ -6,7 +6,9 @@ import { db } from "@/db/client";
 import { organizations } from "@/db/schema";
 import {
   createConversation,
+  createConversationMessage,
   getConversation,
+  listConversationMessages,
   listConversations,
 } from "@/conversations/conversation-repository";
 import {
@@ -76,6 +78,62 @@ test("workers are persisted and isolated by organization", async (t) => {
   );
   assert.equal(
     await getConversation(otherOrganizationId, created.id, conversation.id),
+    undefined,
+  );
+
+  const userMessage = await createConversationMessage({
+    organizationId,
+    workerId: created.id,
+    conversationId: conversation.id,
+    role: "user",
+    content: "What did I ask you to remember?",
+  });
+  assert.ok(userMessage);
+
+  const workerMessage = await createConversationMessage({
+    organizationId,
+    workerId: created.id,
+    conversationId: conversation.id,
+    role: "worker",
+    content: "You asked me to remember this question.",
+    modelId: "kilo/kilo-auto/free",
+    runtimeRunId: "run_test",
+    latencyMs: 12,
+    inputTokens: 8,
+    outputTokens: 9,
+    totalTokens: 17,
+  });
+  assert.ok(workerMessage);
+
+  assert.deepEqual(
+    (
+      await listConversationMessages(
+        organizationId,
+        created.id,
+        conversation.id,
+      )
+    )?.map((message) => message.content),
+    [
+      "What did I ask you to remember?",
+      "You asked me to remember this question.",
+    ],
+  );
+  assert.equal(
+    await createConversationMessage({
+      organizationId: otherOrganizationId,
+      workerId: created.id,
+      conversationId: conversation.id,
+      role: "user",
+      content: "Forged cross-organization message.",
+    }),
+    undefined,
+  );
+  assert.equal(
+    await listConversationMessages(
+      otherOrganizationId,
+      created.id,
+      conversation.id,
+    ),
     undefined,
   );
 

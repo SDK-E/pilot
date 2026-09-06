@@ -1,5 +1,6 @@
 import {
   index,
+  integer,
   pgTable,
   primaryKey,
   text,
@@ -95,6 +96,40 @@ export const conversations = pgTable(
     index("conversations_organization_worker_created_at_index").on(
       table.organizationId,
       table.workerId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const conversationMessages = pgTable(
+  "conversation_messages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    role: text("role").$type<"user" | "worker">().notNull(),
+    content: text("content").notNull(),
+    modelId: text("model_id"),
+    runtimeRunId: text("runtime_run_id"),
+    latencyMs: integer("latency_ms"),
+    inputTokens: integer("input_tokens"),
+    outputTokens: integer("output_tokens"),
+    totalTokens: integer("total_tokens"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("conversation_messages_conversation_created_at_index").on(
+      table.conversationId,
+      table.createdAt,
+    ),
+    index("conversation_messages_organization_created_at_index").on(
+      table.organizationId,
       table.createdAt,
     ),
   ],

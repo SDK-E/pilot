@@ -1,6 +1,6 @@
-# Mastra conversation runtime contract
+# Pilot runtime contract
 
-Status: proposed. Do not deploy this boundary until its Neon storage and authenticated service transport are verified.
+Status: partially implemented. Do not enable this boundary until its Neon storage and authenticated service transport are verified.
 
 ## Context
 
@@ -25,7 +25,7 @@ type GenerateConversationReply = {
   worker: {
     id: string;
     instructions: string;
-    modelId: string;
+    modelId: "kilo/kilo-auto/free";
   };
   conversationId: string;
   message: string;
@@ -44,9 +44,9 @@ The initial agent must have no registered tools, MCP connections, browser access
 ## Storage and deployment requirements
 
 - Replace every `LibSQLStore`, file database and local database fallback in the deployed runtime path with `@mastra/pg` backed by the matching environment's Neon PostgreSQL database.
-- Keep Pilot domain tables owned by `pilot`; Mastra-owned storage tables stay behind the runtime adapter. Do not duplicate message history into an application table before proving which records Mastra persists and how they are queried.
+- Keep Pilot domain tables owned by `pilot`; runtime-owned storage tables stay behind the runtime adapter. Pilot persists immutable user and Worker message records for audit, activity history and UI rendering; the runtime independently owns its memory storage. Do not use Pilot's records as model history.
 - Use an authenticated server-to-server transport. The browser must only call Pilot. Both Vercel projects have team-issued OIDC enabled. Vercel Trusted Sources is the candidate deployment-protection transport: authorize the `pilot` project on `pilot-ai`, then forward Pilot's short-lived token in `x-vercel-trusted-oidc-idp-token`. Test the configured issuer, audience, project and production-environment claims before adoption.
-- The existing `pilot-ai` Vercel deployment protects `/api/agents` with Vercel SSO. Preserve that protection; an unauthenticated request redirecting to Vercel login is not a usable Pilot runtime integration. Do not configure a Trusted Source until `pilot-ai` exposes an app-level, no-tools conversation endpoint that independently accepts only the minimal command described above. Trusted Sources must never make the general `/api/agents` surface a Pilot capability.
+- The `pilot-ai` deployment must protect the app-level `POST /pilot/conversations/generate` endpoint with Vercel Deployment Protection. Pilot obtains its short-lived token through `@vercel/oidc` and forwards it as `x-vercel-trusted-oidc-idp-token`; it does not use a long-lived bypass secret. Configure the Pilot Vercel project as a Trusted Source before setting `PILOT_AI_RUNTIME_URL`. Trusted Sources must never make the general `/api/agents` surface a Pilot capability.
 - Development generations use Kilo Gateway model `kilo/kilo-auto/free`. Keep it as an explicit allowlisted model. A Worker `modelId` is configuration input, never authority to use any arbitrary provider or model. Verify Kilo Gateway's environment-specific credentials and production limits before production traffic.
 - Make the runtime independently deployable and restart-safe. Prove a second process reads the first process's stored history before accepting the slice.
 

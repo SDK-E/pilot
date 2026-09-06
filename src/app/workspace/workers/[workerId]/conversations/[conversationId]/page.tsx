@@ -5,7 +5,11 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getConversation } from "@/conversations/conversation-repository";
+import { ConversationMessageForm } from "@/components/conversations/conversation-message-form";
+import {
+  getConversation,
+  listConversationMessages,
+} from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getWorker } from "@/workers/worker-repository";
 
@@ -40,11 +44,14 @@ export default async function ConversationPage({
   );
   if (!membership) notFound();
 
-  const [worker, conversation] = await Promise.all([
+  const [worker, conversation, messages] = await Promise.all([
     getWorker(organizationId, workerId),
     getConversation(organizationId, workerId, conversationId),
+    listConversationMessages(organizationId, workerId, conversationId),
   ]);
-  if (!worker || !conversation) notFound();
+  if (!worker || !conversation || !messages) notFound();
+
+  const isRuntimeConfigured = Boolean(process.env.PILOT_AI_RUNTIME_URL?.trim());
 
   return (
     <main className="mx-auto min-h-svh max-w-4xl space-y-8 px-6 py-8 sm:px-12">
@@ -70,17 +77,54 @@ export default async function ConversationPage({
       </header>
       <Card>
         <CardHeader>
-          <CardTitle>Messaging is not enabled yet</CardTitle>
+          <CardTitle>Messages</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Pilot has created this organization-scoped conversation and reserved
-            its ID for the Mastra memory thread. Messages will remain
-            unavailable until the Neon-backed runtime, tenant authorization, and
-            durable execution boundary are verified.
-          </p>
+          {messages.length ? (
+            <ol className="space-y-5">
+              {messages.map((message) => (
+                <li key={message.id} className="space-y-1">
+                  <p className="text-xs font-medium tracking-wide text-muted-foreground">
+                    {message.role === "user" ? "You" : worker.name}
+                  </p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                    {message.content}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Send the first message to begin this conversation.
+            </p>
+          )}
         </CardContent>
       </Card>
+      {isRuntimeConfigured ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Message {worker.name}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ConversationMessageForm
+              workerId={worker.id}
+              conversationId={conversation.id}
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pilot is being connected</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Messaging becomes available after this environment is connected to
+              the protected Pilot runtime.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </main>
   );
 }

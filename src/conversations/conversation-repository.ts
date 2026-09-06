@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { conversations, workers } from "@/db/schema";
+import { conversationMessages, conversations, workers } from "@/db/schema";
 
 export async function createConversation(input: {
   organizationId: string;
@@ -71,4 +71,92 @@ export async function getConversation(
     )
     .limit(1);
   return conversation;
+}
+
+type ConversationMessageInput = {
+  organizationId: string;
+  workerId: string;
+  conversationId: string;
+  role: "user" | "worker";
+  content: string;
+  modelId?: string;
+  runtimeRunId?: string;
+  latencyMs?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+};
+
+export async function createConversationMessage(
+  input: ConversationMessageInput,
+) {
+  const conversation = await getConversation(
+    input.organizationId,
+    input.workerId,
+    input.conversationId,
+  );
+  if (!conversation) return undefined;
+
+  const [message] = await db
+    .insert(conversationMessages)
+    .values({
+      organizationId: input.organizationId,
+      conversationId: input.conversationId,
+      role: input.role,
+      content: input.content,
+      modelId: input.modelId,
+      runtimeRunId: input.runtimeRunId,
+      latencyMs: input.latencyMs,
+      inputTokens: input.inputTokens,
+      outputTokens: input.outputTokens,
+      totalTokens: input.totalTokens,
+    })
+    .returning({
+      id: conversationMessages.id,
+      role: conversationMessages.role,
+      content: conversationMessages.content,
+      createdAt: conversationMessages.createdAt,
+    });
+
+  await db
+    .update(conversations)
+    .set({ updatedAt: new Date() })
+    .where(eq(conversations.id, input.conversationId));
+
+  return message;
+}
+
+export async function listConversationMessages(
+  organizationId: string,
+  workerId: string,
+  conversationId: string,
+) {
+  const conversation = await getConversation(
+    organizationId,
+    workerId,
+    conversationId,
+  );
+  if (!conversation) return undefined;
+
+  return db
+    .select({
+      id: conversationMessages.id,
+      role: conversationMessages.role,
+      content: conversationMessages.content,
+      modelId: conversationMessages.modelId,
+      runtimeRunId: conversationMessages.runtimeRunId,
+      latencyMs: conversationMessages.latencyMs,
+      inputTokens: conversationMessages.inputTokens,
+      outputTokens: conversationMessages.outputTokens,
+      totalTokens: conversationMessages.totalTokens,
+      createdAt: conversationMessages.createdAt,
+    })
+    .from(conversationMessages)
+    .where(
+      and(
+        eq(conversationMessages.organizationId, organizationId),
+        eq(conversationMessages.conversationId, conversationId),
+      ),
+    )
+    .orderBy(conversationMessages.createdAt);
 }

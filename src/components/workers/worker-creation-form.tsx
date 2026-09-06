@@ -33,8 +33,9 @@ export function WorkerCreationForm() {
         <Input
           id="worker-model"
           name="modelId"
+          defaultValue="kilo/kilo-auto/free"
           maxLength={200}
-          placeholder="provider/model-name"
+          readOnly
           required
         />
       </div>

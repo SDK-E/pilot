@@ -14,12 +14,7 @@ const workerInputSchema = z.object({
     .trim()
     .min(1, "Instructions are required.")
     .max(10_000),
-  modelId: z
-    .string()
-    .trim()
-    .min(3, "A model ID is required.")
-    .max(200)
-    .regex(/^[a-zA-Z0-9][a-zA-Z0-9._:/-]*$/, "Use a valid model ID."),
+  modelId: z.literal("kilo/kilo-auto/free"),
 });
 
 export async function createWorkerAction(
