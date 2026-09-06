@@ -34,14 +34,15 @@ If a required credential, approval, or external action is missing, continue with
 
 ## Current verified state
 
-`pilot` branch `main` contains the committed first slice through `be426fe`:
+`pilot` branch `main` contains the committed first slices through `8d0ed29`:
 
 - WorkOS AuthKit sign-in/callback, proxy protection, POST sign-out, organization switch and membership checks.
 - Pilot-owned organizations, members, workers, and organization-scoped conversations in Neon.
 - Worker creation and read-only configuration page. Authorized members can create, list, and inspect empty conversation sessions. A conversation UUID is reserved as the future Mastra thread ID; conversations are not runnable and cannot accept messages yet.
+- The local WorkOS CLI emulator has verified the real AuthKit PKCE sign-in and callback path into Pilot, including the authenticated no-membership state. The emulator's logout endpoint does not redirect after receiving Pilot's POST sign-out, so browser verification must separately confirm the local session is cleared. A small uncommitted fix currently keeps the Worker creation state value out of a `"use server"` action module; it must be validated, committed, and deployed before treating the auth slice as closed.
 - Migrations `0000_initial_worker_domain` and `0001_wild_marauders` are applied to development, preview, and production Neon projects.
 - CI runs static checks, production build, Playwright anonymous-boundary tests, and `pnpm audit --audit-level high`.
-- `pnpm check`, `pnpm build`, `pnpm test`, `pnpm test:db`, and `pnpm audit --audit-level high` passed after the conversation-session UI.
+- `pnpm check`, `pnpm build`, `pnpm test`, `pnpm test:db`, and `pnpm audit --audit-level high` passed after the conversation-session UI. Re-run all of them for every new slice and after committing the pending auth fix.
 
 `pilot-ai` now contains an unreviewed `pilot-browser` implementation with browser/research tools, local LibSQL fallback, DuckDB observability, Mastra Editor, subagents, processors, and evaluators. It is not a Pilot capability and must not be deployed, called, or merged into the product boundary. Do not add to it as a shortcut. Before any integration, replace file-backed and local database storage with the approved Neon-backed runtime design, remove or gate every capability behind Pilot's server-enforced authorization and explicit approvals, and prove durable suspension/resume and idempotent recovery.
 
@@ -70,7 +71,7 @@ git diff --check
 
 ## Recommended next goal
 
-First verify the production deployment and real WorkOS sign-in, organization switching, revoked-membership rejection, worker creation, and sign-out. Then take one goal for a visible selected-worker conversation route and persistent Mastra message history backed by Neon. It must:
+Finish and deploy the pending auth-action-module fix. Then verify the production deployment and real WorkOS sign-in, organization switching, revoked-membership rejection, worker creation, and sign-out. After that, take one goal for persistent Mastra message history on the already-visible selected-worker conversation route. It must:
 
 - Recheck the active WorkOS membership server-side.
 - Bind the Pilot conversation UUID to Mastra’s thread ID and a scoped resource ID.
