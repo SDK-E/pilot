@@ -1,14 +1,14 @@
 "use client";
 
 import { useActionState } from "react";
-import {
-  createWorkerAction,
-  initialWorkerCreationState,
-} from "@/app/workspace/worker-actions";
+import { createWorkerAction } from "@/app/workspace/worker-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { WorkerCreationState } from "@/workers/worker-creation-state";
+
+const initialWorkerCreationState: WorkerCreationState = { status: "idle" };
 
 export function WorkerCreationForm() {
   const [state, action, pending] = useActionState(

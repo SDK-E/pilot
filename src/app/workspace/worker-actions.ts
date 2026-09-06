@@ -4,6 +4,7 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import type { WorkerCreationState } from "@/workers/worker-creation-state";
 import { createWorker } from "@/workers/worker-repository";
 
 const workerInputSchema = z.object({
@@ -20,15 +21,6 @@ const workerInputSchema = z.object({
     .max(200)
     .regex(/^[a-zA-Z0-9][a-zA-Z0-9._:/-]*$/, "Use a valid model ID."),
 });
-
-export type WorkerCreationState = {
-  message?: string;
-  status: "error" | "success" | "idle";
-};
-
-export const initialWorkerCreationState: WorkerCreationState = {
-  status: "idle",
-};
 
 export async function createWorkerAction(
   _previousState: WorkerCreationState,
