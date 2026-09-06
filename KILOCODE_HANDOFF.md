@@ -34,7 +34,7 @@ If a required credential, approval, or external action is missing, continue with
 
 ## Current verified state
 
-`pilot` branch `main` contains the committed first slice through `7eb4588`:
+`pilot` branch `main` contains the committed first slice through `be426fe`:
 
 - WorkOS AuthKit sign-in/callback, proxy protection, POST sign-out, organization switch and membership checks.
 - Pilot-owned organizations, members, workers, and organization-scoped conversations in Neon.
@@ -43,17 +43,17 @@ If a required credential, approval, or external action is missing, continue with
 - CI runs static checks, production build, Playwright anonymous-boundary tests, and `pnpm audit --audit-level high`.
 - `pnpm check`, `pnpm build`, `pnpm test`, `pnpm test:db`, and `pnpm audit --audit-level high` passed after the conversation migration.
 
-`pilot-ai` is deliberately capability-free. Do not reintroduce Mastra Editor, local LibSQL/DuckDB, browser, workspace, shell, schedules, MCP, or tools as a shortcut. Kilo Code may be implementing `pilot-browser`; treat it as untrusted work until it satisfies the approval and durable-execution boundary above.
+`pilot-ai` now contains an unreviewed `pilot-browser` implementation with browser/research tools, local LibSQL fallback, DuckDB observability, Mastra Editor, subagents, processors, and evaluators. It is not a Pilot capability and must not be deployed, called, or merged into the product boundary. Do not add to it as a shortcut. Before any integration, replace file-backed and local database storage with the approved Neon-backed runtime design, remove or gate every capability behind Pilot's server-enforced authorization and explicit approvals, and prove durable suspension/resume and idempotent recovery.
 
 ## Infrastructure status
 
 - Vercel project: `sdk-enterprises/pilot`; GitHub `SDK-E/pilot`, production branch `main`.
 - Production origin: `https://pilot.sdk.enterprises`.
 - Production WorkOS application: SDK Pilot, client `client_01M1R77E8ZZ7689T03CF1SANDY`; key, client ID, cookie password, and callback URI are configured in Vercel Production.
-- Development uses a separate WorkOS application and Neon project. Preview still needs its own WorkOS application/client/key and allowed preview callback URL. Never reuse production credentials in preview/development.
+- Development uses a separate WorkOS application and Neon project. Preview has only its isolated Neon credentials; its inherited WorkOS API key, cookie password, and local client ID were removed on 2026-09-06. Preview still needs its own WorkOS application/client/key and allowed callback URL. Never reuse production credentials in preview/development.
 - Neon projects: production `empty-fog-95658984`, development `wandering-shadow-84624750`, preview `proud-wildflower-67913684`.
 
-Before relying on deployment, inspect the current Vercel deployment and logs. The initial production deployment failed because pnpm blocked `esbuild`; `7eb4588` explicitly allows it and was pushed afterward. Verify the replacement deployment rather than assuming it passed.
+Before relying on deployment, inspect the current Vercel deployment and logs. The initial production deployment failed because pnpm blocked `esbuild`; `7eb4588` explicitly allows it. Commit `f9c3ff3` then deployed successfully to `https://pilot.sdk.enterprises`; verify the latest deployment rather than assuming a later push passed.
 
 ## Required checks for a completed persistence slice
 
