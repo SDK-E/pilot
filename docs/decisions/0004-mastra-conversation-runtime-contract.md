@@ -46,6 +46,7 @@ The initial agent must have no registered tools, MCP connections, browser access
 - Replace every `LibSQLStore`, file database and local database fallback in the deployed runtime path with `@mastra/pg` backed by the matching environment's Neon PostgreSQL database.
 - Keep Pilot domain tables owned by `pilot`; Mastra-owned storage tables stay behind the runtime adapter. Do not duplicate message history into an application table before proving which records Mastra persists and how they are queried.
 - Use an authenticated server-to-server transport. The browser must only call Pilot. Vercel OIDC is a candidate because it is enabled for the current project, but its current verification contract must be tested before adoption.
+- The existing `pilot-ai` Vercel deployment protects `/api/agents` with Vercel SSO. Preserve that protection; an unauthenticated request redirecting to Vercel login is not a usable Pilot runtime integration.
 - Development generations use Kilo Gateway model `kilo/kilo-auto/free`. Keep it as an explicit allowlisted model. A Worker `modelId` is configuration input, never authority to use any arbitrary provider or model. Verify Kilo Gateway's environment-specific credentials and production limits before production traffic.
 - Make the runtime independently deployable and restart-safe. Prove a second process reads the first process's stored history before accepting the slice.
 
