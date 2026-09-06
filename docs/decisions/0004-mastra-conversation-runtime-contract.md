@@ -1,6 +1,6 @@
 # Mastra conversation runtime contract
 
-Status: proposed. Do not implement or deploy this boundary until the selected model, AI Gateway budget and authenticated service transport are verified.
+Status: proposed. Do not deploy this boundary until its Neon storage and authenticated service transport are verified.
 
 ## Context
 
@@ -46,7 +46,7 @@ The initial agent must have no registered tools, MCP connections, browser access
 - Replace every `LibSQLStore`, file database and local database fallback in the deployed runtime path with `@mastra/pg` backed by the matching environment's Neon PostgreSQL database.
 - Keep Pilot domain tables owned by `pilot`; Mastra-owned storage tables stay behind the runtime adapter. Do not duplicate message history into an application table before proving which records Mastra persists and how they are queried.
 - Use an authenticated server-to-server transport. The browser must only call Pilot. Vercel OIDC is a candidate because it is enabled for the current project, but its current verification contract must be tested before adoption.
-- Configure an AI Gateway budget and an approved model allowlist before the first generation. A Worker `modelId` is configuration input, never authority to use any arbitrary provider or model.
+- Development generations use Kilo Gateway model `kilo/kilo-auto/free`. Keep it as an explicit allowlisted model. A Worker `modelId` is configuration input, never authority to use any arbitrary provider or model. Verify Kilo Gateway's environment-specific credentials and production limits before production traffic.
 - Make the runtime independently deployable and restart-safe. Prove a second process reads the first process's stored history before accepting the slice.
 
 ## Acceptance evidence
@@ -58,3 +58,4 @@ The first implementation is complete only when an active organization member can
 - [Mastra Memory overview](https://mastra.ai/docs/memory/overview): persistent history uses a storage provider and stable `resource` plus `thread` identifiers; the thread resource owner is immutable.
 - [Mastra Server overview](https://mastra.ai/docs/server/overview): servers provide middleware and request context, but Pilot remains responsible for its product authorization boundary.
 - npm metadata for `@mastra/pg` `1.22.3`: Apache-2.0, Node `>=22.13.0`, and core peer range `>=1.63.1-0 <2.0.0-0`; compatible with `pilot-ai`'s installed `@mastra/core` `1.64.0`.
+- The running `pilot-ai` Mastra API: its registered `pilot-browser` reports provider `kilo` and model `kilo-auto/free`; user-confirmed as the Kilo Gateway development model.
