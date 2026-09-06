@@ -1,8 +1,9 @@
 "use server";
 
-import { getWorkOS, withAuth } from "@workos-inc/authkit-nextjs";
+import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { createWorker } from "@/workers/worker-repository";
 
 const workerInputSchema = z.object({
@@ -50,14 +51,10 @@ export async function createWorkerAction(
     };
   }
 
-  const memberships =
-    await getWorkOS().userManagement.listOrganizationMemberships({
-      userId: user.id,
-      organizationId,
-      statuses: ["active"],
-      limit: 1,
-    });
-  const membership = memberships.data[0];
+  const membership = await getActiveOrganizationMembership(
+    user.id,
+    organizationId,
+  );
   if (!membership) {
     return {
       message: "Your organization access is no longer active.",

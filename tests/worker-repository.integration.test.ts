@@ -6,6 +6,7 @@ import { db } from "@/db/client";
 import { organizations } from "@/db/schema";
 import {
   createConversation,
+  getConversation,
   listConversations,
 } from "@/conversations/conversation-repository";
 import {
@@ -68,6 +69,14 @@ test("workers are persisted and isolated by organization", async (t) => {
       (item) => item.id,
     ),
     [conversation.id],
+  );
+  assert.equal(
+    (await getConversation(organizationId, created.id, conversation.id))?.id,
+    conversation.id,
+  );
+  assert.equal(
+    await getConversation(otherOrganizationId, created.id, conversation.id),
+    undefined,
   );
 
   const organizationWorkers = await listWorkers(organizationId);

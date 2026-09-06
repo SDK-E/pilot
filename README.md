@@ -1,6 +1,6 @@
 # Pilot by SDK Enterprises
 
-An open-source AI workforce platform in early development. The current slice implements WorkOS authentication, organization access, and persistent worker configuration. Durable execution is not implemented yet. See [implementation status](docs/progress.md) and [architecture decisions](docs/decisions/0001-platform-boundaries.md).
+An open-source AI workforce platform in early development. The current slice implements WorkOS authentication, organization access, persistent worker configuration, and empty organization-scoped conversation sessions. Durable execution and messaging are not implemented yet. See [implementation status](docs/progress.md) and [architecture decisions](docs/decisions/0001-platform-boundaries.md).
 
 ## Run locally
 

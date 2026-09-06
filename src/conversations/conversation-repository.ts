@@ -48,3 +48,27 @@ export async function listConversations(
     )
     .orderBy(desc(conversations.updatedAt));
 }
+
+export async function getConversation(
+  organizationId: string,
+  workerId: string,
+  conversationId: string,
+) {
+  const [conversation] = await db
+    .select({
+      id: conversations.id,
+      title: conversations.title,
+      createdAt: conversations.createdAt,
+      updatedAt: conversations.updatedAt,
+    })
+    .from(conversations)
+    .where(
+      and(
+        eq(conversations.organizationId, organizationId),
+        eq(conversations.workerId, workerId),
+        eq(conversations.id, conversationId),
+      ),
+    )
+    .limit(1);
+  return conversation;
+}

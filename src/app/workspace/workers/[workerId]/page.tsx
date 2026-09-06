@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getWorkOS, withAuth } from "@workos-inc/authkit-nextjs";
+import { withAuth } from "@workos-inc/authkit-nextjs";
 import { ArrowLeft, Bot } from "lucide-react";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { listConversations } from "@/conversations/conversation-repository";
+import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getWorker } from "@/workers/worker-repository";
+import { startConversationAction } from "./conversations/actions";
 
 export const metadata: Metadata = { title: "Worker" };
+
+const workerIdSchema = z.uuid();
 
 type WorkerPageProps = {
   params: Promise<{ workerId: string }>;
@@ -14,23 +21,25 @@ type WorkerPageProps = {
 
 export default async function WorkerPage({ params }: WorkerPageProps) {
   const { workerId } = await params;
+  if (!workerIdSchema.safeParse(workerId).success) notFound();
   const { user, organizationId } = await withAuth();
   if (!user) redirect("/sign-in");
   if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId)) {
     redirect("/workspace");
   }
 
-  const memberships =
-    await getWorkOS().userManagement.listOrganizationMemberships({
-      userId: user.id,
-      organizationId,
-      statuses: ["active"],
-      limit: 1,
-    });
-  if (memberships.data.length === 0) notFound();
+  const membership = await getActiveOrganizationMembership(
+    user.id,
+    organizationId,
+  );
+  if (!membership) notFound();
 
-  const worker = await getWorker(organizationId, workerId);
+  const [worker, conversationList] = await Promise.all([
+    getWorker(organizationId, workerId),
+    listConversations(organizationId, workerId),
+  ]);
   if (!worker) notFound();
+  const startConversation = startConversationAction.bind(null, worker.id);
 
   return (
     <main className="mx-auto min-h-svh max-w-4xl space-y-8 px-6 py-8 sm:px-12">
@@ -61,13 +70,32 @@ export default async function WorkerPage({ params }: WorkerPageProps) {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Runtime status</CardTitle>
+          <CardTitle>Conversations</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            This worker is saved and configured. Conversation, memory, tools,
-            and execution are not enabled yet.
-          </p>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Conversations belong to this organization and worker. Messages,
+              memory, tools, and execution are not enabled yet.
+            </p>
+            <form action={startConversation}>
+              <Button type="submit">Start conversation</Button>
+            </form>
+            {conversationList.length > 0 ? (
+              <ul className="space-y-3" aria-label="Worker conversations">
+                {conversationList.map((conversation) => (
+                  <li key={conversation.id}>
+                    <Link
+                      href={`/workspace/workers/${worker.id}/conversations/${conversation.id}`}
+                      className="text-sm underline underline-offset-4 hover:text-primary"
+                    >
+                      {conversation.title ?? "New conversation"}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         </CardContent>
       </Card>
     </main>

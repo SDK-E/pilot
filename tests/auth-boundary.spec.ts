@@ -32,7 +32,11 @@ test("sign-in sets PKCE state and redirects to WorkOS", async ({ request }) => {
 test("anonymous and forged sessions cannot access workspace routes", async ({
   request,
 }) => {
-  for (const path of ["/workspace", "/workspace/workers/forged-worker"]) {
+  for (const path of [
+    "/workspace",
+    "/workspace/workers/forged-worker",
+    "/workspace/workers/forged-worker/conversations/00000000-0000-4000-8000-000000000000",
+  ]) {
     for (const cookie of ["", "wos-session=forged-session"]) {
       const response = await request.get(path, {
         maxRedirects: 0,
