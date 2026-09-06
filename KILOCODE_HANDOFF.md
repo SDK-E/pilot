@@ -46,6 +46,8 @@ If a required credential, approval, or external action is missing, continue with
 
 `pilot-ai` now contains an unreviewed `pilot-browser` implementation with browser/research tools, local LibSQL fallback, DuckDB observability, Mastra Editor, subagents, processors, and evaluators. It is not a Pilot capability and must not be deployed, called, or merged into the product boundary. Do not add to it as a shortcut. Before any integration, replace file-backed and local database storage with the approved Neon-backed runtime design, remove or gate every capability behind Pilot's server-enforced authorization and explicit approvals, and prove durable suspension/resume and idempotent recovery.
 
+The proposed [conversation runtime contract](docs/decisions/0004-mastra-conversation-runtime-contract.md) specifies the only permitted starting point: a no-tools agent, `@mastra/pg` with Neon, a deterministic Worker resource and Conversation thread, and an authenticated service call from Pilot. It is not permission to deploy or integrate until the model budget and transport are verified.
+
 ## Infrastructure status
 
 - Vercel project: `sdk-enterprises/pilot`; GitHub `SDK-E/pilot`, production branch `main`. The deployment for `1f9efcb` is Ready.
