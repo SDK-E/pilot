@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import { AuthKitProvider } from "@workos-inc/authkit-nextjs/components";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const mono = JetBrains_Mono({
@@ -19,7 +20,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${mono.variable} dark h-full antialiased`}>
       <body className="min-h-full">
-        <AuthKitProvider>{children}</AuthKitProvider>
+        <AuthKitProvider>
+          <TooltipProvider>{children}</TooltipProvider>
+        </AuthKitProvider>
       </body>
     </html>
   );

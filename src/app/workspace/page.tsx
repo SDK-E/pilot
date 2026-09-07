@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { signOutAction } from "@/app/auth/actions";
-import { WorkerCreationForm } from "@/components/workers/worker-creation-form";
+import { AgentCreationForm } from "@/components/workers/worker-creation-form";
 import { listWorkers } from "@/workers/worker-repository";
 import { selectOrganization } from "./actions";
 
@@ -30,7 +30,7 @@ export default async function Workspace() {
   const current = organizations.find(
     (membership) => membership.organizationId === organizationId,
   );
-  const workerList = current ? await listWorkers(current.organizationId) : [];
+  const agentList = current ? await listWorkers(current.organizationId) : [];
 
   return (
     <main className="mx-auto min-h-svh max-w-5xl space-y-12 px-6 py-8 sm:px-12">
@@ -49,7 +49,7 @@ export default async function Workspace() {
         </h1>
         <p className="max-w-2xl leading-relaxed text-muted-foreground">
           {current
-            ? "Create and configure the first persistent worker for this organization. Execution is introduced in the next slice."
+            ? "Create a persistent agent for this organization. Execution is introduced in the next slice."
             : "Open an organization to continue to its workspace."}
         </p>
       </section>
@@ -108,48 +108,49 @@ export default async function Workspace() {
         <section className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <Card>
             <CardHeader>
-              <CardTitle>Create a worker</CardTitle>
+              <CardTitle>Create an agent</CardTitle>
               <CardDescription>
-                Pilot stores a worker as an organizational entity. Its model and
-                instructions are configuration; no model is called yet.
+                Pilot stores an agent as an organizational entity. Its persona,
+                model, and instructions are configuration; no model is called
+                yet.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <WorkerCreationForm />
+              <AgentCreationForm />
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Workers</CardTitle>
+              <CardTitle>Agents</CardTitle>
               <CardDescription>
-                {workerList.length === 0
-                  ? "No workers have been created for this organization."
-                  : `${workerList.length} configured worker${workerList.length === 1 ? "" : "s"}.`}
+                {agentList.length === 0
+                  ? "No agents have been created for this organization."
+                  : `${agentList.length} configured agent${agentList.length === 1 ? "" : "s"}.`}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {workerList.length === 0 ? (
+              {agentList.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Create the first worker with a name, a model ID, and explicit
+                  Create the first agent with a name, a model ID, and explicit
                   instructions.
                 </p>
               ) : (
-                <ul className="space-y-4" aria-label="Configured workers">
-                  {workerList.map((worker) => (
+                <ul className="space-y-4" aria-label="Configured agents">
+                  {agentList.map((agent) => (
                     <li
-                      key={worker.id}
+                      key={agent.id}
                       className="space-y-1 border-b border-border pb-4 last:border-0 last:pb-0"
                     >
-                      <p className="font-medium">{worker.name}</p>
+                      <p className="font-medium">{agent.name}</p>
                       <Link
-                        href={`/workspace/workers/${worker.id}`}
+                        href={`/workspace/workers/${agent.id}`}
                         className="text-sm underline underline-offset-4 hover:text-primary"
                       >
                         View configuration
                       </Link>
-                      <p className="text-xs text-primary">{worker.modelId}</p>
+                      <p className="text-xs text-primary">{agent.modelId}</p>
                       <p className="line-clamp-2 text-sm text-muted-foreground">
-                        {worker.instructions}
+                        {agent.instructions}
                       </p>
                     </li>
                   ))}

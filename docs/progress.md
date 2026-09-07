@@ -43,6 +43,6 @@ Neon projects belong to SDK Enterprises, use PostgreSQL 18 in `aws-eu-central-1`
 3. Verify the authenticated creation form with a real active membership, including a rejected/revoked membership.
 4. Establish the shared design-system distribution from `pilot-ui`; current generated components are in the app and must not become competing shared sources.
 5. Set `PILOT_AI_RUNTIME_URL` for Preview after it has its own stable runtime URL, then prove one real authenticated two-turn conversation in each environment, including a fresh runtime process reading the first message.
-7. Prove durable execution across requests/restarts before building protected actions, approval, suspension/resume and the rest of the one-worker milestone.
+6. Prove durable execution across requests/restarts before building protected actions, approval, suspension/resume and the rest of the one-worker milestone.
 
 `pilot-ai` uses `src/index.ts` as its Mastra development entrypoint, with agent-specific modules in `src/conversation` and `src/research`, and shared runtime code in `src/runtime`. Pilot Research remains local-development work with no tenant-scoped service adapter or approved deployment path. The deployed Conversation function imports only the no-tools Pilot adapter. `pilot-integrations` and `pilot-ui` remain package stubs. Pilot has no tasks, approvals, memory controls or integration capabilities yet.

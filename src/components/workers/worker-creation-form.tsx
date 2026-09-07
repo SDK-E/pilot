@@ -8,30 +8,30 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { WorkerCreationState } from "@/workers/worker-creation-state";
 
-const initialWorkerCreationState: WorkerCreationState = { status: "idle" };
+const initialAgentCreationState: WorkerCreationState = { status: "idle" };
 
-export function WorkerCreationForm() {
+export function AgentCreationForm() {
   const [state, action, pending] = useActionState(
     createWorkerAction,
-    initialWorkerCreationState,
+    initialAgentCreationState,
   );
 
   return (
     <form action={action} className="space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="worker-name">Worker name</Label>
+        <Label htmlFor="agent-name">Agent name</Label>
         <Input
-          id="worker-name"
+          id="agent-name"
           name="name"
           maxLength={100}
-          placeholder="Research assistant"
+          placeholder="Research agent"
           required
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="worker-model">Model ID</Label>
+        <Label htmlFor="agent-model">Model ID</Label>
         <Input
-          id="worker-model"
+          id="agent-model"
           name="modelId"
           defaultValue="kilo/kilo-auto/free"
           maxLength={200}
@@ -40,12 +40,12 @@ export function WorkerCreationForm() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="worker-instructions">Instructions</Label>
+        <Label htmlFor="agent-instructions">Instructions</Label>
         <Textarea
-          id="worker-instructions"
+          id="agent-instructions"
           name="instructions"
           maxLength={10_000}
-          placeholder="Describe the worker's purpose, constraints, and expected outcomes."
+          placeholder="Describe the agent's purpose, constraints, and expected outcomes."
           required
           rows={6}
         />
@@ -63,7 +63,7 @@ export function WorkerCreationForm() {
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Creating worker…" : "Create worker"}
+        {pending ? "Creating agent…" : "Create agent"}
       </Button>
     </form>
   );

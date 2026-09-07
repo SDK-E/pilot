@@ -32,7 +32,7 @@ export default async function Home() {
             Get things done<span className="text-primary">_</span>
           </h1>
           <p className="text-base leading-relaxed text-muted-foreground">
-            A shared place for your organization and its AI workers. Sign in to
+            A shared place for your organization and its AI agents. Sign in to
             access your workspace.
           </p>
           <Button asChild size="lg" className="h-12 px-6">

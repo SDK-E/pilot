@@ -11,7 +11,7 @@ import { getActiveOrganizationMembership } from "@/organizations/active-membersh
 import { getWorker } from "@/workers/worker-repository";
 import { startConversationAction } from "./conversations/actions";
 
-export const metadata: Metadata = { title: "Worker" };
+export const metadata: Metadata = { title: "Agent" };
 
 const workerIdSchema = z.uuid();
 
@@ -48,12 +48,12 @@ export default async function WorkerPage({ params }: WorkerPageProps) {
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft aria-hidden="true" className="size-4" />
-        Workspace
+        Agent fleet
       </Link>
       <header className="flex items-start gap-4 border-b border-border pb-8">
         <Bot aria-hidden="true" className="mt-1 size-6 text-primary" />
         <div className="space-y-2">
-          <p className="text-xs tracking-widest text-primary">WORKER</p>
+          <p className="text-xs tracking-widest text-primary">AGENT</p>
           <h1 className="text-3xl font-medium tracking-tight">{worker.name}</h1>
           <p className="text-sm text-muted-foreground">{worker.modelId}</p>
         </div>
@@ -75,14 +75,15 @@ export default async function WorkerPage({ params }: WorkerPageProps) {
         <CardContent>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Conversations belong to this organization and worker. Messages,
-              memory, tools, and execution are not enabled yet.
+              Conversations belong to this organization and agent. Tool use,
+              attachments, live execution traces, and approvals are the next
+              runtime slice.
             </p>
             <form action={startConversation}>
               <Button type="submit">Start conversation</Button>
             </form>
             {conversationList.length > 0 ? (
-              <ul className="space-y-3" aria-label="Worker conversations">
+              <ul className="space-y-3" aria-label="Agent conversations">
                 {conversationList.map((conversation) => (
                   <li key={conversation.id}>
                     <Link
