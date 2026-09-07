@@ -21,16 +21,6 @@ function toStoredCount(value: number): number | undefined {
 export async function sendConversationMessage(
   input: SendConversationMessageInput,
 ) {
-  const startedAt = performance.now();
-  const reply = await generateConversationReply({
-    organizationId: input.organizationId,
-    worker: input.worker,
-    conversationId: input.conversationId,
-    message: input.message,
-    allowedToolIds: [],
-  });
-  const latencyMs = toStoredCount(Math.round(performance.now() - startedAt));
-
   const userMessage = await createConversationMessage({
     organizationId: input.organizationId,
     workerId: input.worker.id,
@@ -41,6 +31,16 @@ export async function sendConversationMessage(
   if (!userMessage) {
     throw new Error("Pilot Conversation no longer belongs to this Worker.");
   }
+
+  const startedAt = performance.now();
+  const reply = await generateConversationReply({
+    organizationId: input.organizationId,
+    worker: input.worker,
+    conversationId: input.conversationId,
+    message: input.message,
+    allowedToolIds: [],
+  });
+  const latencyMs = toStoredCount(Math.round(performance.now() - startedAt));
 
   const workerMessage = await createConversationMessage({
     organizationId: input.organizationId,
