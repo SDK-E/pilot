@@ -1,11 +1,14 @@
 "use client";
 
+import { useActionState } from "react";
 import { Trash2 } from "lucide-react";
-import { deleteConversationAction } from "@/app/workspace/chats/actions";
+import {
+  deleteConversationAction,
+  type DeleteConversationState,
+} from "@/app/workspace/chats/actions";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -15,6 +18,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+const initialState: DeleteConversationState = { status: "idle" };
+
 export function DeleteConversationButton({
   workerId,
   conversationId,
@@ -22,6 +27,11 @@ export function DeleteConversationButton({
   workerId: string;
   conversationId: string;
 }) {
+  const [state, action, pending] = useActionState(
+    deleteConversationAction,
+    initialState,
+  );
+
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -37,17 +47,19 @@ export function DeleteConversationButton({
             everyone in this organization.
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {state.status === "error" ? (
+          <p aria-live="polite" className="text-sm text-destructive">
+            {state.message}
+          </p>
+        ) : null}
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <form action={deleteConversationAction}>
+          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+          <form action={action}>
             <input name="workerId" type="hidden" value={workerId} />
             <input name="conversationId" type="hidden" value={conversationId} />
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              type="submit"
-            >
-              Delete conversation
-            </AlertDialogAction>
+            <Button disabled={pending} type="submit" variant="destructive">
+              {pending ? "Deleting…" : "Delete conversation"}
+            </Button>
           </form>
         </AlertDialogFooter>
       </AlertDialogContent>

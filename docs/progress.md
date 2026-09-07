@@ -34,6 +34,10 @@ When an authenticated runtime request fails after Pilot has accepted a message,
 Pilot routes the user to the saved conversation and renders its failed execution
 activity. This preserves the user's work and gives them a direct retry path.
 
+Conversation deletion uses a destructive confirmation and retains the Neon
+record if protected runtime-memory cleanup fails. The dialog reports that
+recoverable failure rather than silently implying the chat was deleted.
+
 Follow-up messages inside an existing conversation now stream over a
 WorkOS-authorized Pilot route. The AuthKit proxy explicitly covers the
 conversation-stream API path so `withAuth()` receives only the trusted session
