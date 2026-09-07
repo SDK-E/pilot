@@ -19,6 +19,12 @@ approvals, or persona templates are complete: those require an explicit
 runtime event contract, persisted execution/activity records, and capability
 authorization before the UI exposes them.
 
+The accepted [agent-fleet experience](decisions/0005-agent-fleet-experience.md)
+opens on Conversational chat and defines persona configuration, sidebar
+navigation, live activity, Research's future capability boundary, attachment
+scope, approval modes, and dashboard priorities. The next implementation slice
+is the persistent agent/persona configuration needed for that shell.
+
 Implemented: WorkOS AuthKit sign-in route, callback, session proxy, POST sign-out action, organization membership listing and membership-checked organization switching. The page uses Pilot colors, JetBrains Mono and official shadcn source. No local password system or alternative auth provider is installed.
 
 Persistent worker creation and read-only configuration viewing are implemented for an active selected organization. A Worker is Pilot data, rather than a runtime Agent: it has an organization-scoped unique name, instructions, model ID, creator and timestamps. The action rechecks the WorkOS membership for the signed-in user and selected organization before creating or updating the corresponding Pilot organization/member records and inserting the worker. The detail route independently rechecks that membership and scopes the lookup by organization. Authorized members can create, list, and inspect organization-scoped worker conversation sessions.
