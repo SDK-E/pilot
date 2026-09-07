@@ -12,14 +12,8 @@ import {
 } from "@/agents/agent-configuration";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import type { WorkerCreationState } from "@/workers/worker-creation-state";
-import { createConversation } from "@/conversations/conversation-repository";
-import { deriveConversationTitle } from "@/conversations/conversation-title";
-import {
-  createWorker,
-  getWorkerByBaseAgentId,
-  getWorker,
-  updateWorker,
-} from "@/workers/worker-repository";
+import { prepareConversation } from "@/conversations/start-chat";
+import { createWorker, updateWorker } from "@/workers/worker-repository";
 
 const workerInputSchema = z.object({
   name: z.string().trim().min(1, "Name is required.").max(100),
@@ -181,16 +175,14 @@ export async function updateWorkerAction(
   }
 }
 
-export type StartChatState = {
-  message?: string;
-  status: "idle" | "error" | "success";
-  href?: string;
-};
-
 export async function startChatWithMessageAction(
-  _previousState: StartChatState,
+  _previousState: {
+    message?: string;
+    status: "idle" | "error" | "success";
+    href?: string;
+  },
   formData: FormData,
-): Promise<StartChatState> {
+) {
   const input = z
     .object({
       message: z.string().trim().min(1, "Write a message first.").max(10_000),
@@ -219,75 +211,25 @@ export async function startChatWithMessageAction(
       message: "Your organization access is no longer active.",
     };
 
-  const selectedAgent = input.data.workerId
-    ? await getWorker(organizationId, input.data.workerId)
-    : undefined;
-  if (selectedAgent && selectedAgent.baseAgentId !== "conversational") {
-    return {
-      status: "error",
-      message: "This agent is not available for conversation yet.",
-    };
-  }
-  let agent =
-    selectedAgent ??
-    (await getWorkerByBaseAgentId(organizationId, "conversational"));
-  if (!agent) {
-    try {
-      agent = await createWorker({
-        organization: { id: organizationId, name: membership.organizationName },
-        member: { id: membership.id, roleSlug: membership.role.slug },
-        user: { id: user.id, email: user.email },
-        worker: {
-          name: "Pilot",
-          instructions:
-            "You are Pilot, a clear and practical conversational assistant. Ask concise follow-up questions when needed and state useful next steps.",
-          modelId: "kilo/kilo-auto/free",
-          baseAgentId: "conversational",
-          enabledToolIds: [],
-          knowledgeSourceIds: [],
-          approvalRules: {},
-        },
-      });
-    } catch (error) {
-      if (!(
-        typeof error === "object" &&
-        error !== null &&
-        "code" in error &&
-        error.code === "23505"
-      ))
-        throw error;
-      agent = await getWorkerByBaseAgentId(organizationId, "conversational");
-    }
-  }
-  if (!agent)
-    return {
-      status: "error",
-      message: "Pilot could not prepare the Conversational agent.",
-    };
-  const conversation = await createConversation({
+  const prepared = await prepareConversation({
     organizationId,
-    workerId: agent.id,
-    createdByWorkosUserId: user.id,
-    title: deriveConversationTitle(input.data.message),
+    membership,
+    user: { id: user.id, email: user.email },
+    message: input.data.message,
+    workerId: input.data.workerId,
   });
-  if (!conversation)
-    return { status: "error", message: "Pilot could not start a chat." };
-  const worker = await getWorker(organizationId, agent.id);
-  if (!worker || worker.modelId !== "kilo/kilo-auto/free")
-    return { status: "error", message: "This agent is unavailable." };
+  if (!prepared.ok) {
+    return { status: "error", message: prepared.message };
+  }
+  const href = `/workspace/workers/${prepared.worker.id}/conversations/${prepared.conversation.id}`;
   try {
     await sendConversationMessage({
       organizationId,
-      worker: {
-        id: worker.id,
-        instructions: worker.instructions,
-        modelId: "kilo/kilo-auto/free",
-      },
-      conversationId: conversation.id,
+      worker: prepared.worker,
+      conversationId: prepared.conversation.id,
       message: input.data.message,
     });
   } catch (error) {
-    const href = `/workspace/workers/${agent.id}/conversations/${conversation.id}`;
     revalidatePath(href);
     revalidatePath("/workspace");
     revalidatePath("/workspace/chats");
@@ -302,6 +244,6 @@ export async function startChatWithMessageAction(
   }
   return {
     status: "success",
-    href: `/workspace/workers/${agent.id}/conversations/${conversation.id}`,
+    href,
   };
 }

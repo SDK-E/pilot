@@ -43,7 +43,7 @@ receives plain text only; Pilot persists the verified user prompt before
 streaming and persists the returned Worker response, usage, run ID, and
 completed execution after the stream closes.
 Stopping a response records a failed execution and preserves the user prompt.
-The new-chat first message still uses the established completed-response action.
+New and existing chats use the same protected streaming lifecycle.
 The server test verifies that Pilot accepts text only when a terminal runtime
 usage event follows, rejecting partial streams before a Worker response can be
 persisted.

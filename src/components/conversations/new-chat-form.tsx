@@ -1,13 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bot, Check, SendHorizontal } from "lucide-react";
-import { startChatWithMessageAction } from "@/app/workspace/worker-actions";
+import { useCompletion } from "@ai-sdk/react";
+import { Bot, Check, SendHorizontal, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-
-const initialState = { status: "idle" as const };
 
 type AgentOption = {
   id: string;
@@ -16,10 +14,6 @@ type AgentOption = {
 };
 
 export function NewChatForm({ agents }: { agents: AgentOption[] }) {
-  const [state, action, pending] = useActionState(
-    startChatWithMessageAction,
-    initialState,
-  );
   const router = useRouter();
   const conversationalAgents = agents.filter(
     (agent) => agent.baseAgentId === "conversational",
@@ -27,15 +21,42 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
   const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(
     conversationalAgents[0]?.id,
   );
-  useEffect(() => {
-    if (state.href) router.push(state.href);
-  }, [router, state.href]);
+  const [pendingPrompt, setPendingPrompt] = useState<string>();
+  const conversationHref = useRef<string | undefined>(undefined);
+  const {
+    complete,
+    completion,
+    error,
+    input,
+    isLoading,
+    setCompletion,
+    setInput,
+    stop,
+  } = useCompletion<{ workerId: string }>({
+    api: "/api/conversations/stream",
+    body: { workerId: selectedAgentId ?? "" },
+    experimental_throttle: 50,
+    streamProtocol: "text",
+    fetch: async (...args) => {
+      const response = await fetch(...args);
+      conversationHref.current =
+        response.headers.get("x-pilot-conversation-href") ?? undefined;
+      return response;
+    },
+    onError: () => {
+      setPendingPrompt(undefined);
+      if (conversationHref.current) router.push(conversationHref.current);
+    },
+    onFinish: () => {
+      if (conversationHref.current) router.push(conversationHref.current);
+    },
+  });
+  const selectedAgent = conversationalAgents.find(
+    (agent) => agent.id === selectedAgentId,
+  );
+
   return (
-    <form
-      action={action}
-      className="mx-auto w-full max-w-3xl space-y-3 text-left"
-    >
-      <input name="workerId" type="hidden" value={selectedAgentId ?? ""} />
+    <div className="mx-auto w-full max-w-3xl space-y-3 text-left">
       <div
         className="flex flex-wrap justify-center gap-2"
         aria-label="Choose an agent"
@@ -53,6 +74,7 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
                 key={agent.id}
                 aria-pressed={selected}
                 className="rounded-full"
+                disabled={isLoading}
                 onClick={() => setSelectedAgentId(agent.id)}
                 size="sm"
                 type="button"
@@ -79,29 +101,78 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
           Research · coming soon
         </Button>
       </div>
-      <Textarea
-        name="message"
-        aria-label="Message Pilot"
-        placeholder="Message Pilot…"
-        required
-        rows={3}
-        maxLength={10_000}
-        className="min-h-32 resize-y rounded-2xl border-border bg-card px-4 py-4 text-base shadow-lg shadow-black/10 focus-visible:ring-2"
-      />
-      {state.message ? (
-        <p className="text-sm text-destructive">{state.message}</p>
+      {pendingPrompt ? (
+        <section
+          aria-live="polite"
+          className="space-y-4 rounded-2xl border border-border bg-card/45 p-5 shadow-sm"
+        >
+          <p className="whitespace-pre-wrap text-sm">{pendingPrompt}</p>
+          {completion ? (
+            <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+              {completion}
+            </p>
+          ) : (
+            <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+              <Bot className="size-4 text-primary" aria-hidden="true" />
+              Pilot is responding…
+            </p>
+          )}
+        </section>
       ) : null}
-      <div className="flex items-center justify-between px-1">
-        <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-          <Bot className="size-3.5 text-primary" aria-hidden="true" />
-          {conversationalAgents.find((agent) => agent.id === selectedAgentId)
-            ?.name ?? "Pilot"}
-        </span>
-        <Button size="icon" type="submit" disabled={pending}>
-          <SendHorizontal className="size-4" />
-          <span className="sr-only">Send</span>
-        </Button>
-      </div>
-    </form>
+      <form
+        className="space-y-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const prompt = input.trim();
+          if (!prompt || isLoading) return;
+          conversationHref.current = undefined;
+          setPendingPrompt(prompt);
+          setCompletion("");
+          setInput("");
+          void complete(prompt);
+        }}
+      >
+        <Textarea
+          aria-label="Message Pilot"
+          className="min-h-32 resize-y rounded-2xl border-border bg-card px-4 py-4 text-base shadow-lg shadow-black/10 focus-visible:ring-2"
+          disabled={isLoading}
+          maxLength={10_000}
+          onChange={(event) => setInput(event.target.value)}
+          placeholder="Message Pilot…"
+          required
+          rows={3}
+          value={input}
+        />
+        {error ? (
+          <p className="text-sm text-destructive">
+            {error.message || "Pilot could not complete this message."}
+          </p>
+        ) : null}
+        <div className="flex items-center justify-between px-1">
+          <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+            <Bot className="size-3.5 text-primary" aria-hidden="true" />
+            {isLoading
+              ? "Pilot is responding…"
+              : (selectedAgent?.name ?? "Pilot")}
+          </span>
+          {isLoading ? (
+            <Button
+              aria-label="Stop generating"
+              onClick={stop}
+              size="icon"
+              type="button"
+              variant="outline"
+            >
+              <Square aria-hidden="true" className="size-3.5 fill-current" />
+            </Button>
+          ) : (
+            <Button size="icon" type="submit">
+              <SendHorizontal className="size-4" aria-hidden="true" />
+              <span className="sr-only">Send</span>
+            </Button>
+          )}
+        </div>
+      </form>
+    </div>
   );
 }

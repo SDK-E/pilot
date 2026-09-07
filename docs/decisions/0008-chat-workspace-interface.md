@@ -33,11 +33,10 @@ and messages, executions, and completed activity are persisted through the
 authorized Pilot-to-runtime path. The UI displays completed activity in a
 collapsed disclosure. The opening message receives a local, deterministic title
 without another model request, and the newest organization-scoped conversations
-appear in the expanded sidebar for direct return to a chat. Existing
-conversations stream text through a WorkOS-authorized Pilot route while the
-runtime remains tool-free; Pilot persists the user message before streaming and
-the complete assistant message plus execution only after the stream ends. The
-first-message handoff still uses the established completed-response action.
+appear in the expanded sidebar for direct return to a chat. New and existing conversations stream text through WorkOS-authorized Pilot
+routes while the runtime remains tool-free. A new conversation is created only
+after its validated first prompt; Pilot persists that prompt before streaming
+and the complete assistant message plus execution only after the stream ends.
 Streaming tool traces, browser/scratchpad views, and reasoning detail remain
 unimplemented because their event, persistence, and approval contracts are not
 yet present.
