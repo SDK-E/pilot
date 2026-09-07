@@ -292,3 +292,36 @@ export const tasks = pgTable(
     ),
   ],
 );
+
+export const approvals = pgTable(
+  "approvals",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    executionId: uuid("execution_id").references(() => executions.id, {
+      onDelete: "set null",
+    }),
+    runtimeRunId: text("runtime_run_id"),
+    summary: text("summary").notNull(),
+    status: text("status")
+      .$type<"pending" | "approved" | "rejected" | "cancelled">()
+      .notNull()
+      .default("pending"),
+    decidedByWorkosUserId: text("decided_by_workos_user_id"),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("approvals_organization_status_index").on(
+      table.organizationId,
+      table.status,
+    ),
+  ],
+);
