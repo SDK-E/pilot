@@ -25,6 +25,11 @@ or tool approvals. The collapsed completed activity remains the only runtime
 activity the UI can truthfully render today. See
 [chat workspace interface](decisions/0008-chat-workspace-interface.md).
 
+Each submitted first message receives a deterministic local title, avoiding an
+extra model call or content disclosure. The expanded sidebar lists the newest
+organization-scoped chats, so users can return directly to recent work; the
+collapsed sidebar retains the compact navigation mark.
+
 The product language is now **agents** and **agent fleet**. Existing `workers`
 routes, tables, and runtime identifiers remain internal compatibility details
 until a deliberate, tested domain migration can preserve organization isolation

@@ -31,7 +31,10 @@ The existing conversation server action remains the source of truth for a
 message lifecycle. Pilot creates no conversation until a message is submitted,
 and messages, executions, and completed activity are persisted through the
 authorized Pilot-to-runtime path. The UI displays completed activity in a
-collapsed disclosure. It does not yet stream partial text or runtime events.
+collapsed disclosure. The opening message receives a local, deterministic title
+without another model request, and the newest organization-scoped conversations
+appear in the expanded sidebar for direct return to a chat. It does not yet
+stream partial text or runtime events.
 
 ## Sources checked on 2026-09-07
 

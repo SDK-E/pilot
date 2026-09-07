@@ -39,7 +39,21 @@ const primaryNavigation = [
   { icon: Settings, label: "Settings", href: "/workspace" },
 ] as const;
 
-export function AgentFleetShell({ children }: { children: React.ReactNode }) {
+type RecentChat = {
+  id: string;
+  workerId: string;
+  title: string | null;
+};
+
+type AgentFleetShellProps = {
+  children: React.ReactNode;
+  recentChats: RecentChat[];
+};
+
+export function AgentFleetShell({
+  children,
+  recentChats,
+}: AgentFleetShellProps) {
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -84,6 +98,30 @@ export function AgentFleetShell({ children }: { children: React.ReactNode }) {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+          {recentChats.length > 0 ? (
+            <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+              <SidebarGroupLabel>Recent chats</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {recentChats.map((chat) => (
+                    <SidebarMenuItem key={chat.id}>
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={chat.title ?? "New conversation"}
+                      >
+                        <Link
+                          href={`/workspace/workers/${chat.workerId}/conversations/${chat.id}`}
+                        >
+                          <MessageSquareMore aria-hidden="true" />
+                          <span>{chat.title ?? "New conversation"}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ) : null}
         </SidebarContent>
         <SidebarFooter className="p-3">
           <p className="px-2 text-xs text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">

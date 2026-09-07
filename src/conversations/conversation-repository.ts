@@ -8,6 +8,7 @@ export async function createConversation(input: {
   organizationId: string;
   workerId: string;
   createdByWorkosUserId: string;
+  title?: string;
 }) {
   const [worker] = await db
     .select({ id: workers.id })
@@ -68,6 +69,29 @@ export async function listOrganizationConversations(organizationId: string) {
       ),
     )
     .orderBy(desc(conversations.updatedAt));
+}
+
+export async function listRecentOrganizationConversations(
+  organizationId: string,
+  limit = 8,
+) {
+  return db
+    .select({
+      id: conversations.id,
+      workerId: conversations.workerId,
+      agentName: workers.name,
+      title: conversations.title,
+    })
+    .from(conversations)
+    .innerJoin(workers, eq(conversations.workerId, workers.id))
+    .where(
+      and(
+        eq(conversations.organizationId, organizationId),
+        eq(workers.organizationId, organizationId),
+      ),
+    )
+    .orderBy(desc(conversations.updatedAt))
+    .limit(limit);
 }
 
 export async function getOrganizationConversationMetrics(

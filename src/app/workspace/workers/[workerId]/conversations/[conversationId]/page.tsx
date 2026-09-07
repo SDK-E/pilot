@@ -54,7 +54,7 @@ export default async function ConversationPage({
 
   return (
     <ConversationShell
-      backHref={`/workspace/workers/${worker.id}`}
+      backHref="/workspace/chats"
       conversationId={conversation.id}
       messages={messages}
       activities={activities}

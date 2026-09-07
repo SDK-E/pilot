@@ -11,6 +11,7 @@ import {
   getConversation,
   listConversationMessages,
   listConversations,
+  listOrganizationConversations,
 } from "@/conversations/conversation-repository";
 import {
   finishExecution,
@@ -72,6 +73,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     organizationId,
     workerId: created.id,
     createdByWorkosUserId: `user_${suffix}`,
+    title: "Remember this question",
   });
   assert.ok(conversation);
   assert.equal(
@@ -87,6 +89,13 @@ test("workers are persisted and isolated by organization", async (t) => {
       (item) => item.id,
     ),
     [conversation.id],
+  );
+  assert.deepEqual(
+    (await listOrganizationConversations(organizationId)).map((item) => [
+      item.id,
+      item.title,
+    ]),
+    [[conversation.id, "Remember this question"]],
   );
   assert.equal(
     (await getConversation(organizationId, created.id, conversation.id))?.id,

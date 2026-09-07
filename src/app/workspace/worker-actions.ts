@@ -13,6 +13,7 @@ import {
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import type { WorkerCreationState } from "@/workers/worker-creation-state";
 import { createConversation } from "@/conversations/conversation-repository";
+import { deriveConversationTitle } from "@/conversations/conversation-title";
 import {
   createWorker,
   getWorkerByBaseAgentId,
@@ -267,6 +268,7 @@ export async function startChatWithMessageAction(
     organizationId,
     workerId: agent.id,
     createdByWorkosUserId: user.id,
+    title: deriveConversationTitle(input.data.message),
   });
   if (!conversation)
     return { status: "error", message: "Pilot could not start a chat." };
