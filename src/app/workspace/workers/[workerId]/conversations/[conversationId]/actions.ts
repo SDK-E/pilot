@@ -76,6 +76,11 @@ export async function sendConversationMessageAction(
       message: input.data.message,
     });
   } catch (error) {
+    revalidatePath(
+      `/workspace/workers/${input.data.workerId}/conversations/${input.data.conversationId}`,
+    );
+    revalidatePath("/workspace");
+    revalidatePath("/workspace/chats");
     if (error instanceof PilotAiRuntimeError) {
       return {
         message: error.message,

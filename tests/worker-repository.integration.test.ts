@@ -165,6 +165,27 @@ test("workers are persisted and isolated by organization", async (t) => {
       ["execution.completed", "Response completed"],
     ],
   );
+
+  const failedExecution = await startExecution({
+    organizationId,
+    workerId: created.id,
+    conversationId: conversation.id,
+  });
+  assert.ok(failedExecution);
+  await finishExecution({
+    organizationId,
+    executionId: failedExecution.id,
+    errorMessage: "Runtime generation failed",
+  });
+  assert.deepEqual(
+    (await listConversationActivity(organizationId, conversation.id))
+      .slice(-2)
+      .map((event) => [event.type, event.conversationMessageId]),
+    [
+      ["execution.started", null],
+      ["execution.failed", null],
+    ],
+  );
   assert.deepEqual(
     await listConversationActivity(otherOrganizationId, conversation.id),
     [],

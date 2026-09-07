@@ -30,6 +30,10 @@ extra model call or content disclosure. The expanded sidebar lists the newest
 organization-scoped chats, so users can return directly to recent work; the
 collapsed sidebar retains the compact navigation mark.
 
+When an authenticated runtime request fails after Pilot has accepted a message,
+Pilot routes the user to the saved conversation and renders its failed execution
+activity. This preserves the user's work and gives them a direct retry path.
+
 The product language is now **agents** and **agent fleet**. Existing `workers`
 routes, tables, and runtime identifiers remain internal compatibility details
 until a deliberate, tested domain migration can preserve organization isolation

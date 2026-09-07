@@ -50,6 +50,12 @@ export function ConversationShell({
   agentId,
   agentName,
 }: ConversationShellProps) {
+  const failedActivities = activities.filter(
+    (activity) =>
+      activity.conversationMessageId === null &&
+      activity.type === "execution.failed",
+  );
+
   return (
     <main className="flex min-h-svh flex-col bg-background">
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4 sm:px-6">
@@ -100,6 +106,9 @@ export function ConversationShell({
                 );
               })
             )}
+            {failedActivities.length > 0 ? (
+              <ConversationActivity events={failedActivities} />
+            ) : null}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>

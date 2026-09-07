@@ -287,12 +287,17 @@ export async function startChatWithMessageAction(
       message: input.data.message,
     });
   } catch (error) {
+    const href = `/workspace/workers/${agent.id}/conversations/${conversation.id}`;
+    revalidatePath(href);
+    revalidatePath("/workspace");
+    revalidatePath("/workspace/chats");
     return {
       status: "error",
       message:
         error instanceof PilotAiRuntimeError
           ? error.message
           : "Pilot could not complete this message. Try again.",
+      href,
     };
   }
   return {

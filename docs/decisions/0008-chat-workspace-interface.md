@@ -36,6 +36,12 @@ without another model request, and the newest organization-scoped conversations
 appear in the expanded sidebar for direct return to a chat. It does not yet
 stream partial text or runtime events.
 
+If a runtime request fails after Pilot has persisted the submitted user message,
+Pilot takes the user to that conversation rather than leaving it hidden on the
+new-chat screen. The failed execution is rendered as a collapsed error activity
+beside the recoverable conversation, where the user can retry with the normal
+composer.
+
 ## Sources checked on 2026-09-07
 
 - [AI Elements](https://ai-sdk.dev/elements) and the official Conversation,
