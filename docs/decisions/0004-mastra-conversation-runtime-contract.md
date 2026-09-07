@@ -41,6 +41,13 @@ That resource scopes history to a Worker inside one organization. The thread sco
 
 The initial agent must have no registered tools, MCP connections, browser access, filesystem access, integrations, delegation, schedules or autonomous workflows. It may only apply the Worker instructions, invoke the explicitly approved model, write the user message and response through Turso-backed Mastra storage, and return a response suitable for Pilot to render.
 
+For a verified request with OpenAI `stream: true`, the runtime emits
+OpenAI-compatible server-sent chat-completion chunks and a final usage chunk.
+Pilot consumes that stream through its authenticated server-side client; the
+browser never contacts the runtime. Pilot mirrors a Worker response into Neon
+only after the runtime's terminal usage event, so a partial or cancelled stream
+cannot be represented as a completed answer.
+
 ## Storage and deployment requirements
 
 - Use `@mastra/libsql` with a dedicated matching-environment Turso database for the deployed runtime path. Do not use a file database or local database fallback in that path.

@@ -18,6 +18,7 @@
     "check": "pnpm lint && pnpm typecheck && pnpm format:check && pnpm knip"
   },
   "dependencies": {
+    "@ai-sdk/react": "4.0.96",
     "@neondatabase/serverless": "1.1.0",
     "@streamdown/cjk": "^1.0.3",
     "@streamdown/code": "^1.1.1",

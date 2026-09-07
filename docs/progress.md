@@ -34,6 +34,13 @@ When an authenticated runtime request fails after Pilot has accepted a message,
 Pilot routes the user to the saved conversation and renders its failed execution
 activity. This preserves the user's work and gives them a direct retry path.
 
+Follow-up messages inside an existing conversation now stream over a
+WorkOS-authorized Pilot route. The browser receives plain text only; Pilot
+persists the verified user prompt before streaming and persists the returned
+Worker response, usage, run ID, and completed execution after the stream closes.
+Stopping a response records a failed execution and preserves the user prompt.
+The new-chat first message still uses the established completed-response action.
+
 The product language is now **agents** and **agent fleet**. Existing `workers`
 routes, tables, and runtime identifiers remain internal compatibility details
 until a deliberate, tested domain migration can preserve organization isolation

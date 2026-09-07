@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Bot } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCompletion } from "@ai-sdk/react";
+import { ArrowLeft, Bot, SendHorizontal, Square } from "lucide-react";
 import {
   Conversation,
   ConversationContent,
@@ -13,8 +16,9 @@ import {
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
-import { ConversationMessageForm } from "@/components/conversations/conversation-message-form";
 import { ConversationActivity } from "@/components/conversations/conversation-activity";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 type PersistedMessage = {
   id: string;
@@ -50,6 +54,32 @@ export function ConversationShell({
   agentId,
   agentName,
 }: ConversationShellProps) {
+  const router = useRouter();
+  const [pendingUserMessage, setPendingUserMessage] = useState<string>();
+  const {
+    complete,
+    completion,
+    error,
+    input,
+    isLoading,
+    setCompletion,
+    setInput,
+    stop,
+  } = useCompletion<{ workerId: string }>({
+    api: `/api/conversations/${conversationId}/stream`,
+    body: { workerId: agentId },
+    experimental_throttle: 50,
+    streamProtocol: "text",
+    onError: () => {
+      setPendingUserMessage(undefined);
+      router.refresh();
+    },
+    onFinish: () => {
+      setCompletion("");
+      setPendingUserMessage(undefined);
+      router.refresh();
+    },
+  });
   const failedActivities = activities.filter(
     (activity) =>
       activity.conversationMessageId === null &&
@@ -106,6 +136,20 @@ export function ConversationShell({
                 );
               })
             )}
+            {pendingUserMessage ? (
+              <Message from="user">
+                <MessageContent>
+                  <p className="whitespace-pre-wrap">{pendingUserMessage}</p>
+                </MessageContent>
+              </Message>
+            ) : null}
+            {pendingUserMessage && completion ? (
+              <Message from="assistant">
+                <MessageContent>
+                  <MessageResponse>{completion}</MessageResponse>
+                </MessageContent>
+              </Message>
+            ) : null}
             {failedActivities.length > 0 ? (
               <ConversationActivity events={failedActivities} />
             ) : null}
@@ -116,10 +160,64 @@ export function ConversationShell({
         <div className="border-t border-border bg-background/95 px-4 py-4 backdrop-blur sm:px-6 sm:pb-6">
           <div className="mx-auto w-full max-w-3xl">
             {runtimeConfigured ? (
-              <ConversationMessageForm
-                conversationId={conversationId}
-                agentId={agentId}
-              />
+              <form
+                className="space-y-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  const message = input.trim();
+                  if (!message || isLoading) return;
+                  setPendingUserMessage(message);
+                  setCompletion("");
+                  setInput("");
+                  void complete(message);
+                }}
+              >
+                <Textarea
+                  aria-label="Message"
+                  className="min-h-28 resize-y rounded-2xl border-border bg-card px-4 py-3 shadow-lg shadow-black/10 focus-visible:ring-2"
+                  maxLength={10_000}
+                  onChange={(event) => setInput(event.target.value)}
+                  placeholder="Message Pilot…"
+                  required
+                  rows={3}
+                  value={input}
+                />
+                {error ? (
+                  <p aria-live="polite" className="text-sm text-destructive">
+                    {error.message || "Pilot could not complete this message."}
+                  </p>
+                ) : null}
+                <div className="flex items-center justify-between gap-3 px-1">
+                  <p
+                    aria-live="polite"
+                    className="inline-flex items-center gap-2 text-xs text-muted-foreground"
+                  >
+                    <Bot className="size-3.5 text-primary" aria-hidden="true" />
+                    {isLoading
+                      ? "Pilot is responding…"
+                      : "Pilot can make mistakes. Check important work."}
+                  </p>
+                  {isLoading ? (
+                    <Button
+                      aria-label="Stop generating"
+                      onClick={stop}
+                      size="icon"
+                      type="button"
+                      variant="outline"
+                    >
+                      <Square
+                        aria-hidden="true"
+                        className="size-3.5 fill-current"
+                      />
+                    </Button>
+                  ) : (
+                    <Button size="icon" type="submit">
+                      <SendHorizontal aria-hidden="true" className="size-4" />
+                      <span className="sr-only">Send message</span>
+                    </Button>
+                  )}
+                </div>
+              </form>
             ) : (
               <p className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-center text-sm text-muted-foreground">
                 Messaging becomes available after this environment is connected
