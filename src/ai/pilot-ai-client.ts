@@ -4,14 +4,24 @@ import { getVercelOidcToken } from "@vercel/oidc";
 import { z } from "zod";
 
 const runtimeResponseSchema = z.object({
-  text: z.string().min(1),
-  finishReason: z.string(),
-  modelId: z.string().min(1),
-  runId: z.string().min(1).nullable().optional(),
+  id: z.string().min(1),
+  object: z.literal("chat.completion"),
+  model: z.literal("kilo/kilo-auto/free"),
+  choices: z
+    .array(
+      z.object({
+        message: z.object({
+          role: z.literal("assistant"),
+          content: z.string().min(1),
+        }),
+        finish_reason: z.string(),
+      }),
+    )
+    .min(1),
   usage: z.object({
-    inputTokens: z.number().int().nonnegative(),
-    outputTokens: z.number().int().nonnegative(),
-    totalTokens: z.number().int().nonnegative(),
+    prompt_tokens: z.number().int().nonnegative(),
+    completion_tokens: z.number().int().nonnegative(),
+    total_tokens: z.number().int().nonnegative(),
   }),
 });
 
@@ -66,15 +76,25 @@ export async function generateConversationReply(
   rawRequest: GenerateConversationRequest,
 ) {
   const request = generateConversationRequestSchema.parse(rawRequest);
-  const url = new URL("/pilot/conversations/generate", getRuntimeUrl());
+  const url = new URL("/v1/chat/completions", getRuntimeUrl());
   const oidcToken = await getVercelOidcToken();
   const response = await fetch(url, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       "x-vercel-trusted-oidc-idp-token": oidcToken,
+      "x-pilot-organization-id": request.organizationId,
+      "x-pilot-worker-id": request.worker.id,
+      "x-pilot-conversation-id": request.conversationId,
     },
-    body: JSON.stringify(request),
+    body: JSON.stringify({
+      model: request.worker.modelId,
+      messages: [
+        { role: "system", content: request.worker.instructions },
+        { role: "user", content: request.message },
+      ],
+      stream: false,
+    }),
     cache: "no-store",
   });
 
@@ -84,5 +104,18 @@ export async function generateConversationReply(
     );
   }
 
-  return runtimeResponseSchema.parse(await response.json());
+  const completion = runtimeResponseSchema.parse(await response.json());
+  const choice = completion.choices[0];
+
+  return {
+    text: choice.message.content,
+    finishReason: choice.finish_reason,
+    modelId: completion.model,
+    runId: completion.id.replace(/^chatcmpl_/, "") || null,
+    usage: {
+      inputTokens: completion.usage.prompt_tokens,
+      outputTokens: completion.usage.completion_tokens,
+      totalTokens: completion.usage.total_tokens,
+    },
+  };
 }
