@@ -29,7 +29,7 @@ const primaryNavigation = [
   { icon: MessageSquareMore, label: "Chats", href: "/workspace/chats" },
   { icon: UsersRound, label: "Agent fleet", href: "/workspace/fleet" },
   { icon: Bot, label: "Personas", href: "/workspace/personas" },
-  { icon: Gauge, label: "Dashboard", href: "/workspace" },
+  { icon: Gauge, label: "Dashboard", href: "/workspace/dashboard" },
   { icon: Settings, label: "Settings", href: "/workspace" },
 ] as const;
 

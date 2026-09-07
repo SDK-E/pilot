@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { conversationMessages, conversations, workers } from "@/db/schema";
 
@@ -68,6 +68,39 @@ export async function listOrganizationConversations(organizationId: string) {
       ),
     )
     .orderBy(desc(conversations.updatedAt));
+}
+
+export async function getOrganizationConversationMetrics(
+  organizationId: string,
+) {
+  const [[agents], [chatCount], [usage]] = await Promise.all([
+    db
+      .select({ value: count() })
+      .from(workers)
+      .where(eq(workers.organizationId, organizationId)),
+    db
+      .select({ value: count() })
+      .from(conversations)
+      .where(eq(conversations.organizationId, organizationId)),
+    db
+      .select({
+        tokens: sql<number>`coalesce(sum(${conversationMessages.totalTokens}), 0)`,
+        responses: count(),
+      })
+      .from(conversationMessages)
+      .where(
+        and(
+          eq(conversationMessages.organizationId, organizationId),
+          eq(conversationMessages.role, "worker"),
+        ),
+      ),
+  ]);
+  return {
+    agents: agents?.value ?? 0,
+    conversations: chatCount?.value ?? 0,
+    totalTokens: Number(usage?.tokens ?? 0),
+    completedResponses: usage?.responses ?? 0,
+  };
 }
 
 export async function getConversation(
