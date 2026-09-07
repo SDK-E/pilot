@@ -15,6 +15,12 @@ No model reasoning, tool input, tool output, credential, or user attachment is
 stored in this table. Future streaming and tool adapters may add typed event
 records only after their tenant and approval boundaries exist.
 
+A completed activity event may reference the immutable Worker response that it
+describes. This lets the chat render a collapsed status beneath that response
+without guessing from client state. Start and failed events have no response
+reference. The initial interface renders completed status only; it is not a
+claim of streaming or detailed tool/reasoning activity.
+
 The message service marks a run failed if runtime generation fails or if the
 returned response cannot be persisted. It never creates a conversation for an
 empty composer. Conversation and agent deletion cascade to their executions and

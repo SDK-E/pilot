@@ -25,6 +25,7 @@ export async function startExecution(input: {
 export async function finishExecution(input: {
   organizationId: string;
   executionId: string;
+  conversationMessageId?: string;
   runtimeRunId?: string | null;
   errorMessage?: string;
 }) {
@@ -50,6 +51,7 @@ export async function finishExecution(input: {
     await db.insert(activityEvents).values({
       organizationId: input.organizationId,
       executionId: execution.id,
+      conversationMessageId: input.conversationMessageId,
       type: status === "completed" ? "execution.completed" : "execution.failed",
       summary:
         status === "completed" ? "Response completed" : "Response failed",
@@ -64,6 +66,7 @@ export async function listConversationActivity(
     .select({
       id: activityEvents.id,
       executionId: activityEvents.executionId,
+      conversationMessageId: activityEvents.conversationMessageId,
       type: activityEvents.type,
       summary: activityEvents.summary,
       createdAt: activityEvents.createdAt,

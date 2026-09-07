@@ -1,0 +1,2 @@
+ALTER TABLE "activity_events" ADD COLUMN "conversation_message_id" uuid;--> statement-breakpoint
+ALTER TABLE "activity_events" ADD CONSTRAINT "activity_events_conversation_message_id_conversation_messages_id_fk" FOREIGN KEY ("conversation_message_id") REFERENCES "public"."conversation_messages"("id") ON DELETE cascade ON UPDATE no action;

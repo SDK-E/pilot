@@ -8,6 +8,7 @@ import {
   listConversationMessages,
 } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { listConversationActivity } from "@/executions/execution-repository";
 import { getWorker } from "@/workers/worker-repository";
 
 export const metadata: Metadata = { title: "Conversation" };
@@ -41,10 +42,11 @@ export default async function ConversationPage({
   );
   if (!membership) notFound();
 
-  const [worker, conversation, messages] = await Promise.all([
+  const [worker, conversation, messages, activities] = await Promise.all([
     getWorker(organizationId, workerId),
     getConversation(organizationId, workerId, conversationId),
     listConversationMessages(organizationId, workerId, conversationId),
+    listConversationActivity(organizationId, conversationId),
   ]);
   if (!worker || !conversation || !messages) notFound();
 
@@ -55,6 +57,7 @@ export default async function ConversationPage({
       backHref={`/workspace/workers/${worker.id}`}
       conversationId={conversation.id}
       messages={messages}
+      activities={activities}
       runtimeConfigured={isRuntimeConfigured}
       title={conversation.title ?? "New conversation"}
       agentId={worker.id}

@@ -36,6 +36,13 @@
       "when": 1788772217665,
       "tag": "0004_condemned_speed_demon",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788772887806,
+      "tag": "0005_demonic_spiral",
+      "breakpoints": true
     }
   ]
 }

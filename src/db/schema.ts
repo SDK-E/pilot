@@ -197,6 +197,10 @@ export const activityEvents = pgTable(
     executionId: uuid("execution_id")
       .notNull()
       .references(() => executions.id, { onDelete: "cascade" }),
+    conversationMessageId: uuid("conversation_message_id").references(
+      () => conversationMessages.id,
+      { onDelete: "cascade" },
+    ),
     type: text("type")
       .$type<"execution.started" | "execution.completed" | "execution.failed">()
       .notNull(),

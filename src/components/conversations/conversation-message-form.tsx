@@ -38,6 +38,11 @@ export function ConversationMessageForm({
           {state.message}
         </p>
       ) : null}
+      {pending ? (
+        <p aria-live="polite" className="text-sm text-muted-foreground">
+          Pilot is responding…
+        </p>
+      ) : null}
       <div className="flex items-center justify-between gap-3 px-1">
         <p className="text-xs text-muted-foreground">
           Pilot can make mistakes. Check important work.

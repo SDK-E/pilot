@@ -144,6 +144,7 @@ test("workers are persisted and isolated by organization", async (t) => {
   await finishExecution({
     organizationId,
     executionId: execution.id,
+    conversationMessageId: workerMessage.id,
     runtimeRunId: "run_test",
   });
   assert.deepEqual(

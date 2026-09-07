@@ -84,6 +84,7 @@ export async function sendConversationMessage(
       await finishExecution({
         organizationId: input.organizationId,
         executionId: execution.id,
+        conversationMessageId: workerMessage.id,
         runtimeRunId: reply.runId,
       });
   } catch (error) {

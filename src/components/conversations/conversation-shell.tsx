@@ -14,6 +14,7 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message";
 import { ConversationMessageForm } from "@/components/conversations/conversation-message-form";
+import { ConversationActivity } from "@/components/conversations/conversation-activity";
 
 type PersistedMessage = {
   id: string;
@@ -21,10 +22,18 @@ type PersistedMessage = {
   content: string;
 };
 
+type PersistedActivity = {
+  id: string;
+  conversationMessageId: string | null;
+  summary: string;
+  type: "execution.started" | "execution.completed" | "execution.failed";
+};
+
 type ConversationShellProps = {
   backHref: string;
   conversationId: string;
   messages: PersistedMessage[];
+  activities: PersistedActivity[];
   runtimeConfigured: boolean;
   title: string;
   agentId: string;
@@ -35,6 +44,7 @@ export function ConversationShell({
   backHref,
   conversationId,
   messages,
+  activities,
   runtimeConfigured,
   title,
   agentId,
@@ -70,6 +80,9 @@ export function ConversationShell({
             ) : (
               messages.map((message) => {
                 const from = message.role === "user" ? "user" : "assistant";
+                const messageActivities = activities.filter(
+                  (activity) => activity.conversationMessageId === message.id,
+                );
 
                 return (
                   <Message from={from} key={message.id}>
@@ -80,6 +93,9 @@ export function ConversationShell({
                         <p className="whitespace-pre-wrap">{message.content}</p>
                       )}
                     </MessageContent>
+                    {from === "assistant" ? (
+                      <ConversationActivity events={messageActivities} />
+                    ) : null}
                   </Message>
                 );
               })
