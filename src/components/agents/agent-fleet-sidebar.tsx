@@ -28,7 +28,7 @@ import { startDefaultConversationAction } from "@/app/workspace/worker-actions";
 
 const primaryNavigation = [
   { icon: MessageSquareMore, label: "Chats", href: "/workspace" },
-  { icon: UsersRound, label: "Agent fleet", href: "/workspace" },
+  { icon: UsersRound, label: "Agent fleet", href: "/workspace/fleet" },
   { icon: Bot, label: "Personas", href: "/workspace" },
   { icon: Gauge, label: "Dashboard", href: "/workspace" },
   { icon: Settings, label: "Settings", href: "/workspace" },
