@@ -70,6 +70,51 @@ export default async function WorkerPage({ params }: WorkerPageProps) {
       </Card>
       <Card>
         <CardHeader>
+          <CardTitle>Persona configuration</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <dt className="text-muted-foreground">Base agent</dt>
+              <dd className="mt-1 font-medium capitalize">
+                {worker.baseAgentId}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Tone</dt>
+              <dd className="mt-1 font-medium">{worker.tone ?? "Default"}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Enabled tools</dt>
+              <dd className="mt-1 font-medium">
+                {worker.enabledToolIds.length > 0
+                  ? worker.enabledToolIds.join(", ")
+                  : "None"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Approval rule</dt>
+              <dd className="mt-1 font-medium">
+                {Object.values(worker.approvalRules)[0] ?? "Ask"}
+              </dd>
+            </div>
+          </dl>
+          {worker.goals ? (
+            <div>
+              <p className="text-muted-foreground">Goals</p>
+              <p className="mt-1 whitespace-pre-wrap">{worker.goals}</p>
+            </div>
+          ) : null}
+          {worker.outputFormat ? (
+            <div>
+              <p className="text-muted-foreground">Output format</p>
+              <p className="mt-1 whitespace-pre-wrap">{worker.outputFormat}</p>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
           <CardTitle>Conversations</CardTitle>
         </CardHeader>
         <CardContent>

@@ -3,6 +3,11 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import {
+  approvalModes,
+  baseAgentIds,
+  configurableToolIds,
+} from "@/agents/agent-configuration";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import type { WorkerCreationState } from "@/workers/worker-creation-state";
 import { createWorker } from "@/workers/worker-repository";
@@ -15,6 +20,12 @@ const workerInputSchema = z.object({
     .min(1, "Instructions are required.")
     .max(10_000),
   modelId: z.literal("kilo/kilo-auto/free"),
+  baseAgentId: z.enum(baseAgentIds),
+  goals: z.string().trim().max(5_000).optional(),
+  tone: z.string().trim().max(200).optional(),
+  outputFormat: z.string().trim().max(1_000).optional(),
+  enabledToolIds: z.array(z.enum(configurableToolIds)).default([]),
+  approvalMode: z.enum(approvalModes),
 });
 
 export async function createWorkerAction(
@@ -25,6 +36,12 @@ export async function createWorkerAction(
     name: formData.get("name"),
     instructions: formData.get("instructions"),
     modelId: formData.get("modelId"),
+    baseAgentId: formData.get("baseAgentId"),
+    goals: formData.get("goals") || undefined,
+    tone: formData.get("tone") || undefined,
+    outputFormat: formData.get("outputFormat") || undefined,
+    enabledToolIds: formData.getAll("enabledToolIds"),
+    approvalMode: formData.get("approvalMode"),
   });
   if (!parsed.success) {
     return { message: parsed.error.issues[0]?.message, status: "error" };
@@ -57,7 +74,16 @@ export async function createWorkerAction(
       },
       member: { id: membership.id, roleSlug: membership.role.slug },
       user: { id: user.id, email: user.email },
-      worker: parsed.data,
+      worker: {
+        ...parsed.data,
+        approvalRules: Object.fromEntries(
+          parsed.data.enabledToolIds.map((toolId) => [
+            toolId,
+            parsed.data.approvalMode,
+          ]),
+        ),
+        knowledgeSourceIds: [],
+      },
     });
     revalidatePath("/workspace");
     return {

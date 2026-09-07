@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { eq } from "drizzle-orm";
+import type { ConfigurableToolId } from "@/agents/agent-configuration";
 import { db } from "@/db/client";
 import { organizations } from "@/db/schema";
 import {
@@ -30,6 +31,13 @@ function workerInput(overrides: Partial<{ name: string }> = {}) {
       name: "Research assistant",
       instructions: "Return concise research with sources.",
       modelId: "provider/research-model",
+      baseAgentId: "conversational" as const,
+      goals: "Find clear answers.",
+      tone: "Concise",
+      outputFormat: "Markdown",
+      enabledToolIds: ["web-search"] as ConfigurableToolId[],
+      knowledgeSourceIds: [],
+      approvalRules: { "web-search": "ask" as const },
       ...overrides,
     },
   };
@@ -50,6 +58,9 @@ test("workers are persisted and isolated by organization", async (t) => {
   const fetched = await getWorker(organizationId, created.id);
   assert.equal(fetched?.id, created.id);
   assert.equal(fetched?.instructions, "Return concise research with sources.");
+  assert.equal(fetched?.baseAgentId, "conversational");
+  assert.deepEqual(fetched?.enabledToolIds, ["web-search"]);
+  assert.deepEqual(fetched?.approvalRules, { "web-search": "ask" });
   assert.equal(await getWorker(otherOrganizationId, created.id), undefined);
 
   const conversation = await createConversation({

@@ -1,6 +1,7 @@
 import {
   index,
   integer,
+  jsonb,
   pgTable,
   primaryKey,
   text,
@@ -53,6 +54,22 @@ export const workers = pgTable(
     name: text("name").notNull(),
     instructions: text("instructions").notNull(),
     modelId: text("model_id").notNull(),
+    baseAgentId: text("base_agent_id").notNull().default("conversational"),
+    goals: text("goals"),
+    tone: text("tone"),
+    outputFormat: text("output_format"),
+    enabledToolIds: jsonb("enabled_tool_ids")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    knowledgeSourceIds: jsonb("knowledge_source_ids")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    approvalRules: jsonb("approval_rules")
+      .$type<Record<string, "ask" | "allow" | "deny" | "auto-classifier">>()
+      .notNull()
+      .default({}),
     createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

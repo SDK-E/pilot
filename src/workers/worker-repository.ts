@@ -3,6 +3,11 @@ import "server-only";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { members, organizations, workers } from "@/db/schema";
+import type {
+  ApprovalRules,
+  BaseAgentId,
+  ConfigurableToolId,
+} from "@/agents/agent-configuration";
 
 type WorkerMembership = {
   id: string;
@@ -13,7 +18,18 @@ type CreateWorkerInput = {
   organization: { id: string; name: string };
   member: WorkerMembership;
   user: { id: string; email: string };
-  worker: { name: string; instructions: string; modelId: string };
+  worker: {
+    name: string;
+    instructions: string;
+    modelId: string;
+    baseAgentId: BaseAgentId;
+    goals?: string | null;
+    tone?: string | null;
+    outputFormat?: string | null;
+    enabledToolIds: ConfigurableToolId[];
+    knowledgeSourceIds: string[];
+    approvalRules: ApprovalRules;
+  };
 };
 
 export async function createWorker(input: CreateWorkerInput) {
@@ -51,6 +67,13 @@ export async function createWorker(input: CreateWorkerInput) {
         name: input.worker.name,
         instructions: input.worker.instructions,
         modelId: input.worker.modelId,
+        baseAgentId: input.worker.baseAgentId,
+        goals: input.worker.goals,
+        tone: input.worker.tone,
+        outputFormat: input.worker.outputFormat,
+        enabledToolIds: input.worker.enabledToolIds,
+        knowledgeSourceIds: input.worker.knowledgeSourceIds,
+        approvalRules: input.worker.approvalRules,
         createdByWorkosUserId: input.user.id,
       })
       .returning({ id: workers.id, name: workers.name }),
@@ -66,6 +89,13 @@ export async function listWorkers(organizationId: string) {
       name: workers.name,
       instructions: workers.instructions,
       modelId: workers.modelId,
+      baseAgentId: workers.baseAgentId,
+      goals: workers.goals,
+      tone: workers.tone,
+      outputFormat: workers.outputFormat,
+      enabledToolIds: workers.enabledToolIds,
+      knowledgeSourceIds: workers.knowledgeSourceIds,
+      approvalRules: workers.approvalRules,
       createdAt: workers.createdAt,
     })
     .from(workers)
@@ -80,6 +110,13 @@ export async function getWorker(organizationId: string, workerId: string) {
       name: workers.name,
       instructions: workers.instructions,
       modelId: workers.modelId,
+      baseAgentId: workers.baseAgentId,
+      goals: workers.goals,
+      tone: workers.tone,
+      outputFormat: workers.outputFormat,
+      enabledToolIds: workers.enabledToolIds,
+      knowledgeSourceIds: workers.knowledgeSourceIds,
+      approvalRules: workers.approvalRules,
       createdAt: workers.createdAt,
       updatedAt: workers.updatedAt,
     })

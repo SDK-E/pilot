@@ -6,7 +6,7 @@ Updated 2026-09-07. This is an implementation record, not a completion claim.
 
 Ship an open-source, self-hostable AI workforce platform with persistent organizational agents. Pilot owns the domain; Mastra provides runtime capabilities behind typed boundaries. First prove one agent end-to-end, including durable execution, protected actions, approval, suspend/resume, results and history. Do not expand into multiple agent architectures or secondary features before that works.
 
-## Current slice: protected Pilot conversation transport
+## Current slice: persisted agent/persona configuration
 
 The product language is now **agents** and **agent fleet**. Existing `workers`
 routes, tables, and runtime identifiers remain internal compatibility details
@@ -23,7 +23,13 @@ The accepted [agent-fleet experience](decisions/0005-agent-fleet-experience.md)
 opens on Conversational chat and defines persona configuration, sidebar
 navigation, live activity, Research's future capability boundary, attachment
 scope, approval modes, and dashboard priorities. The next implementation slice
-is the persistent agent/persona configuration needed for that shell.
+is the persistent agent/persona configuration needed for that shell. The
+`workers` persistence name remains an internal compatibility detail. It now
+stores the persona's base agent, optional goals, tone and output format, plus
+explicit tool preferences, approval rules, and future knowledge-source IDs.
+The creation form persists those fields and the agent detail page renders them.
+Tool preferences are not capabilities: a malicious form submission cannot make
+a tool available because no production tool adapter is exposed in Pilot.
 
 Implemented: WorkOS AuthKit sign-in route, callback, session proxy, POST sign-out action, organization membership listing and membership-checked organization switching. The page uses Pilot colors, JetBrains Mono and official shadcn source. No local password system or alternative auth provider is installed.
 
