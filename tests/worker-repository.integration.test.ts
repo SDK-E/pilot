@@ -93,18 +93,29 @@ test("workers are persisted and isolated by organization", async (t) => {
   );
 
   assert.deepEqual(
-    (await listOrganizationConversations(organizationId, `user_${suffix}`)).map((item) => [
-      item.id,
-      item.title,
-    ]),
+    (await listOrganizationConversations(organizationId, `user_${suffix}`)).map(
+      (item) => [item.id, item.title],
+    ),
     [[conversation.id, "Remember this question"]],
   );
   assert.equal(
-    (await getConversation(organizationId, created.id, conversation.id, `user_${suffix}`))?.id,
+    (
+      await getConversation(
+        organizationId,
+        created.id,
+        conversation.id,
+        `user_${suffix}`,
+      )
+    )?.id,
     conversation.id,
   );
   assert.equal(
-    await getConversation(otherOrganizationId, created.id, conversation.id, `user_${suffix}`),
+    await getConversation(
+      otherOrganizationId,
+      created.id,
+      conversation.id,
+      `user_${suffix}`,
+    ),
     undefined,
   );
 
@@ -167,7 +178,13 @@ test("workers are persisted and isolated by organization", async (t) => {
     state: "completed",
   });
   assert.deepEqual(
-    (await listConversationActivity(organizationId, conversation.id, `user_${suffix}`))
+    (
+      await listConversationActivity(
+        organizationId,
+        conversation.id,
+        `user_${suffix}`,
+      )
+    )
       .slice(1, 3)
       .map((event) => [
         event.type,
@@ -193,9 +210,13 @@ test("workers are persisted and isolated by organization", async (t) => {
     runtimeRunId: "run_test",
   });
   assert.deepEqual(
-    (await listConversationActivity(organizationId, conversation.id, `user_${suffix}`)).map(
-      (event) => [event.type, event.summary],
-    ),
+    (
+      await listConversationActivity(
+        organizationId,
+        conversation.id,
+        `user_${suffix}`,
+      )
+    ).map((event) => [event.type, event.summary]),
     [
       ["execution.started", "Generating a response"],
       ["tool.started", "Searching the web…"],
@@ -216,7 +237,13 @@ test("workers are persisted and isolated by organization", async (t) => {
     errorMessage: "Runtime generation failed",
   });
   assert.deepEqual(
-    (await listConversationActivity(organizationId, conversation.id, `user_${suffix}`))
+    (
+      await listConversationActivity(
+        organizationId,
+        conversation.id,
+        `user_${suffix}`,
+      )
+    )
       .slice(-2)
       .map((event) => [event.type, event.conversationMessageId]),
     [
@@ -225,7 +252,11 @@ test("workers are persisted and isolated by organization", async (t) => {
     ],
   );
   assert.deepEqual(
-    await listConversationActivity(otherOrganizationId, conversation.id, `user_${suffix}`),
+    await listConversationActivity(
+      otherOrganizationId,
+      conversation.id,
+      `user_${suffix}`,
+    ),
     [],
   );
 

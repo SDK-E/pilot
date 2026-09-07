@@ -44,6 +44,8 @@ type ConversationShellProps = {
   title: string;
   agentId: string;
   agentName: string;
+  tasks: Array<{ id: string; title: string; status: string }>;
+  approvals: Array<{ id: string; summary: string; status: string }>;
 };
 
 export function ConversationShell({
@@ -55,6 +57,8 @@ export function ConversationShell({
   title,
   agentId,
   agentName,
+  tasks,
+  approvals,
 }: ConversationShellProps) {
   const router = useRouter();
   const [pendingUserMessage, setPendingUserMessage] = useState<string>();
@@ -135,7 +139,7 @@ export function ConversationShell({
         <div className="w-12" aria-hidden="true" />
       </header>
 
-      <section className="flex min-h-0 flex-1 flex-col">
+      <section className="flex min-h-0 flex-1 flex-col xl:flex-row">
         <Conversation className="min-h-0">
           <ConversationContent className="mx-auto w-full max-w-3xl gap-8 px-5 py-8 sm:px-8 sm:py-12">
             {messages.length === 0 ? (
@@ -193,6 +197,49 @@ export function ConversationShell({
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
+
+        <aside className="order-first w-full border-b border-border bg-muted/20 p-4 xl:order-last xl:w-72 xl:border-b-0 xl:border-l">
+          <h2 className="text-sm font-medium">Activity</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tool activity, tasks, and approvals for this chat.
+          </p>
+          <div className="mt-4 space-y-4 text-sm">
+            <section>
+              <h3 className="font-medium">Tasks</h3>
+              {tasks.length ? (
+                <ul className="mt-2 space-y-2">
+                  {tasks.map((task) => (
+                    <li key={task.id}>
+                      {task.title}{" "}
+                      <span className="text-muted-foreground">
+                        {task.status}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-muted-foreground">No tasks.</p>
+              )}
+            </section>
+            <section>
+              <h3 className="font-medium">Approvals</h3>
+              {approvals.length ? (
+                <ul className="mt-2 space-y-2">
+                  {approvals.map((approval) => (
+                    <li key={approval.id}>
+                      {approval.summary}{" "}
+                      <span className="text-muted-foreground">
+                        {approval.status}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-muted-foreground">No approvals.</p>
+              )}
+            </section>
+          </div>
+        </aside>
 
         <div className="border-t border-border bg-background/95 px-4 py-4 backdrop-blur sm:px-6 sm:pb-6">
           <div className="mx-auto w-full max-w-3xl">

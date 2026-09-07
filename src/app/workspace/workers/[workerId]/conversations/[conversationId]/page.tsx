@@ -10,6 +10,8 @@ import {
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { listConversationActivity } from "@/executions/execution-repository";
 import { getWorker } from "@/workers/worker-repository";
+import { listConversationTasks } from "@/tasks/task-repository";
+import { listConversationApprovals } from "@/approvals/approval-repository";
 
 export const metadata: Metadata = { title: "Conversation" };
 
@@ -42,12 +44,23 @@ export default async function ConversationPage({
   );
   if (!membership) notFound();
 
-  const [worker, conversation, messages, activities] = await Promise.all([
-    getWorker(organizationId, workerId),
-    getConversation(organizationId, workerId, conversationId, user.id),
-    listConversationMessages(organizationId, workerId, conversationId),
-    listConversationActivity(organizationId, conversationId, user.id),
-  ]);
+  const [worker, conversation, messages, activities, tasks, approvals] =
+    await Promise.all([
+      getWorker(organizationId, workerId),
+      getConversation(organizationId, workerId, conversationId, user.id),
+      listConversationMessages(organizationId, workerId, conversationId),
+      listConversationActivity(organizationId, conversationId, user.id),
+      listConversationTasks({
+        organizationId,
+        conversationId,
+        userId: user.id,
+      }),
+      listConversationApprovals({
+        organizationId,
+        conversationId,
+        userId: user.id,
+      }),
+    ]);
   if (!worker || !conversation || !messages) notFound();
 
   const isRuntimeConfigured = Boolean(process.env.PILOT_AI_RUNTIME_URL?.trim());
@@ -58,6 +71,8 @@ export default async function ConversationPage({
       conversationId={conversation.id}
       messages={messages}
       activities={activities}
+      tasks={tasks}
+      approvals={approvals}
       runtimeConfigured={isRuntimeConfigured}
       title={conversation.title ?? "New conversation"}
       agentId={worker.id}
