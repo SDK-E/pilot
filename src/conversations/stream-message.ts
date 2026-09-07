@@ -12,7 +12,13 @@ import {
 
 type StreamConversationMessageInput = {
   organizationId: string;
-  worker: { id: string; instructions: string; modelId: "kilo/kilo-auto/free" };
+  worker: {
+    id: string;
+    instructions: string;
+    modelId: "kilo/kilo-auto/free";
+    baseAgentId: "conversational" | "research";
+    enabledToolIds: string[];
+  };
   conversationId: string;
   message: string;
   signal: AbortSignal;
@@ -23,6 +29,15 @@ function toStoredCount(value: number): number | undefined {
     return undefined;
   }
   return value;
+}
+
+function allowedToolIds(
+  worker: StreamConversationMessageInput["worker"],
+): Array<"web-search"> {
+  return worker.baseAgentId === "research" &&
+    worker.enabledToolIds.includes("web-search")
+    ? ["web-search"]
+    : [];
 }
 
 export async function streamConversationMessage(
@@ -44,6 +59,7 @@ export async function streamConversationMessage(
     workerId: input.worker.id,
     conversationId: input.conversationId,
   });
+  if (!execution) throw new Error("Pilot could not start this execution.");
   const encoder = new TextEncoder();
   const startedAt = performance.now();
   const abortController = new AbortController();
@@ -60,7 +76,8 @@ export async function streamConversationMessage(
             worker: input.worker,
             conversationId: input.conversationId,
             message: input.message,
-            allowedToolIds: [],
+            executionId: execution.id,
+            allowedToolIds: allowedToolIds(input.worker),
           },
           abortController.signal,
         )) {

@@ -9,8 +9,8 @@ export const baseAgents = [
     id: "research",
     name: "Research",
     description:
-      "Research with protected tools. It is unavailable until its production capability boundary is verified.",
-    available: false,
+      "Public-web research with a protected read-only search boundary.",
+    available: true,
   },
 ] as const;
 

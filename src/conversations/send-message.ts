@@ -9,7 +9,13 @@ import {
 
 type SendConversationMessageInput = {
   organizationId: string;
-  worker: { id: string; instructions: string; modelId: "kilo/kilo-auto/free" };
+  worker: {
+    id: string;
+    instructions: string;
+    modelId: "kilo/kilo-auto/free";
+    baseAgentId: "conversational" | "research";
+    enabledToolIds: string[];
+  };
   conversationId: string;
   message: string;
 };
@@ -20,6 +26,15 @@ function toStoredCount(value: number): number | undefined {
   }
 
   return value;
+}
+
+function allowedToolIds(
+  worker: SendConversationMessageInput["worker"],
+): Array<"web-search"> {
+  return worker.baseAgentId === "research" &&
+    worker.enabledToolIds.includes("web-search")
+    ? ["web-search"]
+    : [];
 }
 
 export async function sendConversationMessage(
@@ -42,6 +57,7 @@ export async function sendConversationMessage(
     workerId: input.worker.id,
     conversationId: input.conversationId,
   });
+  if (!execution) throw new Error("Pilot could not start this execution.");
   let reply;
   try {
     reply = await generateConversationReply({
@@ -49,7 +65,8 @@ export async function sendConversationMessage(
       worker: input.worker,
       conversationId: input.conversationId,
       message: input.message,
-      allowedToolIds: [],
+      executionId: execution.id,
+      allowedToolIds: allowedToolIds(input.worker),
     });
   } catch (error) {
     if (execution)

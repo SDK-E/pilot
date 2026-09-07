@@ -62,6 +62,14 @@ server-generated status; it cannot retain tool inputs, outputs, URLs, errors,
 credentials, or reasoning. The chat activity component can render those events
 when a protected runtime adapter later emits them. This is the event foundation
 for Research, not an enablement of Research tools or approvals.
+
+The next local slice wires a production Research request to the same protected
+OpenAI-compatible runtime path. A selected Research persona receives only
+`web-search` when it explicitly has that preference; all broader Research
+development tools remain absent. Tool lifecycle records travel through a
+separate OIDC-authenticated callback, keeping the completion stream standard.
+This requires matching Pilot and Pilot AI feature flags plus a fixed callback
+URL before it can be enabled or deployed.
 The server test verifies that Pilot accepts text only when a terminal runtime
 usage event follows, rejecting partial streams before a Worker response can be
 persisted.

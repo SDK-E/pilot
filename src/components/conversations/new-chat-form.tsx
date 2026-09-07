@@ -16,11 +16,8 @@ type AgentOption = {
 
 export function NewChatForm({ agents }: { agents: AgentOption[] }) {
   const router = useRouter();
-  const conversationalAgents = agents.filter(
-    (agent) => agent.baseAgentId === "conversational",
-  );
   const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(
-    conversationalAgents[0]?.id,
+    agents[0]?.id,
   );
   const [pendingPrompt, setPendingPrompt] = useState<string>();
   const conversationHref = useRef<string | undefined>(undefined);
@@ -52,9 +49,7 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
       if (conversationHref.current) router.push(conversationHref.current);
     },
   });
-  const selectedAgent = conversationalAgents.find(
-    (agent) => agent.id === selectedAgentId,
-  );
+  const selectedAgent = agents.find((agent) => agent.id === selectedAgentId);
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-3 text-left">
@@ -62,13 +57,13 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
         className="flex flex-wrap justify-center gap-2"
         aria-label="Choose an agent"
       >
-        {conversationalAgents.length === 0 ? (
+        {agents.length === 0 ? (
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-foreground">
             <Bot className="size-3.5 text-primary" aria-hidden="true" />
             Pilot
           </span>
         ) : (
-          conversationalAgents.map((agent) => {
+          agents.map((agent) => {
             const selected = selectedAgentId === agent.id;
             return (
               <Button
@@ -91,16 +86,6 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
             );
           })
         )}
-        <Button
-          className="rounded-full"
-          disabled
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          <Bot className="size-3.5" aria-hidden="true" />
-          Research · coming soon
-        </Button>
       </div>
       {pendingPrompt ? (
         <section

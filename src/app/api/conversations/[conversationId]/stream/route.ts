@@ -48,7 +48,13 @@ export async function POST(request: Request, { params }: RouteContext) {
       parsedConversationId.data,
     ),
   ]);
-  if (!worker || !conversation || worker.modelId !== "kilo/kilo-auto/free") {
+  if (
+    !worker ||
+    !conversation ||
+    worker.modelId !== "kilo/kilo-auto/free" ||
+    (worker.baseAgentId !== "conversational" &&
+      worker.baseAgentId !== "research")
+  ) {
     return error("This conversation is unavailable.", 404);
   }
 
@@ -58,6 +64,8 @@ export async function POST(request: Request, { params }: RouteContext) {
       id: worker.id,
       instructions: worker.instructions,
       modelId: "kilo/kilo-auto/free",
+      baseAgentId: worker.baseAgentId,
+      enabledToolIds: worker.enabledToolIds,
     },
     conversationId: conversation.id,
     message: input.data.prompt,

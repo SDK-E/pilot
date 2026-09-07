@@ -48,6 +48,7 @@ export async function finishExecution(input: {
       and(
         eq(executions.organizationId, input.organizationId),
         eq(executions.id, input.executionId),
+        eq(executions.status, "running"),
       ),
     )
     .returning({ id: executions.id });

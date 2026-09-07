@@ -31,6 +31,8 @@ export type PreparedConversation =
         id: string;
         instructions: string;
         modelId: "kilo/kilo-auto/free";
+        baseAgentId: "conversational" | "research";
+        enabledToolIds: string[];
       };
     };
 
@@ -45,10 +47,13 @@ export async function prepareConversation(
   const selectedAgent = input.workerId
     ? await getWorker(input.organizationId, input.workerId)
     : undefined;
-  if (selectedAgent && selectedAgent.baseAgentId !== "conversational") {
+  if (
+    selectedAgent?.baseAgentId === "research" &&
+    process.env.PILOT_RESEARCH_ENABLED !== "true"
+  ) {
     return {
       ok: false,
-      message: "This agent is not available for conversation yet.",
+      message: "Research is not enabled for this environment yet.",
     };
   }
 
@@ -101,7 +106,12 @@ export async function prepareConversation(
   }
 
   const worker = await getWorker(input.organizationId, agent.id);
-  if (!worker || worker.modelId !== "kilo/kilo-auto/free") {
+  if (
+    !worker ||
+    worker.modelId !== "kilo/kilo-auto/free" ||
+    (worker.baseAgentId !== "conversational" &&
+      worker.baseAgentId !== "research")
+  ) {
     return { ok: false, message: "This agent is unavailable." };
   }
 
@@ -122,6 +132,8 @@ export async function prepareConversation(
       id: worker.id,
       instructions: worker.instructions,
       modelId: "kilo/kilo-auto/free",
+      baseAgentId: worker.baseAgentId,
+      enabledToolIds: worker.enabledToolIds,
     },
   };
 }

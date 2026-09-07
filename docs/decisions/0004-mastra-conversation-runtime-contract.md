@@ -41,6 +41,17 @@ That resource scopes history to a Worker inside one organization. The thread sco
 
 The initial agent must have no registered tools, MCP connections, browser access, filesystem access, integrations, delegation, schedules or autonomous workflows. It may only apply the Worker instructions, invoke the explicitly approved model, write the user message and response through Turso-backed Mastra storage, and return a response suitable for Pilot to render.
 
+The first Research extension is a separate, request-scoped adapter. It can expose
+only `web-search` when Pilot has loaded a Research persona whose persisted tool
+preference contains that exact capability. It has no Stagehand/browser, MCP,
+filesystem, export, scratchpad, delegation, or write tool imports. The runtime
+uses the original, short-lived Pilot OIDC token to call Pilot's narrow activity
+callback before and after the read-only tool invocation. Pilot independently
+verifies that token and accepts only an organization-owned running execution,
+then creates a generated lifecycle summary. This callback carries no prompt,
+tool arguments, results, URLs, errors, or reasoning, which keeps the OpenAI
+completion stream standard while preserving truthful activity history.
+
 For a verified request with OpenAI `stream: true`, the runtime emits
 OpenAI-compatible server-sent chat-completion chunks and a final usage chunk.
 Pilot consumes that stream through its authenticated server-side client; the

@@ -7,7 +7,19 @@ export type ActivityEventType =
   | "tool.failed";
 export type ToolActivityState = "started" | "completed" | "failed";
 
-const toolLabels = {
+export const toolActivityToolIds = [
+  "web-search",
+  "langsearch",
+  "browser",
+  "file-analysis",
+  "github",
+  "scratchpad",
+  "ask-user",
+] as const;
+
+type ToolActivityToolId = (typeof toolActivityToolIds)[number];
+
+const toolLabels: Record<ToolActivityToolId, string> = {
   "web-search": "Searching the web",
   langsearch: "Searching the web",
   browser: "Using the browser",
@@ -15,7 +27,7 @@ const toolLabels = {
   github: "Using GitHub",
   scratchpad: "Updating the scratchpad",
   "ask-user": "Waiting for your input",
-} as const;
+};
 
 /**
  * Converts a known capability identifier into the only detail persisted for a
@@ -23,7 +35,7 @@ const toolLabels = {
  * eligible for this audit trail.
  */
 export function createToolActivity(input: {
-  toolId: keyof typeof toolLabels;
+  toolId: ToolActivityToolId;
   toolCallId?: string;
   state: ToolActivityState;
 }) {

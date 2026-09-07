@@ -50,10 +50,13 @@ const generateConversationRequestSchema = z.object({
     id: z.uuid(),
     instructions: z.string().min(1).max(20_000),
     modelId: z.literal("kilo/kilo-auto/free"),
+    baseAgentId: z.enum(["conversational", "research"]),
+    enabledToolIds: z.array(z.string()).max(20),
   }),
   conversationId: z.uuid(),
   message: z.string().min(1).max(10_000),
-  allowedToolIds: z.array(z.string()).max(0),
+  executionId: z.uuid(),
+  allowedToolIds: z.array(z.literal("web-search")).max(1),
 });
 
 export type GenerateConversationRequest = z.infer<
@@ -105,6 +108,23 @@ function getRuntimeUrl(): URL {
   return url;
 }
 
+function headersForRuntime(
+  request: GenerateConversationRequest,
+  oidcToken: string,
+) {
+  return {
+    "content-type": "application/json",
+    "x-pilot-runtime-oidc-token": oidcToken,
+    "x-vercel-trusted-oidc-idp-token": oidcToken,
+    "x-pilot-organization-id": request.organizationId,
+    "x-pilot-worker-id": request.worker.id,
+    "x-pilot-conversation-id": request.conversationId,
+    "x-pilot-execution-id": request.executionId,
+    "x-pilot-base-agent-id": request.worker.baseAgentId,
+    "x-pilot-allowed-tool-ids": JSON.stringify(request.allowedToolIds),
+  };
+}
+
 export async function generateConversationReply(
   rawRequest: GenerateConversationRequest,
 ) {
@@ -113,14 +133,7 @@ export async function generateConversationReply(
   const oidcToken = await getVercelOidcToken();
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-pilot-runtime-oidc-token": oidcToken,
-      "x-vercel-trusted-oidc-idp-token": oidcToken,
-      "x-pilot-organization-id": request.organizationId,
-      "x-pilot-worker-id": request.worker.id,
-      "x-pilot-conversation-id": request.conversationId,
-    },
+    headers: headersForRuntime(request, oidcToken),
     body: JSON.stringify({
       model: request.worker.modelId,
       messages: [
@@ -163,14 +176,7 @@ export async function* streamConversationReply(
   const oidcToken = await getVercelOidcToken();
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-pilot-runtime-oidc-token": oidcToken,
-      "x-vercel-trusted-oidc-idp-token": oidcToken,
-      "x-pilot-organization-id": request.organizationId,
-      "x-pilot-worker-id": request.worker.id,
-      "x-pilot-conversation-id": request.conversationId,
-    },
+    headers: headersForRuntime(request, oidcToken),
     body: JSON.stringify({
       model: request.worker.modelId,
       messages: [
