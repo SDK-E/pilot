@@ -48,6 +48,10 @@ streaming and persists the returned Worker response, usage, run ID, and
 completed execution after the stream closes.
 Stopping a response records a failed execution and preserves the user prompt.
 New and existing chats use the same protected streaming lifecycle.
+During an active protected stream, the chat renders a collapsed transient
+activity for the verified browser state; it never labels that status as
+reasoning or tool use, and persisted execution activity replaces it when the
+stream ends.
 The server test verifies that Pilot accepts text only when a terminal runtime
 usage event follows, rejecting partial streams before a Worker response can be
 persisted.

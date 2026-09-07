@@ -6,6 +6,7 @@ import { useCompletion } from "@ai-sdk/react";
 import { Bot, Check, SendHorizontal, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
 
 type AgentOption = {
   id: string;
@@ -111,12 +112,8 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
             <p className="whitespace-pre-wrap text-sm text-muted-foreground">
               {completion}
             </p>
-          ) : (
-            <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-              <Bot className="size-4 text-primary" aria-hidden="true" />
-              Pilot is responding…
-            </p>
-          )}
+          ) : null}
+          {isLoading ? <LiveConversationActivity /> : null}
         </section>
       ) : null}
       <form

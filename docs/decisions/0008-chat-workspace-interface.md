@@ -27,6 +27,11 @@ rule applies to attachments, streaming tool traces, browser/scratchpad views,
 and reasoning detail: do not add interactive controls until their runtime event
 contract, durable records, and authorization checks are implemented.
 
+The interface displays a collapsed, transient “Pilot is responding”
+activity only while the browser has an active protected stream. It reports the
+observed generation state, not model reasoning or a tool action, and is
+replaced by Pilot’s persisted execution activity after the request resolves.
+
 The existing conversation server action remains the source of truth for a
 message lifecycle. Pilot creates no conversation until a message is submitted,
 and messages, executions, and completed activity are persisted through the

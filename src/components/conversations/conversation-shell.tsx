@@ -17,6 +17,7 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message";
 import { ConversationActivity } from "@/components/conversations/conversation-activity";
+import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -143,10 +144,13 @@ export function ConversationShell({
                 </MessageContent>
               </Message>
             ) : null}
-            {pendingUserMessage && completion ? (
+            {pendingUserMessage ? (
               <Message from="assistant">
                 <MessageContent>
-                  <MessageResponse>{completion}</MessageResponse>
+                  {completion ? (
+                    <MessageResponse>{completion}</MessageResponse>
+                  ) : null}
+                  {isLoading ? <LiveConversationActivity /> : null}
                 </MessageContent>
               </Message>
             ) : null}
