@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { listTasks } from "@/tasks/task-repository";
+import { createTaskAction } from "./actions";
 
 export default async function TasksPage() {
   const { user, organizationId } = await withAuth();
@@ -24,6 +25,31 @@ export default async function TasksPage() {
           Task execution and approvals will appear here.
         </p>
       </header>
+      <form
+        action={createTaskAction}
+        className="grid gap-3 rounded-lg border border-border p-4"
+      >
+        <input
+          className="rounded-md border border-border bg-background px-3 py-2"
+          name="title"
+          placeholder="Task title"
+          required
+          maxLength={200}
+        />
+        <textarea
+          className="min-h-24 rounded-md border border-border bg-background px-3 py-2"
+          name="instructions"
+          placeholder="Describe the intended outcome"
+          required
+          maxLength={10000}
+        />
+        <button
+          className="w-fit rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
+          type="submit"
+        >
+          Create task
+        </button>
+      </form>
       {tasks.length === 0 ? (
         <p className="rounded-lg border border-border p-6 text-sm text-muted-foreground">
           No tasks yet.
