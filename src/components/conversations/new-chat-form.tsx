@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useCompletion } from "@ai-sdk/react";
 import { Bot, Check, SendHorizontal, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -90,41 +91,50 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
     };
   }, [activityConversationId, isLoading]);
 
+  if (agents.length === 0) {
+    return (
+      <section className="rounded-2xl border border-dashed border-border bg-card/35 p-6 text-center">
+        <Bot className="mx-auto size-5 text-primary" aria-hidden="true" />
+        <h2 className="mt-3 font-medium">Create a persona to begin</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Personas set the base agent, instructions, goals, and safe tool
+          preferences for your organization.
+        </p>
+        <Button asChild className="mt-4">
+          <Link href="/workspace/personas">Create persona</Link>
+        </Button>
+      </section>
+    );
+  }
+
   return (
     <div className="mx-auto w-full max-w-3xl space-y-3 text-left">
       <div
         className="flex flex-wrap justify-center gap-2"
         aria-label="Choose an agent"
       >
-        {agents.length === 0 ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-foreground">
-            <Bot className="size-3.5 text-primary" aria-hidden="true" />
-            Pilot
-          </span>
-        ) : (
-          agents.map((agent) => {
-            const selected = selectedAgentId === agent.id;
-            return (
-              <Button
-                key={agent.id}
-                aria-pressed={selected}
-                className="rounded-full"
-                disabled={isLoading}
-                onClick={() => setSelectedAgentId(agent.id)}
-                size="sm"
-                type="button"
-                variant={selected ? "secondary" : "outline"}
-              >
-                {selected ? (
-                  <Check className="size-3.5 text-primary" aria-hidden="true" />
-                ) : (
-                  <Bot className="size-3.5" aria-hidden="true" />
-                )}
-                {agent.name}
-              </Button>
-            );
-          })
-        )}
+        {agents.map((agent) => {
+          const selected = selectedAgentId === agent.id;
+          return (
+            <Button
+              key={agent.id}
+              aria-pressed={selected}
+              className="rounded-full"
+              disabled={isLoading}
+              onClick={() => setSelectedAgentId(agent.id)}
+              size="sm"
+              type="button"
+              variant={selected ? "secondary" : "outline"}
+            >
+              {selected ? (
+                <Check className="size-3.5 text-primary" aria-hidden="true" />
+              ) : (
+                <Bot className="size-3.5" aria-hidden="true" />
+              )}
+              {agent.name}
+            </Button>
+          );
+        })}
       </div>
       {pendingPrompt ? (
         <section

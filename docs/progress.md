@@ -165,3 +165,7 @@ endpoint and shows sanitized execution and tool lifecycle summaries in a
 collapsed disclosure. The endpoint is organization-scoped and does not expose
 tool payloads, outputs, URLs, errors, or reasoning. It is best effort: text
 streaming remains the authoritative reply channel.
+
+New chat also uses this live feed after the server creates a conversation. An
+organization without a configured persona sees a direct, non-submittable path
+to Persona creation instead of an invalid runtime request.
