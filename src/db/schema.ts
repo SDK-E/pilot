@@ -220,3 +220,75 @@ export const activityEvents = pgTable(
     ),
   ],
 );
+
+export const goals = pgTable(
+  "goals",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description"),
+    status: text("status")
+      .$type<"active" | "completed" | "cancelled">()
+      .notNull()
+      .default("active"),
+    createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("goals_organization_created_at_index").on(
+      table.organizationId,
+      table.createdAt,
+    ),
+  ],
+);
+
+export const tasks = pgTable(
+  "tasks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    goalId: uuid("goal_id").references(() => goals.id, {
+      onDelete: "set null",
+    }),
+    workerId: uuid("worker_id").references(() => workers.id, {
+      onDelete: "set null",
+    }),
+    title: text("title").notNull(),
+    instructions: text("instructions").notNull(),
+    status: text("status")
+      .$type<
+        | "draft"
+        | "ready"
+        | "running"
+        | "awaiting_approval"
+        | "completed"
+        | "cancelled"
+        | "failed"
+      >()
+      .notNull()
+      .default("draft"),
+    createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("tasks_organization_updated_at_index").on(
+      table.organizationId,
+      table.updatedAt,
+    ),
+  ],
+);
