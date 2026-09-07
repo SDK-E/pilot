@@ -12,7 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 Read `docs/progress.md`, `docs/decisions/0001-platform-boundaries.md`, and `docs/decisions/0004-mastra-conversation-runtime-contract.md` before continuing. Keep them synchronized with verified implementation and environment changes.
 
-- WorkOS is the required auth provider. Use application-specific credentials. Authenticate and authorize every server mutation; never trust a submitted organization ID or model decision as authorization.
+- WorkOS is the required auth provider. Use application-specific credentials. Authenticate and authorize every server mutation; never trust a submitted organization ID or model decision as authorization. When a Route Handler calls `withAuth()`, its path must be included in `src/proxy.ts`'s AuthKit matcher; add a regression test for its anonymous and forged-session boundary.
 - Use current official documentation and inspect installed types/source before choosing APIs. Prefer maintained packages, Mastra runtime capabilities and official shadcn components over custom infrastructure.
 - Keep product/domain logic in Pilot, Mastra implementation in `pilot-ai`, integration adapters in `pilot-integrations`, and shared design-system sources in `pilot-ui`.
 - Keep local, preview and production secrets separate. Never log or commit credentials. Do not expose worker capabilities until system-enforced permissions and approval behavior exist.

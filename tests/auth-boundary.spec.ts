@@ -61,3 +61,26 @@ test("callback without OAuth state cannot establish a session", async ({
     /wos-session=[^;]/,
   );
 });
+
+test("anonymous and forged sessions cannot access the conversation stream", async ({
+  request,
+}) => {
+  const path = "/api/conversations/00000000-0000-4000-8000-000000000000/stream";
+  for (const cookie of ["", "wos-session=forged-session"]) {
+    const response = await request.post(path, {
+      maxRedirects: 0,
+      headers: {
+        cookie,
+        "content-type": "application/json",
+      },
+      data: {
+        prompt: "Test",
+        workerId: "00000000-0000-4000-8000-000000000000",
+      },
+    });
+    expect(response.status()).toBe(303);
+    expect(new URL(response.headers().location).hostname).toBe(
+      "api.workos.com",
+    );
+  }
+});

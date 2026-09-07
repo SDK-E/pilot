@@ -5,5 +5,5 @@ export default authkitProxy({
 });
 
 export const config = {
-  matcher: ["/", "/workspace/:path*"],
+  matcher: ["/", "/workspace/:path*", "/api/conversations/:path*"],
 };

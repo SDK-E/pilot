@@ -35,9 +35,13 @@ Pilot routes the user to the saved conversation and renders its failed execution
 activity. This preserves the user's work and gives them a direct retry path.
 
 Follow-up messages inside an existing conversation now stream over a
-WorkOS-authorized Pilot route. The browser receives plain text only; Pilot
-persists the verified user prompt before streaming and persists the returned
-Worker response, usage, run ID, and completed execution after the stream closes.
+WorkOS-authorized Pilot route. The AuthKit proxy explicitly covers the
+conversation-stream API path so `withAuth()` receives only the trusted session
+headers supplied by WorkOS; anonymous and forged-session POST requests are
+redirected before the route parses a body or touches persistence. The browser
+receives plain text only; Pilot persists the verified user prompt before
+streaming and persists the returned Worker response, usage, run ID, and
+completed execution after the stream closes.
 Stopping a response records a failed execution and preserves the user prompt.
 The new-chat first message still uses the established completed-response action.
 The server test verifies that Pilot accepts text only when a terminal runtime
