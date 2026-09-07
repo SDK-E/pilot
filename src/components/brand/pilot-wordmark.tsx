@@ -16,7 +16,7 @@ export function PilotWordmark({
       )}
     >
       {compact ? "P" : "Pilot"}
-      {!compact ? <span className="text-primary">.</span> : null}
+      <span className="text-primary">.</span>
     </span>
   );
 }

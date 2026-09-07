@@ -63,13 +63,11 @@ export function AgentFleetShell({
             aria-label="Pilot home"
             className="flex h-10 items-center gap-2 rounded-md px-2 text-lg font-semibold tracking-tight outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
           >
-            <span className="grid size-7 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground group-data-[collapsible=icon]:hidden">
-              <PilotWordmark compact />
-            </span>
             <PilotWordmark className="group-data-[collapsible=icon]:hidden" />
-            <span className="hidden text-lg font-semibold group-data-[collapsible=icon]:inline">
-              P
-            </span>
+            <PilotWordmark
+              compact
+              className="hidden group-data-[collapsible=icon]:inline-flex"
+            />
           </Link>
         </SidebarHeader>
         <SidebarContent>
