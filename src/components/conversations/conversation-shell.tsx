@@ -18,6 +18,7 @@ import {
 } from "@/components/ai-elements/message";
 import { ConversationActivity } from "@/components/conversations/conversation-activity";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
+import type { ActivityEventType } from "@/executions/activity-event";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -31,7 +32,7 @@ type PersistedActivity = {
   id: string;
   conversationMessageId: string | null;
   summary: string;
-  type: "execution.started" | "execution.completed" | "execution.failed";
+  type: ActivityEventType;
 };
 
 type ConversationShellProps = {

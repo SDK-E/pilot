@@ -14,6 +14,7 @@ import {
   listOrganizationConversations,
 } from "@/conversations/conversation-repository";
 import {
+  appendToolActivity,
   finishExecution,
   listConversationActivity,
   startExecution,
@@ -90,6 +91,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     ),
     [conversation.id],
   );
+
   assert.deepEqual(
     (await listOrganizationConversations(organizationId)).map((item) => [
       item.id,
@@ -163,6 +165,40 @@ test("workers are persisted and isolated by organization", async (t) => {
     [
       ["execution.started", "Generating a response"],
       ["execution.completed", "Response completed"],
+    ],
+  );
+
+  await appendToolActivity({
+    organizationId,
+    executionId: execution.id,
+    toolId: "web-search",
+    toolCallId: "tool-call-1",
+    state: "started",
+  });
+  await appendToolActivity({
+    organizationId,
+    executionId: execution.id,
+    toolId: "web-search",
+    toolCallId: "tool-call-1",
+    state: "completed",
+  });
+  assert.deepEqual(
+    (await listConversationActivity(organizationId, conversation.id))
+      .slice(2, 4)
+      .map((event) => [
+        event.type,
+        event.toolId,
+        event.toolCallId,
+        event.summary,
+      ]),
+    [
+      ["tool.started", "web-search", "tool-call-1", "Searching the web…"],
+      [
+        "tool.completed",
+        "web-search",
+        "tool-call-1",
+        "Searching the web completed",
+      ],
     ],
   );
 

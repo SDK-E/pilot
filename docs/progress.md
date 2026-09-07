@@ -55,6 +55,13 @@ During an active protected stream, the chat renders a collapsed transient
 activity for the verified browser state; it never labels that status as
 reasoning or tool use, and persisted execution activity replaces it when the
 stream ends.
+The generated `0008_complex_justin_hammer` migration extends the append-only
+activity record with sanitized tool lifecycle events. A stored tool event is
+limited to a fixed capability ID, optional tool-call correlation ID, and
+server-generated status; it cannot retain tool inputs, outputs, URLs, errors,
+credentials, or reasoning. The chat activity component can render those events
+when a protected runtime adapter later emits them. This is the event foundation
+for Research, not an enablement of Research tools or approvals.
 The server test verifies that Pilot accepts text only when a terminal runtime
 usage event follows, rejecting partial streams before a Worker response can be
 persisted.

@@ -11,9 +11,16 @@ not an authorization input.
 `activity_events` is an append-only, organization-scoped record of execution
 lifecycle events. The initial events deliberately expose only concise safe
 status (`Generating a response`, `Response completed`, or `Response failed`).
-No model reasoning, tool input, tool output, credential, or user attachment is
-stored in this table. Future streaming and tool adapters may add typed event
-records only after their tenant and approval boundaries exist.
+No model reasoning, tool input, tool output, credential, user attachment,
+tool error, or URL is stored in this table.
+
+The `0008_complex_justin_hammer` migration adds a narrow tool-lifecycle shape:
+`tool.started`, `tool.completed`, and `tool.failed`, optionally correlated by a
+tool call ID. Pilot derives its summary from a fixed capability map, such as
+`Searching the web…`; callers cannot supply a summary or payload. This makes
+the chat's expandable activity row ready for verified tool events while keeping
+the audit data useful and safe. It does not make a tool available, expose a
+tool result, or authorize a tool call.
 
 A completed activity event may reference the immutable Worker response that it
 describes. This lets the chat render a collapsed status beneath that response

@@ -1,17 +1,19 @@
 import { CheckCircle2, ChevronRight, CircleAlert } from "lucide-react";
+import type { ActivityEventType } from "@/executions/activity-event";
 
 type ConversationActivityProps = {
   events: Array<{
     id: string;
     summary: string;
-    type: "execution.started" | "execution.completed" | "execution.failed";
+    type: ActivityEventType;
   }>;
 };
 
 export function ConversationActivity({ events }: ConversationActivityProps) {
   if (events.length === 0) return null;
   const latest = events.at(-1);
-  const failed = latest?.type === "execution.failed";
+  const failed =
+    latest?.type === "execution.failed" || latest?.type === "tool.failed";
 
   return (
     <details className="group mt-1 w-fit rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">

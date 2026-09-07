@@ -202,8 +202,17 @@ export const activityEvents = pgTable(
       { onDelete: "cascade" },
     ),
     type: text("type")
-      .$type<"execution.started" | "execution.completed" | "execution.failed">()
+      .$type<
+        | "execution.started"
+        | "execution.completed"
+        | "execution.failed"
+        | "tool.started"
+        | "tool.completed"
+        | "tool.failed"
+      >()
       .notNull(),
+    toolId: text("tool_id"),
+    toolCallId: text("tool_call_id"),
     summary: text("summary").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

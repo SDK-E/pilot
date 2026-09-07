@@ -2,6 +2,10 @@ import "server-only";
 import { and, asc, count, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { activityEvents, executions } from "@/db/schema";
+import {
+  createToolActivity,
+  type ToolActivityState,
+} from "@/executions/activity-event";
 
 export async function startExecution(input: {
   organizationId: string;
@@ -58,6 +62,41 @@ export async function finishExecution(input: {
     });
 }
 
+/**
+ * Appends a concise, server-derived tool lifecycle event. This intentionally
+ * accepts only a known capability and state so activity storage can never be
+ * used to retain model prompts, tool payloads, URLs, secrets, or reasoning.
+ */
+export async function appendToolActivity(input: {
+  organizationId: string;
+  executionId: string;
+  toolId: Parameters<typeof createToolActivity>[0]["toolId"];
+  toolCallId?: string;
+  state: ToolActivityState;
+}) {
+  const event = createToolActivity(input);
+  const [execution] = await db
+    .select({ id: executions.id })
+    .from(executions)
+    .where(
+      and(
+        eq(executions.organizationId, input.organizationId),
+        eq(executions.id, input.executionId),
+      ),
+    )
+    .limit(1);
+  if (!execution) return;
+
+  await db.insert(activityEvents).values({
+    organizationId: input.organizationId,
+    executionId: execution.id,
+    type: event.type,
+    toolId: event.toolId,
+    toolCallId: event.toolCallId,
+    summary: event.summary,
+  });
+}
+
 export async function listConversationActivity(
   organizationId: string,
   conversationId: string,
@@ -68,6 +107,8 @@ export async function listConversationActivity(
       executionId: activityEvents.executionId,
       conversationMessageId: activityEvents.conversationMessageId,
       type: activityEvents.type,
+      toolId: activityEvents.toolId,
+      toolCallId: activityEvents.toolCallId,
       summary: activityEvents.summary,
       createdAt: activityEvents.createdAt,
     })
