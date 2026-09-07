@@ -32,6 +32,8 @@ type CreateWorkerInput = {
   };
 };
 
+type WorkerConfiguration = CreateWorkerInput["worker"];
+
 export async function createWorker(input: CreateWorkerInput) {
   const now = new Date();
   const [, , createdWorkers] = await db.batch([
@@ -80,6 +82,21 @@ export async function createWorker(input: CreateWorkerInput) {
   ]);
 
   return createdWorkers[0];
+}
+
+export async function updateWorker(
+  organizationId: string,
+  workerId: string,
+  worker: WorkerConfiguration,
+) {
+  const [updated] = await db
+    .update(workers)
+    .set({ ...worker, updatedAt: new Date() })
+    .where(
+      and(eq(workers.organizationId, organizationId), eq(workers.id, workerId)),
+    )
+    .returning({ id: workers.id, name: workers.name });
+  return updated;
 }
 
 export async function listWorkers(organizationId: string) {

@@ -5,6 +5,7 @@ import { MessageSquareMore } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listOrganizationConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { DeleteConversationButton } from "@/components/conversations/delete-conversation-button";
 
 export default async function ChatsPage() {
   const { user, organizationId } = await withAuth();
@@ -45,17 +46,23 @@ export default async function ChatsPage() {
         <ul className="divide-y divide-border rounded-xl border border-border">
           {chats.map((chat) => (
             <li key={chat.id}>
-              <Link
-                className="block space-y-1 px-5 py-4 transition-colors hover:bg-muted/40"
-                href={`/workspace/workers/${chat.workerId}/conversations/${chat.id}`}
-              >
-                <p className="font-medium">
-                  {chat.title ?? "New conversation"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {chat.agentName} · {chat.updatedAt.toLocaleString()}
-                </p>
-              </Link>
+              <div className="flex items-center gap-2 px-2">
+                <Link
+                  className="block min-w-0 flex-1 space-y-1 px-3 py-4 transition-colors hover:bg-muted/40"
+                  href={`/workspace/workers/${chat.workerId}/conversations/${chat.id}`}
+                >
+                  <p className="font-medium">
+                    {chat.title ?? "New conversation"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {chat.agentName} · {chat.updatedAt.toLocaleString()}
+                  </p>
+                </Link>
+                <DeleteConversationButton
+                  workerId={chat.workerId}
+                  conversationId={chat.id}
+                />
+              </div>
             </li>
           ))}
         </ul>

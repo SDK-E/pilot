@@ -4,6 +4,8 @@
     "src/components/ui/button-group.tsx": ["exports"],
     "src/components/ui/button.tsx": ["exports"],
     "src/components/ui/sheet.tsx": ["exports"],
-    "src/components/ui/sidebar.tsx": ["exports"]
+    "src/components/ui/sidebar.tsx": ["exports"],
+    "src/components/ui/alert-dialog.tsx": ["exports"],
+    "src/app/workspace/worker-actions.ts": ["exports"]
   }
 }

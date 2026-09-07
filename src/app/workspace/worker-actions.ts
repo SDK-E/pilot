@@ -17,6 +17,7 @@ import {
   createWorker,
   getWorkerByBaseAgentId,
   getWorker,
+  updateWorker,
 } from "@/workers/worker-repository";
 
 const workerInputSchema = z.object({
@@ -109,6 +110,72 @@ export async function createWorkerAction(
         status: "error",
       };
     }
+    throw error;
+  }
+}
+
+export async function updateWorkerAction(
+  _previousState: WorkerCreationState,
+  formData: FormData,
+): Promise<WorkerCreationState> {
+  const workerId = z.uuid().safeParse(formData.get("workerId"));
+  const parsed = workerInputSchema.safeParse({
+    name: formData.get("name"),
+    instructions: formData.get("instructions"),
+    modelId: formData.get("modelId"),
+    baseAgentId: formData.get("baseAgentId"),
+    goals: formData.get("goals") || undefined,
+    tone: formData.get("tone") || undefined,
+    outputFormat: formData.get("outputFormat") || undefined,
+    enabledToolIds: formData.getAll("enabledToolIds"),
+    approvalMode: formData.get("approvalMode"),
+  });
+  if (!workerId.success || !parsed.success)
+    return {
+      status: "error",
+      message: parsed.success
+        ? "This persona is unavailable."
+        : parsed.error.issues[0]?.message,
+    };
+  const { user, organizationId } = await withAuth({ ensureSignedIn: true });
+  if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId))
+    return {
+      status: "error",
+      message: "Choose an organization before updating a persona.",
+    };
+  if (!(await getActiveOrganizationMembership(user.id, organizationId)))
+    return {
+      status: "error",
+      message: "Your organization access is no longer active.",
+    };
+  try {
+    const worker = await updateWorker(organizationId, workerId.data, {
+      ...parsed.data,
+      approvalRules: Object.fromEntries(
+        parsed.data.enabledToolIds.map((toolId) => [
+          toolId,
+          parsed.data.approvalMode,
+        ]),
+      ),
+      knowledgeSourceIds: [],
+    });
+    if (!worker)
+      return { status: "error", message: "This persona is unavailable." };
+    revalidatePath(`/workspace/workers/${worker.id}`);
+    revalidatePath("/workspace/personas");
+    return { status: "success", message: `${worker.name} was updated.` };
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "23505"
+    )
+      return {
+        status: "error",
+        message:
+          "A persona with that name already exists in this organization.",
+      };
     throw error;
   }
 }

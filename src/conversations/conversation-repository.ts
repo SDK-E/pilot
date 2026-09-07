@@ -94,6 +94,24 @@ export async function getConversation(
   return conversation;
 }
 
+export async function deleteConversation(
+  organizationId: string,
+  workerId: string,
+  conversationId: string,
+) {
+  const [deleted] = await db
+    .delete(conversations)
+    .where(
+      and(
+        eq(conversations.organizationId, organizationId),
+        eq(conversations.workerId, workerId),
+        eq(conversations.id, conversationId),
+      ),
+    )
+    .returning({ id: conversations.id });
+  return deleted;
+}
+
 type ConversationMessageInput = {
   organizationId: string;
   workerId: string;
