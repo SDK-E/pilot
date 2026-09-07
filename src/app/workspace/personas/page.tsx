@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { listWorkers } from "@/workers/worker-repository";
+import { DeletePersonaButton } from "@/components/workers/delete-persona-button";
 
 export default async function PersonasPage() {
   const { user, organizationId } = await withAuth();
@@ -70,23 +71,29 @@ export default async function PersonasPage() {
               <ul className="space-y-3">
                 {personas.map((persona) => (
                   <li key={persona.id}>
-                    <Link
-                      href={`/workspace/personas/${persona.id}`}
-                      className="flex items-start gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/40"
-                    >
-                      <Bot className="mt-0.5 size-4 text-primary" />
-                      <span className="min-w-0">
-                        <span className="block font-medium">
-                          {persona.name}
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/workspace/personas/${persona.id}`}
+                        className="flex items-start gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/40"
+                      >
+                        <Bot className="mt-0.5 size-4 text-primary" />
+                        <span className="min-w-0">
+                          <span className="block font-medium">
+                            {persona.name}
+                          </span>
+                          <span className="block text-xs capitalize text-primary">
+                            {persona.baseAgentId}
+                          </span>
+                          <span className="mt-1 block line-clamp-2 text-sm text-muted-foreground">
+                            {persona.instructions}
+                          </span>
                         </span>
-                        <span className="block text-xs capitalize text-primary">
-                          {persona.baseAgentId}
-                        </span>
-                        <span className="mt-1 block line-clamp-2 text-sm text-muted-foreground">
-                          {persona.instructions}
-                        </span>
-                      </span>
-                    </Link>
+                      </Link>
+                      <DeletePersonaButton
+                        workerId={persona.id}
+                        name={persona.name}
+                      />
+                    </div>
                   </li>
                 ))}
               </ul>

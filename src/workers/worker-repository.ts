@@ -99,6 +99,16 @@ export async function updateWorker(
   return updated;
 }
 
+export async function deleteWorker(organizationId: string, workerId: string) {
+  const [deleted] = await db
+    .delete(workers)
+    .where(
+      and(eq(workers.organizationId, organizationId), eq(workers.id, workerId)),
+    )
+    .returning({ id: workers.id });
+  return deleted;
+}
+
 export async function listWorkers(organizationId: string) {
   return db
     .select({
