@@ -3,7 +3,6 @@
 import Link from "next/link";
 import {
   Bot,
-  ChevronRight,
   Gauge,
   MessageSquareMore,
   Plus,
@@ -25,9 +24,9 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { startDefaultConversationAction } from "@/app/workspace/worker-actions";
 
 const primaryNavigation = [
-  { icon: Plus, label: "New chat", href: "/workspace" },
   { icon: MessageSquareMore, label: "Chats", href: "/workspace" },
   { icon: UsersRound, label: "Agent fleet", href: "/workspace" },
   { icon: Bot, label: "Personas", href: "/workspace" },
@@ -58,15 +57,20 @@ export function AgentFleetShell({ children }: { children: React.ReactNode }) {
             <SidebarGroupLabel>Workspace</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                <SidebarMenuItem>
+                  <form action={startDefaultConversationAction}>
+                    <SidebarMenuButton type="submit" tooltip="New chat">
+                      <Plus aria-hidden="true" />
+                      <span>New chat</span>
+                    </SidebarMenuButton>
+                  </form>
+                </SidebarMenuItem>
                 {primaryNavigation.map((item) => (
                   <SidebarMenuItem key={item.label}>
                     <SidebarMenuButton asChild tooltip={item.label}>
                       <Link href={item.href}>
                         <item.icon aria-hidden="true" />
                         <span>{item.label}</span>
-                        {item.label === "New chat" ? (
-                          <ChevronRight className="ml-auto opacity-50 group-data-[collapsible=icon]:hidden" />
-                        ) : null}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

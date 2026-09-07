@@ -2,6 +2,7 @@
 
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
   approvalModes,
@@ -10,7 +11,11 @@ import {
 } from "@/agents/agent-configuration";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import type { WorkerCreationState } from "@/workers/worker-creation-state";
-import { createWorker } from "@/workers/worker-repository";
+import { createConversation } from "@/conversations/conversation-repository";
+import {
+  createWorker,
+  getWorkerByBaseAgentId,
+} from "@/workers/worker-repository";
 
 const workerInputSchema = z.object({
   name: z.string().trim().min(1, "Name is required.").max(100),
@@ -104,4 +109,57 @@ export async function createWorkerAction(
     }
     throw error;
   }
+}
+
+export async function startDefaultConversationAction() {
+  const { user, organizationId } = await withAuth({ ensureSignedIn: true });
+  if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId)) {
+    redirect("/workspace");
+  }
+
+  const membership = await getActiveOrganizationMembership(
+    user.id,
+    organizationId,
+  );
+  if (!membership) redirect("/workspace");
+
+  let agent = await getWorkerByBaseAgentId(organizationId, "conversational");
+  if (!agent) {
+    try {
+      agent = await createWorker({
+        organization: { id: organizationId, name: membership.organizationName },
+        member: { id: membership.id, roleSlug: membership.role.slug },
+        user: { id: user.id, email: user.email },
+        worker: {
+          name: "Conversational",
+          instructions:
+            "You are Pilot, a clear and practical conversational assistant. Ask concise follow-up questions when needed and state useful next steps.",
+          modelId: "kilo/kilo-auto/free",
+          baseAgentId: "conversational",
+          enabledToolIds: [],
+          knowledgeSourceIds: [],
+          approvalRules: {},
+        },
+      });
+    } catch (error) {
+      if (!(
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23505"
+      )) {
+        throw error;
+      }
+      agent = await getWorkerByBaseAgentId(organizationId, "conversational");
+    }
+  }
+  if (!agent) redirect("/workspace");
+
+  const conversation = await createConversation({
+    organizationId,
+    workerId: agent.id,
+    createdByWorkosUserId: user.id,
+  });
+  if (!conversation) redirect("/workspace");
+  redirect(`/workspace/workers/${agent.id}/conversations/${conversation.id}`);
 }

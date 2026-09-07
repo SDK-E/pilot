@@ -128,3 +128,22 @@ export async function getWorker(organizationId: string, workerId: string) {
 
   return worker;
 }
+
+export async function getWorkerByBaseAgentId(
+  organizationId: string,
+  baseAgentId: BaseAgentId,
+) {
+  const [worker] = await db
+    .select({ id: workers.id })
+    .from(workers)
+    .where(
+      and(
+        eq(workers.organizationId, organizationId),
+        eq(workers.baseAgentId, baseAgentId),
+      ),
+    )
+    .orderBy(desc(workers.createdAt))
+    .limit(1);
+
+  return worker;
+}
