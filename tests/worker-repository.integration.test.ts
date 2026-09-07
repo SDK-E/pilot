@@ -152,22 +152,6 @@ test("workers are persisted and isolated by organization", async (t) => {
     conversationId: conversation.id,
   });
   assert.ok(execution);
-  await finishExecution({
-    organizationId,
-    executionId: execution.id,
-    conversationMessageId: workerMessage.id,
-    runtimeRunId: "run_test",
-  });
-  assert.deepEqual(
-    (await listConversationActivity(organizationId, conversation.id)).map(
-      (event) => [event.type, event.summary],
-    ),
-    [
-      ["execution.started", "Generating a response"],
-      ["execution.completed", "Response completed"],
-    ],
-  );
-
   await appendToolActivity({
     organizationId,
     executionId: execution.id,
@@ -184,7 +168,7 @@ test("workers are persisted and isolated by organization", async (t) => {
   });
   assert.deepEqual(
     (await listConversationActivity(organizationId, conversation.id))
-      .slice(2, 4)
+      .slice(1, 3)
       .map((event) => [
         event.type,
         event.toolId,
@@ -199,6 +183,24 @@ test("workers are persisted and isolated by organization", async (t) => {
         "tool-call-1",
         "Searching the web completed",
       ],
+    ],
+  );
+
+  await finishExecution({
+    organizationId,
+    executionId: execution.id,
+    conversationMessageId: workerMessage.id,
+    runtimeRunId: "run_test",
+  });
+  assert.deepEqual(
+    (await listConversationActivity(organizationId, conversation.id)).map(
+      (event) => [event.type, event.summary],
+    ),
+    [
+      ["execution.started", "Generating a response"],
+      ["tool.started", "Searching the web…"],
+      ["tool.completed", "Searching the web completed"],
+      ["execution.completed", "Response completed"],
     ],
   );
 

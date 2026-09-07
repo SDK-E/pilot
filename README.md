@@ -36,7 +36,7 @@ pnpm audit --audit-level high
 
 The Playwright suite starts the production build on port 3100 with explicit test-only credentials. It checks public rendering and unauthenticated security boundaries. Successful hosted login, organization switching and logout must also be verified with a real WorkOS development environment; this suite does not prove those flows.
 
-`pnpm test:db` uses the development Neon database to verify worker persistence and organization isolation, then removes its randomized fixtures. Apply committed schema changes with `pnpm db:migrate`; it uses `DATABASE_URL_UNPOOLED` when present. Never use development credentials to migrate preview or production.
+`pnpm test:db` uses the development Neon database to verify worker persistence and organization isolation, then removes its randomized fixtures. Apply committed schema changes with `pnpm db:migrate`; it uses `DATABASE_URL`. Never use development credentials to migrate preview or production.
 
 GitHub Actions runs `pnpm check`, production build, Playwright browser tests, and the high-severity audit for pull requests and `main`. It supplies test-only configuration and does not connect to Neon; run `pnpm test:db` before merging a persistence change.
 

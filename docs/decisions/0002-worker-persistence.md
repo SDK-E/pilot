@@ -4,7 +4,7 @@ Status: accepted for the first persistent-worker slice.
 
 Pilot uses Drizzle ORM `0.45.2`, Drizzle Kit `0.31.10`, and Neon's GA serverless driver `1.1.0`. Drizzle is a small, type-safe PostgreSQL layer with maintained Neon support and generated SQL migrations. It replaces neither the Pilot domain nor the database: Pilot owns the schema and authorization rules.
 
-The application uses Drizzle's Neon HTTP driver with the pooled `DATABASE_URL`. It suits request-scoped reads and writes, while Neon supports non-interactive batches as a transaction. Migrations use `DATABASE_URL_UNPOOLED` when it is available. If future work needs session state or interactive transactions, use Neon's WebSocket driver rather than emulating transactions in application code.
+The application uses Drizzle's Neon HTTP driver with `DATABASE_URL`. It suits request-scoped reads and writes, while Neon supports non-interactive batches as a transaction. Migrations use the same environment-specific `DATABASE_URL`. If future work needs session state or interactive transactions, use Neon's WebSocket driver rather than emulating transactions in application code.
 
 The first schema intentionally contains only the domain records that work now:
 
