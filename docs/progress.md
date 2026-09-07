@@ -86,4 +86,8 @@ Neon projects belong to SDK Enterprises, use PostgreSQL 18 in `aws-eu-central-1`
 5. Set `PILOT_AI_RUNTIME_URL` for Preview after it has its own stable runtime URL, then prove one real authenticated two-turn conversation in each environment, including a fresh runtime process reading the first message.
 6. Render the persisted execution activity in the chat interface and prove a real authorized end-to-end runtime run across requests/restarts before building protected actions, approval, suspension/resume and the rest of the one-worker milestone.
 
+The next vertical slice is a Pilot-owned task and approval record paired with a
+Turso-backed Mastra workflow suspension. Its boundary is recorded in
+[task approval workflow boundary](decisions/0007-task-approval-workflow-boundary.md).
+
 `pilot-ai` uses `src/index.ts` as its Mastra development entrypoint, with agent-specific modules in `src/conversation` and `src/research`, and shared runtime code in `src/runtime`. Pilot Research remains local-development work with no tenant-scoped service adapter or approved deployment path. The deployed Conversation function imports only the no-tools Pilot adapter. `pilot-integrations` and `pilot-ui` remain package stubs. Pilot has no tasks, approvals, memory controls or integration capabilities yet.
