@@ -2,7 +2,10 @@
 
 import { useActionState } from "react";
 import { baseAgents, configurableToolIds } from "@/agents/agent-configuration";
-import { createWorkerAction } from "@/app/workspace/worker-actions";
+import {
+  createWorkerAction,
+  updateWorkerAction,
+} from "@/app/workspace/worker-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,14 +14,30 @@ import type { WorkerCreationState } from "@/workers/worker-creation-state";
 
 const initialAgentCreationState: WorkerCreationState = { status: "idle" };
 
-export function AgentCreationForm() {
+type Persona = {
+  id: string;
+  name: string;
+  instructions: string;
+  modelId: string;
+  baseAgentId: string;
+  goals: string | null;
+  tone: string | null;
+  outputFormat: string | null;
+  enabledToolIds: string[];
+  approvalRules: Record<string, string>;
+};
+
+export function AgentCreationForm({ persona }: { persona?: Persona }) {
   const [state, action, pending] = useActionState(
-    createWorkerAction,
+    persona ? updateWorkerAction : createWorkerAction,
     initialAgentCreationState,
   );
 
   return (
     <form action={action} className="space-y-5">
+      {persona ? (
+        <input name="workerId" type="hidden" value={persona.id} />
+      ) : null}
       <div className="space-y-2">
         <Label htmlFor="agent-name">Agent name</Label>
         <Input
@@ -26,6 +45,7 @@ export function AgentCreationForm() {
           name="name"
           maxLength={100}
           placeholder="Research agent"
+          defaultValue={persona?.name}
           required
         />
       </div>
@@ -46,7 +66,7 @@ export function AgentCreationForm() {
           id="agent-base"
           name="baseAgentId"
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-          defaultValue="conversational"
+          defaultValue={persona?.baseAgentId ?? "conversational"}
         >
           {baseAgents.map((agent) => (
             <option key={agent.id} value={agent.id} disabled={!agent.available}>
@@ -67,6 +87,7 @@ export function AgentCreationForm() {
           name="instructions"
           maxLength={10_000}
           placeholder="Describe the agent's purpose, constraints, and expected outcomes."
+          defaultValue={persona?.instructions}
           required
           rows={6}
         />
@@ -78,6 +99,7 @@ export function AgentCreationForm() {
           name="goals"
           maxLength={5_000}
           placeholder="Optional outcomes this persona should optimize for."
+          defaultValue={persona?.goals ?? undefined}
           rows={3}
         />
       </div>
@@ -89,6 +111,7 @@ export function AgentCreationForm() {
             name="tone"
             maxLength={200}
             placeholder="Clear and pragmatic"
+            defaultValue={persona?.tone ?? undefined}
           />
         </div>
         <div className="space-y-2">
@@ -97,7 +120,9 @@ export function AgentCreationForm() {
             id="agent-approval"
             name="approvalMode"
             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            defaultValue="ask"
+            defaultValue={
+              Object.values(persona?.approvalRules ?? {})[0] ?? "ask"
+            }
           >
             <option value="ask">Ask before each tool</option>
             <option value="allow">Allow automatically</option>
@@ -122,6 +147,7 @@ export function AgentCreationForm() {
                 name="enabledToolIds"
                 type="checkbox"
                 value={toolId}
+                defaultChecked={persona?.enabledToolIds.includes(toolId)}
                 className="size-4 accent-primary"
               />
               {toolId.replaceAll("-", " ")}
@@ -136,6 +162,7 @@ export function AgentCreationForm() {
           name="outputFormat"
           maxLength={1_000}
           placeholder="Optional format, such as concise markdown with sources."
+          defaultValue={persona?.outputFormat ?? undefined}
           rows={3}
         />
       </div>
@@ -152,7 +179,13 @@ export function AgentCreationForm() {
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Creating agent…" : "Create agent"}
+        {pending
+          ? persona
+            ? "Saving persona…"
+            : "Creating agent…"
+          : persona
+            ? "Save persona"
+            : "Create agent"}
       </Button>
     </form>
   );

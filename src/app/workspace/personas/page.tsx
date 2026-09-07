@@ -71,7 +71,7 @@ export default async function PersonasPage() {
                 {personas.map((persona) => (
                   <li key={persona.id}>
                     <Link
-                      href={`/workspace/workers/${persona.id}`}
+                      href={`/workspace/personas/${persona.id}`}
                       className="flex items-start gap-3 rounded-lg border border-border p-4 transition-colors hover:bg-muted/40"
                     >
                       <Bot className="mt-0.5 size-4 text-primary" />
