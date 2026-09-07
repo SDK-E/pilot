@@ -37,6 +37,9 @@ activity. This preserves the user's work and gives them a direct retry path.
 Conversation deletion uses a destructive confirmation and retains the Neon
 record if protected runtime-memory cleanup fails. The dialog reports that
 recoverable failure rather than silently implying the chat was deleted.
+Persona deletion follows the same rule for every owned conversation: Pilot
+removes runtime memory before deleting the organization-scoped persona and
+shows an error when that cleanup cannot be completed.
 
 Follow-up messages inside an existing conversation now stream over a
 WorkOS-authorized Pilot route. The AuthKit proxy explicitly covers the
