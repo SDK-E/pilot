@@ -4,9 +4,20 @@ Updated 2026-09-07. This is an implementation record, not a completion claim.
 
 ## Goal
 
-Ship an open-source, self-hostable AI workforce platform with persistent organizational workers. Pilot owns the domain; Mastra provides runtime capabilities behind typed boundaries. First prove one worker end-to-end, including durable execution, protected actions, approval, suspend/resume, results and history. Do not expand into multiple worker architectures or secondary features before that works.
+Ship an open-source, self-hostable AI workforce platform with persistent organizational agents. Pilot owns the domain; Mastra provides runtime capabilities behind typed boundaries. First prove one agent end-to-end, including durable execution, protected actions, approval, suspend/resume, results and history. Do not expand into multiple agent architectures or secondary features before that works.
 
 ## Current slice: protected Pilot conversation transport
+
+The product language is now **agents** and **agent fleet**. Existing `workers`
+routes, tables, and runtime identifiers remain internal compatibility details
+until a deliberate, tested domain migration can preserve organization isolation
+and existing conversation history. The first ChatGPT-style interface slice uses
+Vercel's AI Elements registry for its conversation canvas, markdown-safe agent
+responses, scroll behavior, and docked composer. It does not imply that live
+streaming, attachments, tool invocation, tool traces, reasoning display,
+approvals, or persona templates are complete: those require an explicit
+runtime event contract, persisted execution/activity records, and capability
+authorization before the UI exposes them.
 
 Implemented: WorkOS AuthKit sign-in route, callback, session proxy, POST sign-out action, organization membership listing and membership-checked organization switching. The page uses Pilot colors, JetBrains Mono and official shadcn source. No local password system or alternative auth provider is installed.
 
