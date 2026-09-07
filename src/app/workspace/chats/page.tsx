@@ -5,7 +5,6 @@ import { MessageSquareMore } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listOrganizationConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
-import { startDefaultConversationAction } from "../worker-actions";
 
 export default async function ChatsPage() {
   const { user, organizationId } = await withAuth();
@@ -28,9 +27,9 @@ export default async function ChatsPage() {
           </p>
           <h1 className="text-3xl font-medium tracking-tight">Chats</h1>
         </div>
-        <form action={startDefaultConversationAction}>
-          <Button type="submit">New chat</Button>
-        </form>
+        <Button asChild>
+          <Link href="/workspace">New chat</Link>
+        </Button>
       </header>
       {chats.length === 0 ? (
         <section className="grid min-h-64 place-items-center rounded-xl border border-dashed border-border p-8 text-center">

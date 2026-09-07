@@ -24,7 +24,6 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { startDefaultConversationAction } from "@/app/workspace/worker-actions";
 
 const primaryNavigation = [
   { icon: MessageSquareMore, label: "Chats", href: "/workspace/chats" },
@@ -58,12 +57,12 @@ export function AgentFleetShell({ children }: { children: React.ReactNode }) {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <form action={startDefaultConversationAction}>
-                    <SidebarMenuButton type="submit" tooltip="New chat">
+                  <SidebarMenuButton asChild tooltip="New chat">
+                    <Link href="/workspace">
                       <Plus aria-hidden="true" />
                       <span>New chat</span>
-                    </SidebarMenuButton>
-                  </form>
+                    </Link>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
                 {primaryNavigation.map((item) => (
                   <SidebarMenuItem key={item.label}>

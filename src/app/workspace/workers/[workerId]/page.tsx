@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getWorker } from "@/workers/worker-repository";
-import { startConversationAction } from "./conversations/actions";
 
 export const metadata: Metadata = { title: "Agent" };
 
@@ -39,7 +38,6 @@ export default async function WorkerPage({ params }: WorkerPageProps) {
     listConversations(organizationId, workerId),
   ]);
   if (!worker) notFound();
-  const startConversation = startConversationAction.bind(null, worker.id);
 
   return (
     <main className="mx-auto min-h-svh max-w-4xl space-y-8 px-6 py-8 sm:px-12">
@@ -124,9 +122,9 @@ export default async function WorkerPage({ params }: WorkerPageProps) {
               attachments, live execution traces, and approvals are the next
               runtime slice.
             </p>
-            <form action={startConversation}>
-              <Button type="submit">Start conversation</Button>
-            </form>
+            <Button asChild>
+              <Link href="/workspace">Start a new chat</Link>
+            </Button>
             {conversationList.length > 0 ? (
               <ul className="space-y-3" aria-label="Agent conversations">
                 {conversationList.map((conversation) => (
