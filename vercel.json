@@ -1,0 +1,3 @@
+{
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then pnpm exec drizzle-kit migrate; fi; pnpm build"
+}

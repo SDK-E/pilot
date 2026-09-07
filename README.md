@@ -38,6 +38,11 @@ The Playwright suite starts the production build on port 3100 with explicit test
 
 `pnpm test:db` uses the development Neon database to verify worker persistence and organization isolation, then removes its randomized fixtures. Apply committed schema changes with `pnpm db:migrate`; it uses `DATABASE_URL`. Never use development credentials to migrate preview or production.
 
+Production builds run committed Drizzle migrations before `pnpm build`, using the
+production `DATABASE_URL` available only inside Vercel. Drizzle records applied
+migrations, so a later production build does not reapply them. Preview builds
+do not migrate a shared production database.
+
 GitHub Actions runs `pnpm check`, production build, Playwright browser tests, and the high-severity audit for pull requests and `main`. It supplies test-only configuration and does not connect to Neon; run `pnpm test:db` before merging a persistence change.
 
 ## Deployment
