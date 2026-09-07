@@ -13,6 +13,11 @@ import {
   listConversations,
 } from "@/conversations/conversation-repository";
 import {
+  finishExecution,
+  listConversationActivity,
+  startExecution,
+} from "@/executions/execution-repository";
+import {
   createWorker,
   getWorker,
   listWorkers,
@@ -129,6 +134,32 @@ test("workers are persisted and isolated by organization", async (t) => {
       "You asked me to remember this question.",
     ],
   );
+
+  const execution = await startExecution({
+    organizationId,
+    workerId: created.id,
+    conversationId: conversation.id,
+  });
+  assert.ok(execution);
+  await finishExecution({
+    organizationId,
+    executionId: execution.id,
+    runtimeRunId: "run_test",
+  });
+  assert.deepEqual(
+    (await listConversationActivity(organizationId, conversation.id)).map(
+      (event) => [event.type, event.summary],
+    ),
+    [
+      ["execution.started", "Generating a response"],
+      ["execution.completed", "Response completed"],
+    ],
+  );
+  assert.deepEqual(
+    await listConversationActivity(otherOrganizationId, conversation.id),
+    [],
+  );
+
   assert.equal(
     await createConversationMessage({
       organizationId: otherOrganizationId,

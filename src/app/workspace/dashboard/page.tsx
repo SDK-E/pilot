@@ -3,6 +3,7 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { Bot, Gauge, MessageSquareMore, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getOrganizationConversationMetrics } from "@/conversations/conversation-repository";
+import { getOrganizationExecutionMetrics } from "@/executions/execution-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 
 export default async function DashboardPage() {
@@ -15,12 +16,15 @@ export default async function DashboardPage() {
     organizationId,
   );
   if (!membership) redirect("/workspace");
-  const metrics = await getOrganizationConversationMetrics(organizationId);
+  const [metrics, executionMetrics] = await Promise.all([
+    getOrganizationConversationMetrics(organizationId),
+    getOrganizationExecutionMetrics(organizationId),
+  ]);
   const cards = [
     { label: "Active agents", value: metrics.agents, icon: Bot },
     {
-      label: "Conversations",
-      value: metrics.conversations,
+      label: "Running tasks",
+      value: executionMetrics.running,
       icon: MessageSquareMore,
     },
     {

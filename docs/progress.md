@@ -6,7 +6,7 @@ Updated 2026-09-07. This is an implementation record, not a completion claim.
 
 Ship an open-source, self-hostable AI workforce platform with persistent organizational agents. Pilot owns the domain; Mastra provides runtime capabilities behind typed boundaries. First prove one agent end-to-end, including durable execution, protected actions, approval, suspend/resume, results and history. Do not expand into multiple agent architectures or secondary features before that works.
 
-## Current slice: persisted agent/persona configuration
+## Current slice: durable execution activity
 
 The product language is now **agents** and **agent fleet**. Existing `workers`
 routes, tables, and runtime identifiers remain internal compatibility details
@@ -19,12 +19,22 @@ approvals, or persona templates are complete: those require an explicit
 runtime event contract, persisted execution/activity records, and capability
 authorization before the UI exposes them.
 
+Each non-empty submitted message now creates a Pilot-owned, organization-scoped
+execution immediately before the protected runtime call. The returned response
+completes that execution; runtime and response-persistence failures append a
+failed lifecycle event. The generated `0004_condemned_speed_demon` migration
+adds `executions` and append-only `activity_events` with organization-scoped
+foreign keys and read indexes. The Dashboard derives its running-task metric
+from those durable records. This is a lifecycle foundation, not yet live
+streaming: the conversation interface does not render execution activity, tool
+traces, reasoning, approvals, or browser/scratchpad panes yet.
+
 The accepted [agent-fleet experience](decisions/0005-agent-fleet-experience.md)
 opens on Conversational chat and defines persona configuration, sidebar
 navigation, live activity, Research's future capability boundary, attachment
-scope, approval modes, and dashboard priorities. The next implementation slice
-is the persistent agent/persona configuration needed for that shell. The
-`workers` persistence name remains an internal compatibility detail. It now
+scope, approval modes, and dashboard priorities. The persona configuration
+slice is complete; the `workers` persistence name remains an internal
+compatibility detail. It now
 stores the persona's base agent, optional goals, tone and output format, plus
 explicit tool preferences, approval rules, and future knowledge-source IDs.
 The creation form persists those fields and the agent detail page renders them.
@@ -44,7 +54,7 @@ Persistent worker creation and read-only configuration viewing are implemented f
 
 The [Pilot runtime contract](decisions/0004-mastra-conversation-runtime-contract.md) preserves this boundary. The Pilot application now has organization-scoped `conversation_messages`, a server-only, typed client for the protected Pilot runtime, and an authenticated WorkOS server action which reloads the Worker and Conversation before every request. It persists the verified user message and the returned Worker reply, including model, runtime-run identifier, latency and token counts. Kilo Gateway model `kilo/kilo-auto/free` is allowlisted for development. The UI leaves message submission unavailable until `PILOT_AI_RUNTIME_URL` is set. Pilot forwards its short-lived Vercel OIDC token after the WorkOS and tenant checks; the runtime validates the token's exact Pilot project and environment claims before accepting any request. This is intentionally not an end-to-end claim: an authenticated two-turn browser verification still needs to prove the complete production path.
 
-The generated `0000_initial_worker_domain` through `0003_yummy_marrow` migrations create `organizations`, `members`, `workers`, `conversations`, and `conversation_messages` with organization-scoped foreign keys and indexes. `0003` adds persisted persona configuration and is applied to development and production; preview remains intentionally pending until its own authenticated WorkOS configuration is provisioned. The application uses Drizzle `0.45.2` with Neon's HTTP driver `1.1.0`; migrations prefer the direct `DATABASE_URL_UNPOOLED`. See [worker persistence decision](decisions/0002-worker-persistence.md).
+The generated `0000_initial_worker_domain` through `0004_condemned_speed_demon` migrations create `organizations`, `members`, `workers`, `conversations`, `conversation_messages`, `executions`, and `activity_events` with organization-scoped foreign keys and indexes. `0003` adds persisted persona configuration. `0004` adds durable execution/activity records and is applied to development; production rollout follows the completed quality checks for this slice. Preview remains intentionally pending until its own authenticated WorkOS configuration is provisioned. The application uses Drizzle `0.45.2` with Neon's HTTP driver `1.1.0`; migrations prefer the direct `DATABASE_URL_UNPOOLED`. See [worker persistence decision](decisions/0002-worker-persistence.md) and [execution activity decision](decisions/0006-execution-activity-records.md).
 
 Quality tooling: ESLint, TypeScript, Prettier, Knip, Playwright, a live Neon integration test, pnpm audit, and a GitHub Actions quality workflow. Browser tests found anonymous workspace access returned 500 because AuthKit's page-level sign-in helper writes PKCE cookies during rendering. Proxy enforcement and a read-only page fallback fixed that path. On 2026-09-06, a fresh `pnpm check`, production `pnpm build`, `pnpm test`, `pnpm test:db` and `pnpm audit --audit-level high` all passed after the server-action-module authentication fix. The four Playwright tests cover the mobile public page, PKCE redirect, anonymous/forged-session rejection of workspace and nested worker conversation routes, and callback rejection without state. The Neon test creates and removes randomized fixtures while verifying worker and conversation persistence plus organization isolation. CI repeats all non-database checks with test-only settings; it never connects to a Neon project.
 
@@ -73,6 +83,6 @@ Neon projects belong to SDK Enterprises, use PostgreSQL 18 in `aws-eu-central-1`
 3. Verify the authenticated creation form with a real active membership, including a rejected/revoked membership.
 4. Establish the shared design-system distribution from `pilot-ui`; current generated components are in the app and must not become competing shared sources.
 5. Set `PILOT_AI_RUNTIME_URL` for Preview after it has its own stable runtime URL, then prove one real authenticated two-turn conversation in each environment, including a fresh runtime process reading the first message.
-6. Prove durable execution across requests/restarts before building protected actions, approval, suspension/resume and the rest of the one-worker milestone.
+6. Render the persisted execution activity in the chat interface and prove a real authorized end-to-end runtime run across requests/restarts before building protected actions, approval, suspension/resume and the rest of the one-worker milestone.
 
 `pilot-ai` uses `src/index.ts` as its Mastra development entrypoint, with agent-specific modules in `src/conversation` and `src/research`, and shared runtime code in `src/runtime`. Pilot Research remains local-development work with no tenant-scoped service adapter or approved deployment path. The deployed Conversation function imports only the no-tools Pilot adapter. `pilot-integrations` and `pilot-ui` remain package stubs. Pilot has no tasks, approvals, memory controls or integration capabilities yet.

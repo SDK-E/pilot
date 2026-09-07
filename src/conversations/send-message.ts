@@ -2,6 +2,10 @@ import "server-only";
 
 import { generateConversationReply } from "@/ai/pilot-ai-client";
 import { createConversationMessage } from "@/conversations/conversation-repository";
+import {
+  finishExecution,
+  startExecution,
+} from "@/executions/execution-repository";
 
 type SendConversationMessageInput = {
   organizationId: string;
@@ -33,30 +37,63 @@ export async function sendConversationMessage(
   }
 
   const startedAt = performance.now();
-  const reply = await generateConversationReply({
-    organizationId: input.organizationId,
-    worker: input.worker,
-    conversationId: input.conversationId,
-    message: input.message,
-    allowedToolIds: [],
-  });
-  const latencyMs = toStoredCount(Math.round(performance.now() - startedAt));
-
-  const workerMessage = await createConversationMessage({
+  const execution = await startExecution({
     organizationId: input.organizationId,
     workerId: input.worker.id,
     conversationId: input.conversationId,
-    role: "worker",
-    content: reply.text,
-    modelId: reply.modelId,
-    runtimeRunId: reply.runId ?? undefined,
-    latencyMs,
-    inputTokens: toStoredCount(reply.usage.inputTokens),
-    outputTokens: toStoredCount(reply.usage.outputTokens),
-    totalTokens: toStoredCount(reply.usage.totalTokens),
   });
-  if (!workerMessage) {
-    throw new Error("Pilot Conversation no longer belongs to this Worker.");
+  let reply;
+  try {
+    reply = await generateConversationReply({
+      organizationId: input.organizationId,
+      worker: input.worker,
+      conversationId: input.conversationId,
+      message: input.message,
+      allowedToolIds: [],
+    });
+  } catch (error) {
+    if (execution)
+      await finishExecution({
+        organizationId: input.organizationId,
+        executionId: execution.id,
+        errorMessage: "Runtime generation failed",
+      });
+    throw error;
+  }
+  const latencyMs = toStoredCount(Math.round(performance.now() - startedAt));
+
+  let workerMessage;
+  try {
+    workerMessage = await createConversationMessage({
+      organizationId: input.organizationId,
+      workerId: input.worker.id,
+      conversationId: input.conversationId,
+      role: "worker",
+      content: reply.text,
+      modelId: reply.modelId,
+      runtimeRunId: reply.runId ?? undefined,
+      latencyMs,
+      inputTokens: toStoredCount(reply.usage.inputTokens),
+      outputTokens: toStoredCount(reply.usage.outputTokens),
+      totalTokens: toStoredCount(reply.usage.totalTokens),
+    });
+    if (!workerMessage) {
+      throw new Error("Pilot Conversation no longer belongs to this Worker.");
+    }
+    if (execution)
+      await finishExecution({
+        organizationId: input.organizationId,
+        executionId: execution.id,
+        runtimeRunId: reply.runId,
+      });
+  } catch (error) {
+    if (execution)
+      await finishExecution({
+        organizationId: input.organizationId,
+        executionId: execution.id,
+        errorMessage: "Response persistence failed",
+      });
+    throw error;
   }
 
   return { userMessage, workerMessage };
