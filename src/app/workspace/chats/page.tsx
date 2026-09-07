@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
-import { MessageSquareMore } from "lucide-react";
+import { MessageSquareMore, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listOrganizationConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
@@ -20,20 +20,21 @@ export default async function ChatsPage() {
   const chats = await listOrganizationConversations(organizationId);
 
   return (
-    <main className="mx-auto w-full max-w-4xl space-y-8 px-6 py-10">
+    <main className="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 sm:py-10">
       <header className="flex items-center justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">
             {membership.organizationName}
           </p>
-          <h1 className="text-3xl font-medium tracking-tight">Chats</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Chats</h1>
         </div>
         <Button asChild>
-          <Link href="/workspace">New chat</Link>
+          <Plus aria-hidden="true" />
+          New chat
         </Button>
       </header>
       {chats.length === 0 ? (
-        <section className="grid min-h-64 place-items-center rounded-xl border border-dashed border-border p-8 text-center">
+        <section className="grid min-h-72 place-items-center rounded-2xl border border-dashed border-border bg-card/30 p-8 text-center">
           <div className="space-y-3">
             <MessageSquareMore className="mx-auto size-6 text-primary" />
             <p className="font-medium">No chats yet</p>
@@ -43,12 +44,12 @@ export default async function ChatsPage() {
           </div>
         </section>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border">
+        <ul className="overflow-hidden rounded-2xl border border-border bg-card/40">
           {chats.map((chat) => (
             <li key={chat.id}>
               <div className="flex items-center gap-2 px-2">
                 <Link
-                  className="block min-w-0 flex-1 space-y-1 px-3 py-4 transition-colors hover:bg-muted/40"
+                  className="block min-w-0 flex-1 space-y-1 px-4 py-4 transition-colors hover:bg-muted/70"
                   href={`/workspace/workers/${chat.workerId}/conversations/${chat.id}`}
                 >
                   <p className="font-medium">

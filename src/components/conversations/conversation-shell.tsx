@@ -52,24 +52,24 @@ export function ConversationShell({
 }: ConversationShellProps) {
   return (
     <main className="flex min-h-svh flex-col bg-background">
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4 sm:px-6">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4 sm:px-6">
         <Link
           href={backHref}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft aria-hidden="true" className="size-4" />
-          <span className="hidden sm:inline">Agent fleet</span>
+          <span className="hidden sm:inline">Chats</span>
         </Link>
         <div className="min-w-0 text-center">
-          <p className="truncate text-sm font-medium">{title}</p>
-          <p className="truncate text-xs text-muted-foreground">{agentName}</p>
+          <p className="truncate text-sm font-medium">{agentName}</p>
+          <p className="truncate text-xs text-muted-foreground">{title}</p>
         </div>
         <div className="w-12" aria-hidden="true" />
       </header>
 
       <section className="flex min-h-0 flex-1 flex-col">
         <Conversation className="min-h-0">
-          <ConversationContent className="mx-auto w-full max-w-3xl gap-7 px-5 py-8 sm:px-8 sm:py-12">
+          <ConversationContent className="mx-auto w-full max-w-3xl gap-8 px-5 py-8 sm:px-8 sm:py-12">
             {messages.length === 0 ? (
               <ConversationEmptyState
                 className="min-h-[min(52svh,34rem)]"

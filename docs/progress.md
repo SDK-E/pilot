@@ -6,7 +6,24 @@ Updated 2026-09-07. This is an implementation record, not a completion claim.
 
 Ship an open-source, self-hostable AI workforce platform with persistent organizational agents. Pilot owns the domain; Mastra provides runtime capabilities behind typed boundaries. First prove one agent end-to-end, including durable execution, protected actions, approval, suspend/resume, results and history. Do not expand into multiple agent architectures or secondary features before that works.
 
-## Current slice: durable execution activity
+## Current slice: production chat workspace interface
+
+Pilot's authenticated workspace now has a production-focused, responsive chat
+shell built with the existing shadcn sidebar and AI Elements conversation and
+message components. The text-only mark is `Pilot.` when expanded and `P` when
+collapsed; the former decorative `logo.png` is removed, leaving image branding
+to the favicon. The home surface presents a conversational-first composer and
+an organization-scoped chooser for configured Conversational personas. A
+missing persona is created as `Pilot` only when an active member sends a
+non-empty first message. Research appears as unavailable because its
+production, tenant-scoped read-only capability boundary is not yet verified.
+
+This is an interface and routing improvement over the durable-execution
+foundation below. It does not add message streaming, attachments, runtime tool
+events, browser/scratchpad panes, reasoning content, Research production tools,
+or tool approvals. The collapsed completed activity remains the only runtime
+activity the UI can truthfully render today. See
+[chat workspace interface](decisions/0008-chat-workspace-interface.md).
 
 The product language is now **agents** and **agent fleet**. Existing `workers`
 routes, tables, and runtime identifiers remain internal compatibility details

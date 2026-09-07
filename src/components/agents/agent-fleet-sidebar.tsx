@@ -11,6 +11,7 @@ import {
   Settings,
   UsersRound,
 } from "lucide-react";
+import { PilotWordmark } from "@/components/brand/pilot-wordmark";
 import {
   Sidebar,
   SidebarContent,
@@ -47,11 +48,12 @@ export function AgentFleetShell({ children }: { children: React.ReactNode }) {
             aria-label="Pilot home"
             className="flex h-10 items-center gap-2 rounded-md px-2 text-lg font-semibold tracking-tight outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
           >
-            <span className="grid size-6 place-items-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-              P
+            <span className="grid size-7 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-foreground group-data-[collapsible=icon]:hidden">
+              <PilotWordmark compact />
             </span>
-            <span className="group-data-[collapsible=icon]:hidden">
-              Pilot<span className="text-primary">.</span>
+            <PilotWordmark className="group-data-[collapsible=icon]:hidden" />
+            <span className="hidden text-lg font-semibold group-data-[collapsible=icon]:inline">
+              P
             </span>
           </Link>
         </SidebarHeader>
@@ -89,8 +91,9 @@ export function AgentFleetShell({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="min-w-0 bg-background">
-        <header className="flex h-16 items-center border-b border-border px-4">
+        <header className="flex h-16 items-center border-b border-border px-4 sm:px-5">
           <SidebarTrigger aria-label="Toggle navigation" />
+          <span className="ml-3 text-sm text-muted-foreground">Workspace</span>
         </header>
         {children}
       </SidebarInset>

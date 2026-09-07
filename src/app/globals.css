@@ -7,9 +7,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-pilot);
-  --font-mono: var(--font-pilot);
-  --font-heading: var(--font-pilot);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+  --font-heading:
+    "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -37,24 +38,24 @@
 
 :root,
 .dark {
-  --background: #061004;
-  --foreground: #d7e8d3;
-  --card: #082003;
-  --card-foreground: #d7e8d3;
-  --popover: #082003;
-  --popover-foreground: #d7e8d3;
-  --primary: #2cdb16;
-  --primary-foreground: #082003;
-  --secondary: #173111;
-  --secondary-foreground: #d7e8d3;
-  --muted: #10200c;
-  --muted-foreground: #a4b79e;
-  --accent: #173111;
-  --accent-foreground: #d7e8d3;
-  --destructive: #ffaca3;
-  --border: #31462b;
-  --input: #31462b;
-  --ring: #2cdb16;
+  --background: oklch(0.145 0.006 145);
+  --foreground: oklch(0.965 0.008 145);
+  --card: oklch(0.18 0.008 145);
+  --card-foreground: oklch(0.965 0.008 145);
+  --popover: oklch(0.18 0.008 145);
+  --popover-foreground: oklch(0.965 0.008 145);
+  --primary: oklch(0.78 0.19 145);
+  --primary-foreground: oklch(0.16 0.012 145);
+  --secondary: oklch(0.235 0.01 145);
+  --secondary-foreground: oklch(0.965 0.008 145);
+  --muted: oklch(0.205 0.008 145);
+  --muted-foreground: oklch(0.7 0.012 145);
+  --accent: oklch(0.245 0.012 145);
+  --accent-foreground: oklch(0.965 0.008 145);
+  --destructive: oklch(0.7 0.19 25);
+  --border: oklch(0.3 0.009 145);
+  --input: oklch(0.3 0.009 145);
+  --ring: oklch(0.78 0.19 145);
   --radius: 0.625rem;
 }
 
@@ -64,6 +65,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
   }
   html {
     @apply font-sans;

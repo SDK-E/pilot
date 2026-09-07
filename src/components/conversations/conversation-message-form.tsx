@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { SendHorizontal } from "lucide-react";
+import { Bot, SendHorizontal } from "lucide-react";
 import { sendConversationMessageAction } from "@/app/workspace/workers/[workerId]/conversations/[conversationId]/actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,7 +26,7 @@ export function ConversationMessageForm({
       <input name="conversationId" type="hidden" value={conversationId} />
       <Textarea
         aria-label="Message"
-        className="min-h-24 resize-y rounded-2xl border-border bg-muted/40 px-4 py-3 shadow-sm focus-visible:ring-1"
+        className="min-h-28 resize-y rounded-2xl border-border bg-card px-4 py-3 shadow-lg shadow-black/10 focus-visible:ring-2"
         name="message"
         maxLength={10_000}
         placeholder="Message Pilot…"
@@ -44,7 +44,8 @@ export function ConversationMessageForm({
         </p>
       ) : null}
       <div className="flex items-center justify-between gap-3 px-1">
-        <p className="text-xs text-muted-foreground">
+        <p className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+          <Bot className="size-3.5 text-primary" aria-hidden="true" />
           Pilot can make mistakes. Check important work.
         </p>
         <Button size="icon" type="submit" disabled={pending}>

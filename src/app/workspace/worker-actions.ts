@@ -190,14 +190,20 @@ export async function startChatWithMessageAction(
   _previousState: StartChatState,
   formData: FormData,
 ): Promise<StartChatState> {
-  const message = z
-    .string()
-    .trim()
-    .min(1, "Write a message first.")
-    .max(10_000)
-    .safeParse(formData.get("message"));
-  if (!message.success)
-    return { status: "error", message: message.error.issues[0]?.message };
+  const input = z
+    .object({
+      message: z.string().trim().min(1, "Write a message first.").max(10_000),
+      workerId: z.preprocess(
+        (value) => (value === "" ? undefined : value),
+        z.uuid().optional(),
+      ),
+    })
+    .safeParse({
+      message: formData.get("message"),
+      workerId: formData.get("workerId"),
+    });
+  if (!input.success)
+    return { status: "error", message: input.error.issues[0]?.message };
 
   const { user, organizationId } = await withAuth({ ensureSignedIn: true });
   if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId))
@@ -212,7 +218,18 @@ export async function startChatWithMessageAction(
       message: "Your organization access is no longer active.",
     };
 
-  let agent = await getWorkerByBaseAgentId(organizationId, "conversational");
+  const selectedAgent = input.data.workerId
+    ? await getWorker(organizationId, input.data.workerId)
+    : undefined;
+  if (selectedAgent && selectedAgent.baseAgentId !== "conversational") {
+    return {
+      status: "error",
+      message: "This agent is not available for conversation yet.",
+    };
+  }
+  let agent =
+    selectedAgent ??
+    (await getWorkerByBaseAgentId(organizationId, "conversational"));
   if (!agent) {
     try {
       agent = await createWorker({
@@ -220,7 +237,7 @@ export async function startChatWithMessageAction(
         member: { id: membership.id, roleSlug: membership.role.slug },
         user: { id: user.id, email: user.email },
         worker: {
-          name: "Conversational",
+          name: "Pilot",
           instructions:
             "You are Pilot, a clear and practical conversational assistant. Ask concise follow-up questions when needed and state useful next steps.",
           modelId: "kilo/kilo-auto/free",
@@ -265,7 +282,7 @@ export async function startChatWithMessageAction(
         modelId: "kilo/kilo-auto/free",
       },
       conversationId: conversation.id,
-      message: message.data,
+      message: input.data.message,
     });
   } catch (error) {
     return {

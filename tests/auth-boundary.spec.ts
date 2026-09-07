@@ -6,7 +6,7 @@ test("public page renders with usable mobile navigation", async ({ page }) => {
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Get things done",
+    "Give your team a place to think",
   );
   await expect(
     page.getByRole("link", { name: "Sign in to Pilot" }),

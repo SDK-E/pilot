@@ -1,39 +1,25 @@
-import Image from "next/image";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { ArrowUpRight } from "lucide-react";
+import { PilotWordmark } from "@/components/brand/pilot-wordmark";
 import { Button } from "@/components/ui/button";
-import logo from "./logo.png";
 
 export default async function Home() {
   const { user } = await withAuth();
   return (
     <main className="mx-auto flex min-h-svh max-w-7xl flex-col px-6 py-8 sm:px-12">
-      <header className="flex items-center justify-between border-b border-border pb-6 text-xs">
-        <span>SDK ENTERPRISES / PILOT</span>
-        <span className="text-muted-foreground">AI WORKFORCE PLATFORM</span>
+      <header className="flex items-center justify-between border-b border-border pb-6">
+        <PilotWordmark className="text-lg" />
+        <span className="text-xs text-muted-foreground">SDK Enterprises</span>
       </header>
-      <div className="grid flex-1 items-center gap-10 py-12 lg:grid-cols-2 lg:gap-16">
-        <Image
-          src={logo}
-          alt="Pilot by SDK Enterprises"
-          priority
-          className="w-full rounded-xl"
-          sizes="(min-width: 1024px) 50vw, 100vw"
-        />
-        <section className="max-w-lg space-y-8">
-          <p className="text-xs tracking-widest text-primary">
-            YOUR WORKFORCE. YOUR DIRECTION.
-          </p>
-          <h1 className="text-4xl font-medium leading-tight tracking-tight sm:text-5xl">
-            Organize.
-            <br />
-            Delegate.
-            <br />
-            Get things done<span className="text-primary">_</span>
+      <div className="flex flex-1 items-center py-12 sm:py-16">
+        <section className="max-w-2xl space-y-8">
+          <p className="text-sm font-medium text-primary">AI workspace</p>
+          <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
+            Give your team a place to think, research, and move work forward.
           </h1>
-          <p className="text-base leading-relaxed text-muted-foreground">
-            A shared place for your organization and its AI agents. Sign in to
-            access your workspace.
+          <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            Pilot brings your organization&apos;s conversations and configured
+            agents into one focused workspace.
           </p>
           <Button asChild size="lg" className="h-12 px-6">
             <a href={user ? "/workspace" : "/sign-in"}>
