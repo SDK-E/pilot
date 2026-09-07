@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCompletion } from "@ai-sdk/react";
 import { Bot, Check, SendHorizontal, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
+import type { ActivityEventType } from "@/executions/activity-event";
 
 type AgentOption = {
   id: string;
@@ -14,12 +15,18 @@ type AgentOption = {
   baseAgentId: string;
 };
 
+type Activity = { id: string; summary: string; type: ActivityEventType };
+
 export function NewChatForm({ agents }: { agents: AgentOption[] }) {
   const router = useRouter();
   const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(
     agents[0]?.id,
   );
   const [pendingPrompt, setPendingPrompt] = useState<string>();
+  const [activityConversationId, setActivityConversationId] = useState<
+    string | undefined
+  >();
+  const [liveActivities, setLiveActivities] = useState<Activity[]>([]);
   const conversationHref = useRef<string | undefined>(undefined);
   const {
     complete,
@@ -37,8 +44,12 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
     streamProtocol: "text",
     fetch: async (...args) => {
       const response = await fetch(...args);
-      conversationHref.current =
+      const href =
         response.headers.get("x-pilot-conversation-href") ?? undefined;
+      conversationHref.current = href;
+      setActivityConversationId(
+        href?.match(/\/conversations\/([0-9a-f-]{36})$/i)?.[1],
+      );
       return response;
     },
     onError: () => {
@@ -50,6 +61,34 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
     },
   });
   const selectedAgent = agents.find((agent) => agent.id === selectedAgentId);
+
+  useEffect(() => {
+    if (!isLoading || !activityConversationId) return;
+
+    let cancelled = false;
+    const refreshActivities = async () => {
+      try {
+        const response = await fetch(
+          `/api/conversations/${activityConversationId}/activity`,
+          { cache: "no-store" },
+        );
+        if (!response.ok || cancelled) return;
+        const payload: { activities?: Activity[] } = await response.json();
+        if (payload.activities && !cancelled) {
+          setLiveActivities(payload.activities);
+        }
+      } catch {
+        // The response stream remains useful even when activity polling fails.
+      }
+    };
+
+    void refreshActivities();
+    const interval = window.setInterval(() => void refreshActivities(), 1_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [activityConversationId, isLoading]);
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-3 text-left">
@@ -98,7 +137,9 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
               {completion}
             </p>
           ) : null}
-          {isLoading ? <LiveConversationActivity /> : null}
+          {isLoading ? (
+            <LiveConversationActivity events={liveActivities} />
+          ) : null}
         </section>
       ) : null}
       <form
@@ -108,6 +149,8 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
           const prompt = input.trim();
           if (!prompt || isLoading) return;
           conversationHref.current = undefined;
+          setActivityConversationId(undefined);
+          setLiveActivities([]);
           setPendingPrompt(prompt);
           setCompletion("");
           setInput("");

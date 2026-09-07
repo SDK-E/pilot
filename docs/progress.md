@@ -157,6 +157,7 @@ Turso-backed Mastra workflow suspension. Its boundary is recorded in
 [task approval workflow boundary](decisions/0007-task-approval-workflow-boundary.md).
 
 `pilot-ai` uses `src/index.ts` as its Mastra development entrypoint, with agent-specific modules in `src/conversation` and `src/research`, and shared runtime code in `src/runtime`. Pilot Research remains local-development work with no tenant-scoped service adapter or approved deployment path. The deployed Conversation function imports only the no-tools Pilot adapter. Pilot owns organization-scoped task and approval records plus their read-only workspace routes; starting, deciding, resuming, and rendering a durable approval workflow are still pending. `pilot-integrations` and `pilot-ui` remain package stubs. There are no user-facing memory controls or integration capabilities.
+
 # Current slice: live safe activity
 
 During a streamed reply, the conversation UI polls a WorkOS-protected activity
