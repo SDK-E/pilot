@@ -189,6 +189,12 @@ export async function* streamConversationReply(
     );
   }
 
+  yield* parseConversationRuntimeStream(response.body);
+}
+
+export async function* parseConversationRuntimeStream(
+  body: ReadableStream<Uint8Array>,
+): AsyncGenerator<PilotAiStreamEvent> {
   const decoder = new TextDecoder();
   let buffer = "";
   let finalEvent:
@@ -221,7 +227,7 @@ export async function* streamConversationReply(
     };
   };
 
-  const reader = response.body.getReader();
+  const reader = body.getReader();
   try {
     while (true) {
       const { done, value } = await reader.read();

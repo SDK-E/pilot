@@ -29,6 +29,7 @@ pnpm check
 pnpm build
 pnpm exec playwright install chromium
 pnpm test
+pnpm test:server
 pnpm test:db
 pnpm audit --audit-level high
 ```
