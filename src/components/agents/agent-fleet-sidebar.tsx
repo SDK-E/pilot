@@ -5,8 +5,6 @@ import {
   Bot,
   Gauge,
   MessageSquareMore,
-  ListTodo,
-  ShieldCheck,
   Plus,
   Settings,
   UsersRound,
@@ -31,8 +29,6 @@ import {
 
 const primaryNavigation = [
   { icon: MessageSquareMore, label: "Chats", href: "/workspace/chats" },
-  { icon: ListTodo, label: "Tasks", href: "/workspace/tasks" },
-  { icon: ShieldCheck, label: "Approvals", href: "/workspace/approvals" },
   { icon: UsersRound, label: "Agent fleet", href: "/workspace/fleet" },
   { icon: Bot, label: "Personas", href: "/workspace/personas" },
   { icon: Gauge, label: "Dashboard", href: "/workspace/dashboard" },
