@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import { AuthKitProvider } from "@workos-inc/authkit-nextjs/components";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
-const geist = Geist({
-  variable: "--font-geist-sans",
+const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
-  display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
   display: "swap",
 });
 
@@ -26,7 +20,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geist.variable} ${geistMono.variable} dark h-full antialiased`}
+      className={`${jetbrainsMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full">
         <AuthKitProvider>

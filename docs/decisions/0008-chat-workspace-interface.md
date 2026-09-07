@@ -4,9 +4,10 @@ Status: accepted for the first production interface slice.
 
 Pilot's primary product surface is a conversation workspace. The interface uses
 the existing shadcn responsive sidebar and AI Elements conversation/message
-primitives. The Pilot mark is rendered as text: expanded navigation shows
-`Pilot.` and collapsed navigation shows `P`. Image branding belongs only in
-the favicon.
+primitives. Its applied shadcn `b2qMYtuMc` preset defines both the light
+`:root` and dark `.dark` color tokens; JetBrains Mono is the interface font.
+The Pilot mark is rendered as text: expanded navigation shows `Pilot.` and
+collapsed navigation shows `P`. Image branding belongs only in the favicon.
 
 The New chat screen lets an active organization member choose one of that
 organization's configured Conversational personas. If none exists, Pilot
