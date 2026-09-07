@@ -169,3 +169,11 @@ streaming remains the authoritative reply channel.
 New chat also uses this live feed after the server creates a conversation. An
 organization without a configured persona sees a direct, non-submittable path
 to Persona creation instead of an invalid runtime request.
+
+# Current slice: private chat ownership
+
+Chats are now filtered by their existing `created_by_workos_user_id` field.
+History, recent chat links, direct chat pages, message streaming, deletion, and
+activity polling all require the creator's authenticated WorkOS user ID.
+Ownerless historical records remain in the database but are intentionally
+inaccessible until an explicit recovery or sharing workflow exists.
