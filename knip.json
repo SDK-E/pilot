@@ -1,6 +1,9 @@
 {
   "ignoreIssues": {
     "src/components/ai-elements/**": ["exports", "types"],
-    "src/components/ui/button-group.tsx": ["exports"]
+    "src/components/ui/button-group.tsx": ["exports"],
+    "src/components/ui/button.tsx": ["exports"],
+    "src/components/ui/sheet.tsx": ["exports"],
+    "src/components/ui/sidebar.tsx": ["exports"]
   }
 }

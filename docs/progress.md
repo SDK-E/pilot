@@ -31,6 +31,13 @@ The creation form persists those fields and the agent detail page renders them.
 Tool preferences are not capabilities: a malicious form submission cannot make
 a tool available because no production tool adapter is exposed in Pilot.
 
+The authenticated workspace now uses shadcn's maintained responsive sidebar
+primitive. It provides the required collapsed `P` mark, expanded `Pilot.` mark,
+and the first navigation structure for New chat, Chats, Agent fleet, Personas,
+Dashboard, and Settings. The links currently preserve the existing workspace
+route while their own persisted read models are introduced; this shell is not a
+claim that those destinations are implemented yet.
+
 Implemented: WorkOS AuthKit sign-in route, callback, session proxy, POST sign-out action, organization membership listing and membership-checked organization switching. The page uses Pilot colors, JetBrains Mono and official shadcn source. No local password system or alternative auth provider is installed.
 
 Persistent worker creation and read-only configuration viewing are implemented for an active selected organization. A Worker is Pilot data, rather than a runtime Agent: it has an organization-scoped unique name, instructions, model ID, creator and timestamps. The action rechecks the WorkOS membership for the signed-in user and selected organization before creating or updating the corresponding Pilot organization/member records and inserting the worker. The detail route independently rechecks that membership and scopes the lookup by organization. Authorized members can create, list, and inspect organization-scoped worker conversation sessions.
