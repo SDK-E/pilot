@@ -272,6 +272,9 @@ export const tasks = pgTable(
     workerId: uuid("worker_id").references(() => workers.id, {
       onDelete: "set null",
     }),
+    conversationId: uuid("conversation_id").references(() => conversations.id, {
+      onDelete: "set null",
+    }),
     title: text("title").notNull(),
     instructions: text("instructions").notNull(),
     status: text("status")
@@ -297,6 +300,10 @@ export const tasks = pgTable(
   (table) => [
     index("tasks_organization_updated_at_index").on(
       table.organizationId,
+      table.updatedAt,
+    ),
+    index("tasks_conversation_updated_at_index").on(
+      table.conversationId,
       table.updatedAt,
     ),
   ],
