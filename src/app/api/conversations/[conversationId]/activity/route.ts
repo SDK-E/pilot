@@ -31,6 +31,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const activities = await listConversationActivity(
     organizationId,
     parsedConversationId.data,
+    user.id,
   );
   return Response.json(
     { activities },

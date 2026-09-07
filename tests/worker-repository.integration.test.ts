@@ -93,18 +93,18 @@ test("workers are persisted and isolated by organization", async (t) => {
   );
 
   assert.deepEqual(
-    (await listOrganizationConversations(organizationId)).map((item) => [
+    (await listOrganizationConversations(organizationId, `user_${suffix}`)).map((item) => [
       item.id,
       item.title,
     ]),
     [[conversation.id, "Remember this question"]],
   );
   assert.equal(
-    (await getConversation(organizationId, created.id, conversation.id))?.id,
+    (await getConversation(organizationId, created.id, conversation.id, `user_${suffix}`))?.id,
     conversation.id,
   );
   assert.equal(
-    await getConversation(otherOrganizationId, created.id, conversation.id),
+    await getConversation(otherOrganizationId, created.id, conversation.id, `user_${suffix}`),
     undefined,
   );
 
@@ -167,7 +167,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     state: "completed",
   });
   assert.deepEqual(
-    (await listConversationActivity(organizationId, conversation.id))
+    (await listConversationActivity(organizationId, conversation.id, `user_${suffix}`))
       .slice(1, 3)
       .map((event) => [
         event.type,
@@ -193,7 +193,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     runtimeRunId: "run_test",
   });
   assert.deepEqual(
-    (await listConversationActivity(organizationId, conversation.id)).map(
+    (await listConversationActivity(organizationId, conversation.id, `user_${suffix}`)).map(
       (event) => [event.type, event.summary],
     ),
     [
@@ -216,7 +216,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     errorMessage: "Runtime generation failed",
   });
   assert.deepEqual(
-    (await listConversationActivity(organizationId, conversation.id))
+    (await listConversationActivity(organizationId, conversation.id, `user_${suffix}`))
       .slice(-2)
       .map((event) => [event.type, event.conversationMessageId]),
     [
@@ -225,7 +225,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     ],
   );
   assert.deepEqual(
-    await listConversationActivity(otherOrganizationId, conversation.id),
+    await listConversationActivity(otherOrganizationId, conversation.id, `user_${suffix}`),
     [],
   );
 

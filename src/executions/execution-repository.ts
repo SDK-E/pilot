@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, count, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { activityEvents, executions } from "@/db/schema";
+import { activityEvents, conversations, executions } from "@/db/schema";
 import {
   createToolActivity,
   type ToolActivityState,
@@ -102,6 +102,7 @@ export async function appendToolActivity(input: {
 export async function listConversationActivity(
   organizationId: string,
   conversationId: string,
+  userId: string,
 ) {
   return db
     .select({
@@ -116,11 +117,13 @@ export async function listConversationActivity(
     })
     .from(activityEvents)
     .innerJoin(executions, eq(activityEvents.executionId, executions.id))
+    .innerJoin(conversations, eq(executions.conversationId, conversations.id))
     .where(
       and(
         eq(activityEvents.organizationId, organizationId),
         eq(executions.organizationId, organizationId),
         eq(executions.conversationId, conversationId),
+        eq(conversations.createdByWorkosUserId, userId),
       ),
     )
     .orderBy(asc(activityEvents.createdAt));

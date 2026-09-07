@@ -44,9 +44,9 @@ export default async function ConversationPage({
 
   const [worker, conversation, messages, activities] = await Promise.all([
     getWorker(organizationId, workerId),
-    getConversation(organizationId, workerId, conversationId),
+    getConversation(organizationId, workerId, conversationId, user.id),
     listConversationMessages(organizationId, workerId, conversationId),
-    listConversationActivity(organizationId, conversationId),
+    listConversationActivity(organizationId, conversationId, user.id),
   ]);
   if (!worker || !conversation || !messages) notFound();
 

@@ -50,7 +50,10 @@ export async function listConversations(
     .orderBy(desc(conversations.updatedAt));
 }
 
-export async function listOrganizationConversations(organizationId: string) {
+export async function listOrganizationConversations(
+  organizationId: string,
+  userId: string,
+) {
   return db
     .select({
       id: conversations.id,
@@ -65,6 +68,7 @@ export async function listOrganizationConversations(organizationId: string) {
     .where(
       and(
         eq(conversations.organizationId, organizationId),
+        eq(conversations.createdByWorkosUserId, userId),
         eq(workers.organizationId, organizationId),
       ),
     )
@@ -73,6 +77,7 @@ export async function listOrganizationConversations(organizationId: string) {
 
 export async function listRecentOrganizationConversations(
   organizationId: string,
+  userId: string,
   limit = 8,
 ) {
   return db
@@ -87,6 +92,7 @@ export async function listRecentOrganizationConversations(
     .where(
       and(
         eq(conversations.organizationId, organizationId),
+        eq(conversations.createdByWorkosUserId, userId),
         eq(workers.organizationId, organizationId),
       ),
     )
@@ -131,6 +137,7 @@ export async function getConversation(
   organizationId: string,
   workerId: string,
   conversationId: string,
+  userId: string,
 ) {
   const [conversation] = await db
     .select({
@@ -139,6 +146,26 @@ export async function getConversation(
       createdAt: conversations.createdAt,
       updatedAt: conversations.updatedAt,
     })
+    .from(conversations)
+    .where(
+      and(
+        eq(conversations.organizationId, organizationId),
+        eq(conversations.workerId, workerId),
+        eq(conversations.id, conversationId),
+        eq(conversations.createdByWorkosUserId, userId),
+      ),
+    )
+    .limit(1);
+  return conversation;
+}
+
+async function getConversationForOrganization(
+  organizationId: string,
+  workerId: string,
+  conversationId: string,
+) {
+  const [conversation] = await db
+    .select({ id: conversations.id })
     .from(conversations)
     .where(
       and(
@@ -155,6 +182,7 @@ export async function deleteConversation(
   organizationId: string,
   workerId: string,
   conversationId: string,
+  userId: string,
 ) {
   const [deleted] = await db
     .delete(conversations)
@@ -163,6 +191,7 @@ export async function deleteConversation(
         eq(conversations.organizationId, organizationId),
         eq(conversations.workerId, workerId),
         eq(conversations.id, conversationId),
+        eq(conversations.createdByWorkosUserId, userId),
       ),
     )
     .returning({ id: conversations.id });
@@ -186,7 +215,7 @@ type ConversationMessageInput = {
 export async function createConversationMessage(
   input: ConversationMessageInput,
 ) {
-  const conversation = await getConversation(
+  const conversation = await getConversationForOrganization(
     input.organizationId,
     input.workerId,
     input.conversationId,
@@ -227,7 +256,7 @@ export async function listConversationMessages(
   workerId: string,
   conversationId: string,
 ) {
-  const conversation = await getConversation(
+  const conversation = await getConversationForOrganization(
     organizationId,
     workerId,
     conversationId,

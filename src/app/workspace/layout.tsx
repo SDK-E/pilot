@@ -15,7 +15,7 @@ export default async function WorkspaceLayout({
       ? await getActiveOrganizationMembership(user.id, organizationId!)
       : undefined;
   const recentChats = membership
-    ? await listRecentOrganizationConversations(organizationId!)
+    ? await listRecentOrganizationConversations(organizationId!, user?.id ?? "")
     : [];
 
   return (

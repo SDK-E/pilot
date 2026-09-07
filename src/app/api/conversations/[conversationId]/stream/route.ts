@@ -46,6 +46,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       organizationId,
       input.data.workerId,
       parsedConversationId.data,
+      user.id,
     ),
   ]);
   if (

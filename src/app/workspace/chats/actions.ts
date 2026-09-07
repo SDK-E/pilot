@@ -47,6 +47,7 @@ export async function deleteConversationAction(
       organizationId,
       input.data.workerId,
       input.data.conversationId,
+      user.id,
     );
     if (!deleted) {
       return { status: "error", message: "This conversation is unavailable." };

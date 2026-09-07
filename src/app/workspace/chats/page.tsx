@@ -17,7 +17,7 @@ export default async function ChatsPage() {
     organizationId,
   );
   if (!membership) redirect("/workspace");
-  const chats = await listOrganizationConversations(organizationId);
+  const chats = await listOrganizationConversations(organizationId, user.id);
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 sm:py-10">
