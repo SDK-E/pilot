@@ -119,3 +119,26 @@ export async function generateConversationReply(
     },
   };
 }
+
+export async function deleteConversationMemory(input: {
+  organizationId: string;
+  workerId: string;
+  conversationId: string;
+}) {
+  const url = new URL("/v1/conversations/delete", getRuntimeUrl());
+  const oidcToken = await getVercelOidcToken();
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-vercel-trusted-oidc-idp-token": oidcToken,
+    },
+    body: JSON.stringify(input),
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new PilotAiRuntimeError(
+      `Pilot Conversation cleanup returned ${response.status}.`,
+    );
+  }
+}

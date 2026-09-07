@@ -3,6 +3,7 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { deleteConversationMemory } from "@/ai/pilot-ai-client";
 import { deleteConversation } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 
@@ -17,6 +18,11 @@ export async function deleteConversationAction(formData: FormData) {
   const { user, organizationId } = await withAuth({ ensureSignedIn: true });
   if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId)) return;
   if (!(await getActiveOrganizationMembership(user.id, organizationId))) return;
+  await deleteConversationMemory({
+    organizationId,
+    workerId: input.data.workerId,
+    conversationId: input.data.conversationId,
+  });
   await deleteConversation(
     organizationId,
     input.data.workerId,
