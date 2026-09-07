@@ -87,3 +87,21 @@ test("anonymous and forged sessions cannot access the conversation stream", asyn
       );
     }
 });
+
+test("anonymous and forged sessions cannot read conversation activity", async ({
+  request,
+}) => {
+  const path =
+    "/api/conversations/00000000-0000-4000-8000-000000000000/activity";
+  for (const cookie of ["", "wos-session=forged-session"]) {
+    const response = await request.get(path, {
+      maxRedirects: 0,
+      headers: { cookie },
+    });
+    expect(response.status()).toBeGreaterThanOrEqual(300);
+    expect(response.status()).toBeLessThan(400);
+    expect(new URL(response.headers().location).hostname).toBe(
+      "api.workos.com",
+    );
+  }
+});

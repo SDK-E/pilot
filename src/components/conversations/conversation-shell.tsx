@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCompletion } from "@ai-sdk/react";
 import { ArrowLeft, Bot, SendHorizontal, Square } from "lucide-react";
@@ -58,6 +58,7 @@ export function ConversationShell({
 }: ConversationShellProps) {
   const router = useRouter();
   const [pendingUserMessage, setPendingUserMessage] = useState<string>();
+  const [liveActivities, setLiveActivities] = useState(activities);
   const {
     complete,
     completion,
@@ -87,6 +88,35 @@ export function ConversationShell({
       activity.conversationMessageId === null &&
       activity.type === "execution.failed",
   );
+
+  useEffect(() => {
+    if (!isLoading) return;
+
+    let cancelled = false;
+    const refreshActivities = async () => {
+      try {
+        const response = await fetch(
+          `/api/conversations/${conversationId}/activity`,
+          { cache: "no-store" },
+        );
+        if (!response.ok || cancelled) return;
+        const payload: { activities?: PersistedActivity[] } =
+          await response.json();
+        if (payload.activities && !cancelled) {
+          setLiveActivities(payload.activities);
+        }
+      } catch {
+        // The stream is still authoritative; activity polling is best effort.
+      }
+    };
+
+    void refreshActivities();
+    const interval = window.setInterval(() => void refreshActivities(), 1_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [conversationId, isLoading]);
 
   return (
     <main className="flex min-h-svh flex-col bg-background">
@@ -151,7 +181,9 @@ export function ConversationShell({
                   {completion ? (
                     <MessageResponse>{completion}</MessageResponse>
                   ) : null}
-                  {isLoading ? <LiveConversationActivity /> : null}
+                  {isLoading ? (
+                    <LiveConversationActivity events={liveActivities} />
+                  ) : null}
                 </MessageContent>
               </Message>
             ) : null}
