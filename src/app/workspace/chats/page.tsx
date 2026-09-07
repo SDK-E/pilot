@@ -29,8 +29,10 @@ export default async function ChatsPage() {
           <h1 className="text-3xl font-semibold tracking-tight">Chats</h1>
         </div>
         <Button asChild>
-          <Plus aria-hidden="true" />
-          New chat
+          <Link href="/workspace">
+            <Plus aria-hidden="true" />
+            New chat
+          </Link>
         </Button>
       </header>
       {chats.length === 0 ? (
