@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { MessageSquareMore } from "lucide-react";
-import { startDefaultConversationAction } from "./worker-actions";
-import { Button } from "@/components/ui/button";
+import { NewChatForm } from "@/components/conversations/new-chat-form";
 
 export default async function WorkspaceHome() {
   const { user, organizationId } = await withAuth();
@@ -26,11 +25,7 @@ export default async function WorkspaceHome() {
             fresh, persistent conversation for this organization.
           </p>
         </div>
-        <form action={startDefaultConversationAction}>
-          <Button className="h-11 rounded-xl px-5" type="submit">
-            Start a new chat
-          </Button>
-        </form>
+        <NewChatForm />
       </section>
     </main>
   );

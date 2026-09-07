@@ -4,6 +4,8 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { PilotAiRuntimeError } from "@/ai/pilot-ai-client";
+import { sendConversationMessage } from "@/conversations/send-message";
 import {
   approvalModes,
   baseAgentIds,
@@ -15,6 +17,7 @@ import { createConversation } from "@/conversations/conversation-repository";
 import {
   createWorker,
   getWorkerByBaseAgentId,
+  getWorker,
 } from "@/workers/worker-repository";
 
 const workerInputSchema = z.object({
@@ -162,4 +165,106 @@ export async function startDefaultConversationAction() {
   });
   if (!conversation) redirect("/workspace");
   redirect(`/workspace/workers/${agent.id}/conversations/${conversation.id}`);
+}
+
+export type StartChatState = {
+  message?: string;
+  status: "idle" | "error" | "success";
+  href?: string;
+};
+
+export async function startChatWithMessageAction(
+  _previousState: StartChatState,
+  formData: FormData,
+): Promise<StartChatState> {
+  const message = z
+    .string()
+    .trim()
+    .min(1, "Write a message first.")
+    .max(10_000)
+    .safeParse(formData.get("message"));
+  if (!message.success)
+    return { status: "error", message: message.error.issues[0]?.message };
+
+  const { user, organizationId } = await withAuth({ ensureSignedIn: true });
+  if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId))
+    return { status: "error", message: "Choose an organization first." };
+  const membership = await getActiveOrganizationMembership(
+    user.id,
+    organizationId,
+  );
+  if (!membership)
+    return {
+      status: "error",
+      message: "Your organization access is no longer active.",
+    };
+
+  let agent = await getWorkerByBaseAgentId(organizationId, "conversational");
+  if (!agent) {
+    try {
+      agent = await createWorker({
+        organization: { id: organizationId, name: membership.organizationName },
+        member: { id: membership.id, roleSlug: membership.role.slug },
+        user: { id: user.id, email: user.email },
+        worker: {
+          name: "Conversational",
+          instructions:
+            "You are Pilot, a clear and practical conversational assistant. Ask concise follow-up questions when needed and state useful next steps.",
+          modelId: "kilo/kilo-auto/free",
+          baseAgentId: "conversational",
+          enabledToolIds: [],
+          knowledgeSourceIds: [],
+          approvalRules: {},
+        },
+      });
+    } catch (error) {
+      if (!(
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23505"
+      ))
+        throw error;
+      agent = await getWorkerByBaseAgentId(organizationId, "conversational");
+    }
+  }
+  if (!agent)
+    return {
+      status: "error",
+      message: "Pilot could not prepare the Conversational agent.",
+    };
+  const conversation = await createConversation({
+    organizationId,
+    workerId: agent.id,
+    createdByWorkosUserId: user.id,
+  });
+  if (!conversation)
+    return { status: "error", message: "Pilot could not start a chat." };
+  const worker = await getWorker(organizationId, agent.id);
+  if (!worker || worker.modelId !== "kilo/kilo-auto/free")
+    return { status: "error", message: "This agent is unavailable." };
+  try {
+    await sendConversationMessage({
+      organizationId,
+      worker: {
+        id: worker.id,
+        instructions: worker.instructions,
+        modelId: "kilo/kilo-auto/free",
+      },
+      conversationId: conversation.id,
+      message: message.data,
+    });
+  } catch (error) {
+    return {
+      status: "error",
+      message:
+        error instanceof PilotAiRuntimeError
+          ? error.message
+          : "Pilot could not complete this message. Try again.",
+    };
+  }
+  return {
+    status: "success",
+    href: `/workspace/workers/${agent.id}/conversations/${conversation.id}`,
+  };
 }
