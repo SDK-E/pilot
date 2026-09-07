@@ -49,6 +49,27 @@ export async function listConversations(
     .orderBy(desc(conversations.updatedAt));
 }
 
+export async function listOrganizationConversations(organizationId: string) {
+  return db
+    .select({
+      id: conversations.id,
+      workerId: conversations.workerId,
+      agentName: workers.name,
+      title: conversations.title,
+      createdAt: conversations.createdAt,
+      updatedAt: conversations.updatedAt,
+    })
+    .from(conversations)
+    .innerJoin(workers, eq(conversations.workerId, workers.id))
+    .where(
+      and(
+        eq(conversations.organizationId, organizationId),
+        eq(workers.organizationId, organizationId),
+      ),
+    )
+    .orderBy(desc(conversations.updatedAt));
+}
+
 export async function getConversation(
   organizationId: string,
   workerId: string,
