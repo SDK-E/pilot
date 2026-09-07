@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,11 @@ const themes = [
 
 export function ThemeSwitcher() {
   const { setTheme, theme } = useTheme();
+  const isHydrated = React.useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false,
+  );
 
   return (
     <div
@@ -19,21 +25,25 @@ export function ThemeSwitcher() {
       className="inline-flex items-center rounded-2xl border border-border bg-card p-0.5 shadow-sm"
       role="group"
     >
-      {themes.map(({ id, label, icon: Icon }) => (
-        <Button
-          aria-label={`${label} theme`}
-          aria-pressed={theme === id}
-          className="rounded-xl"
-          key={id}
-          onClick={() => setTheme(id)}
-          size="icon-xs"
-          type="button"
-          variant={theme === id ? "secondary" : "ghost"}
-        >
-          <Icon aria-hidden="true" />
-          <span className="sr-only">{label}</span>
-        </Button>
-      ))}
+      {themes.map(({ id, label, icon: Icon }) => {
+        const isSelected = isHydrated && theme === id;
+
+        return (
+          <Button
+            aria-label={`${label} theme`}
+            aria-pressed={isSelected}
+            className="rounded-xl"
+            key={id}
+            onClick={() => setTheme(id)}
+            size="icon-xs"
+            type="button"
+            variant={isSelected ? "secondary" : "ghost"}
+          >
+            <Icon aria-hidden="true" />
+            <span className="sr-only">{label}</span>
+          </Button>
+        );
+      })}
     </div>
   );
 }

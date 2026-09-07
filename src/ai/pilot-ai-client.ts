@@ -82,6 +82,7 @@ export async function generateConversationReply(
     method: "POST",
     headers: {
       "content-type": "application/json",
+      "x-pilot-runtime-oidc-token": oidcToken,
       "x-vercel-trusted-oidc-idp-token": oidcToken,
       "x-pilot-organization-id": request.organizationId,
       "x-pilot-worker-id": request.worker.id,
@@ -131,6 +132,7 @@ export async function deleteConversationMemory(input: {
     method: "POST",
     headers: {
       "content-type": "application/json",
+      "x-pilot-runtime-oidc-token": oidcToken,
       "x-vercel-trusted-oidc-idp-token": oidcToken,
     },
     body: JSON.stringify(input),
