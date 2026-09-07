@@ -1,6 +1,7 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { ArrowUpRight } from "lucide-react";
 import { PilotWordmark } from "@/components/brand/pilot-wordmark";
+import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { Button } from "@/components/ui/button";
 
 export default async function Home() {
@@ -9,7 +10,12 @@ export default async function Home() {
     <main className="mx-auto flex min-h-svh max-w-7xl flex-col px-6 py-8 sm:px-12">
       <header className="flex items-center justify-between border-b border-border pb-6">
         <PilotWordmark className="text-lg" />
-        <span className="text-xs text-muted-foreground">SDK Enterprises</span>
+        <div className="flex items-center gap-3">
+          <span className="hidden text-xs text-muted-foreground sm:inline">
+            SDK Enterprises
+          </span>
+          <ThemeSwitcher />
+        </div>
       </header>
       <div className="flex flex-1 items-center py-12 sm:py-16">
         <section className="max-w-2xl space-y-8">

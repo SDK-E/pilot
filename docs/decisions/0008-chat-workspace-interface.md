@@ -6,6 +6,9 @@ Pilot's primary product surface is a conversation workspace. The interface uses
 the existing shadcn responsive sidebar and AI Elements conversation/message
 primitives. Its applied shadcn `b2qMYtuMc` preset defines both the light
 `:root` and dark `.dark` color tokens; JetBrains Mono is the interface font.
+The maintained `next-themes` provider defaults to the operating system setting,
+persists a user choice, and exposes System, Light, and Dark controls on the
+public and authenticated headers.
 The Pilot mark is rendered as text: expanded navigation shows `Pilot.` and
 collapsed navigation shows `P`. Image branding belongs only in the favicon.
 

@@ -12,6 +12,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { PilotWordmark } from "@/components/brand/pilot-wordmark";
+import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -94,6 +95,9 @@ export function AgentFleetShell({ children }: { children: React.ReactNode }) {
         <header className="flex h-16 items-center border-b border-border px-4 sm:px-5">
           <SidebarTrigger aria-label="Toggle navigation" />
           <span className="ml-3 text-sm text-muted-foreground">Workspace</span>
+          <div className="ml-auto">
+            <ThemeSwitcher />
+          </div>
         </header>
         {children}
       </SidebarInset>
