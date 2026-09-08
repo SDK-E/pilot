@@ -78,6 +78,11 @@ provides only WorkOS-active organizations, reuses the server-side membership
 check before changing the session organization, and signs out through a POST
 Server Action. Agent fleet and Personas are reached through Settings.
 
+The Chats page lets the creator rename a conversation. The server action and
+repository scope the update to the active organization, selected agent,
+conversation ID, and creator ID. Renaming changes only the Pilot title; it does
+not alter messages, activity, tasks, approvals, or Mastra memory.
+
 If a runtime request fails after Pilot has persisted the submitted user message,
 Pilot takes the user to that conversation rather than leaving it hidden on the
 new-chat screen. The failed execution is rendered as a collapsed error activity

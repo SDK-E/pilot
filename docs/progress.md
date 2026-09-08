@@ -183,6 +183,9 @@ authenticated WorkOS user ID.
 Ownerless historical records remain in the database but are intentionally
 inaccessible until an explicit recovery or sharing workflow exists.
 
+Chat History also supports creator-scoped title changes. The rename action is
+separate from deletion and does not alter the chat’s messages or runtime memory.
+
 # Current slice: conversation details and tasks
 
 The `0009_sudden_siren` migration adds an optional conversation foreign key to
