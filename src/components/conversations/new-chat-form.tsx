@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCompletion } from "@ai-sdk/react";
 import { Bot, Check, SendHorizontal, Square } from "lucide-react";
+import { AgentAvatar } from "@/components/agents/agent-avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
@@ -151,7 +152,7 @@ export function NewChatForm({
               {selected ? (
                 <Check className="size-3.5 text-primary" aria-hidden="true" />
               ) : (
-                <Bot className="size-3.5" aria-hidden="true" />
+                <AgentAvatar className="size-4" name={agent.name} />
               )}
               {agent.name}
             </Button>

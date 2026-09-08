@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCompletion } from "@ai-sdk/react";
 import { ArrowLeft, Bot, SendHorizontal, Square } from "lucide-react";
+import { AgentAvatar } from "@/components/agents/agent-avatar";
 import {
   Conversation,
   ConversationContent,
@@ -139,9 +140,12 @@ export function ConversationShell({
           <ArrowLeft aria-hidden="true" className="size-4" />
           <span className="hidden sm:inline">Chats</span>
         </Link>
-        <div className="min-w-0 text-center">
-          <p className="truncate text-sm font-medium">{agentName}</p>
-          <p className="truncate text-xs text-muted-foreground">{title}</p>
+        <div className="flex min-w-0 items-center gap-2 text-center">
+          <AgentAvatar name={agentName} />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">{agentName}</p>
+            <p className="truncate text-xs text-muted-foreground">{title}</p>
+          </div>
         </div>
         <div className="w-12" aria-hidden="true" />
       </header>
