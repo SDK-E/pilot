@@ -37,6 +37,10 @@ import {
   getUserPreferences,
   updateUserPreferences,
 } from "@/users/user-preference-repository";
+import {
+  getOrganizationPreferences,
+  updateOrganizationDefaultWorker,
+} from "@/organizations/organization-preference-repository";
 
 const suffix = randomUUID().replaceAll("-", "");
 const organizationId = `org_pilot_test_${suffix}`;
@@ -96,6 +100,26 @@ test("workers are persisted and isolated by organization", async (t) => {
     sendMessageShortcut: "enter",
   });
   assert.equal(await getWorker(otherOrganizationId, created.id), undefined);
+  assert.deepEqual(await getOrganizationPreferences(organizationId), {
+    defaultWorkerId: null,
+  });
+  assert.equal(
+    await updateOrganizationDefaultWorker({
+      organizationId: otherOrganizationId,
+      defaultWorkerId: created.id,
+    }),
+    undefined,
+  );
+  assert.deepEqual(
+    await updateOrganizationDefaultWorker({
+      organizationId,
+      defaultWorkerId: created.id,
+    }),
+    { defaultWorkerId: created.id },
+  );
+  assert.deepEqual(await getOrganizationPreferences(organizationId), {
+    defaultWorkerId: created.id,
+  });
 
   const conversation = await createConversation({
     organizationId,

@@ -20,11 +20,19 @@ type AgentOption = {
 
 type Activity = { id: string; summary: string; type: ActivityEventType };
 
-export function NewChatForm({ agents }: { agents: AgentOption[] }) {
+export function NewChatForm({
+  agents,
+  defaultAgentId,
+}: {
+  agents: AgentOption[];
+  defaultAgentId: string | null;
+}) {
   const router = useRouter();
   const sendMessageShortcut = useSendMessageShortcut();
   const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(
-    agents[0]?.id,
+    defaultAgentId && agents.some((agent) => agent.id === defaultAgentId)
+      ? defaultAgentId
+      : agents[0]?.id,
   );
   const [pendingPrompt, setPendingPrompt] = useState<string>();
   const [activityConversationId, setActivityConversationId] = useState<

@@ -104,6 +104,21 @@ export const workers = pgTable(
   ],
 );
 
+export const organizationPreferences = pgTable("organization_preferences", {
+  organizationId: text("organization_id")
+    .primaryKey()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  defaultWorkerId: uuid("default_worker_id").references(() => workers.id, {
+    onDelete: "set null",
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const conversations = pgTable(
   "conversations",
   {

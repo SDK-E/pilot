@@ -3,12 +3,30 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getUserPreferences } from "@/users/user-preference-repository";
-import { updateMessageShortcutAction } from "./actions";
+import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
+import { listWorkers } from "@/workers/worker-repository";
+import {
+  updateDefaultAgentAction,
+  updateMessageShortcutAction,
+} from "./actions";
 
 export default async function SettingsPage() {
-  const { user } = await withAuth();
+  const { user, organizationId } = await withAuth();
   if (!user) redirect("/sign-in");
-  const preferences = await getUserPreferences(user.id);
+  const hasOrganization = Boolean(
+    organizationId && /^org_[a-zA-Z0-9]+$/.test(organizationId),
+  );
+  const membership = hasOrganization
+    ? await getActiveOrganizationMembership(user.id, organizationId!)
+    : undefined;
+  const [preferences, organizationPreferences, agents] = await Promise.all([
+    getUserPreferences(user.id),
+    membership
+      ? getOrganizationPreferences(organizationId!)
+      : Promise.resolve({ defaultWorkerId: null }),
+    membership ? listWorkers(organizationId!) : Promise.resolve([]),
+  ]);
 
   return (
     <main className="mx-auto w-full max-w-3xl space-y-8 px-5 py-8 sm:px-8 sm:py-10">
@@ -58,6 +76,40 @@ export default async function SettingsPage() {
           </label>
           <Button type="submit">Save composer preference</Button>
         </form>
+      </section>
+      <section className="rounded-2xl border border-border bg-card/50 p-5">
+        <h2 className="font-medium">Organization default agent</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          New chats start with this agent selected. Each person can choose a
+          different agent before sending their first message.
+        </p>
+        {membership && agents.length ? (
+          <form
+            action={updateDefaultAgentAction}
+            className="mt-4 flex flex-wrap gap-3"
+          >
+            <select
+              className="h-9 min-w-52 rounded-xl border border-border bg-background px-3 text-sm"
+              defaultValue={
+                organizationPreferences.defaultWorkerId ?? agents[0]?.id
+              }
+              name="defaultWorkerId"
+            >
+              {agents.map((agent) => (
+                <option key={agent.id} value={agent.id}>
+                  {agent.name}
+                </option>
+              ))}
+            </select>
+            <Button type="submit" variant="outline">
+              Save default agent
+            </Button>
+          </form>
+        ) : (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Create an agent before choosing an organization default.
+          </p>
+        )}
       </section>
       <section className="rounded-2xl border border-border bg-card/50 p-5">
         <h2 className="font-medium">Agents</h2>

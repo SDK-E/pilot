@@ -223,6 +223,13 @@ See the [project boundary](decisions/0009-project-boundary.md).
 
 # Current slice: navigation and account menu
 
+The `0012_lush_titanium_man` migration adds organization preferences for the
+default agent. Settings stores a selected organization-owned agent, and New
+chat opens with that agent selected without preventing a user from selecting
+another one. The preference is cleared safely if the agent is removed. The
+repository and live Neon integration test reject a default agent from another
+organization.
+
 The responsive workspace sidebar now centers New chat and private Chat history.
 It loads up to 50 of the signed-in creator’s recent chats and lets shadcn’s
 sidebar scroll them independently of the fixed footer. The footer provides

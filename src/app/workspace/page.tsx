@@ -3,6 +3,7 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { ArrowUpRight, MessageSquareMore, Sparkles } from "lucide-react";
 import { NewChatForm } from "@/components/conversations/new-chat-form";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
 import { listWorkers } from "@/workers/worker-repository";
 
 export default async function WorkspaceHome() {
@@ -12,7 +13,12 @@ export default async function WorkspaceHome() {
     organizationId && /^org_[a-zA-Z0-9]+$/.test(organizationId)
       ? await getActiveOrganizationMembership(user.id, organizationId)
       : undefined;
-  const agents = membership ? await listWorkers(organizationId!) : [];
+  const [agents, organizationPreferences] = membership
+    ? await Promise.all([
+        listWorkers(organizationId!),
+        getOrganizationPreferences(organizationId!),
+      ])
+    : [[], { defaultWorkerId: null }];
 
   return (
     <main className="flex min-h-[calc(100svh-4rem)] flex-1 flex-col items-center justify-center px-5 py-10 sm:px-8">
@@ -38,6 +44,7 @@ export default async function WorkspaceHome() {
             name: agent.name,
             baseAgentId: agent.baseAgentId,
           }))}
+          defaultAgentId={organizationPreferences.defaultWorkerId}
         />
         <div className="grid gap-3 text-left sm:grid-cols-3">
           {[

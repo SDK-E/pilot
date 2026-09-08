@@ -60,6 +60,14 @@ Shift + Enter then adding a new line. The same preference is applied to both
 new-chat and existing-chat composers, and composition events never submit a
 partially entered IME character.
 
+An active organization member can set the organization’s default agent in
+Settings. The preference is stored in Pilot, and a new chat begins with that
+agent selected while still allowing the user to choose another available agent
+before submitting. The update action and repository both verify that the
+selected agent belongs to the active organization. Removing an agent clears
+the database preference through its foreign key; new chat then selects the
+first available agent until a new default is saved.
+
 The sidebar keeps New chat at the top and the current user’s private chat
 history at the bottom, with scrolling provided by the shadcn Sidebar when the
 history grows. Dashboard and Projects sit above the account menu. Projects
