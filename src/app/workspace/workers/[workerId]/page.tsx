@@ -35,7 +35,7 @@ export default async function WorkerPage({ params }: WorkerPageProps) {
 
   const [worker, conversationList] = await Promise.all([
     getWorker(organizationId, workerId),
-    listConversations(organizationId, workerId),
+    listConversations(organizationId, workerId, user.id),
   ]);
   if (!worker) notFound();
 

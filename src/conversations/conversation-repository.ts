@@ -32,6 +32,7 @@ export async function createConversation(input: {
 export async function listConversations(
   organizationId: string,
   workerId: string,
+  userId: string,
 ) {
   return db
     .select({
@@ -45,6 +46,7 @@ export async function listConversations(
       and(
         eq(conversations.organizationId, organizationId),
         eq(conversations.workerId, workerId),
+        eq(conversations.createdByWorkosUserId, userId),
       ),
     )
     .orderBy(desc(conversations.updatedAt));

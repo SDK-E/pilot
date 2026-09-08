@@ -1,0 +1,65 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { withAuth } from "@workos-inc/authkit-nextjs";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import {
+  addProjectConversation,
+  createProject,
+  updateProject,
+} from "@/projects/project-repository";
+
+const projectSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  instructions: z.string().trim().max(10_000).optional(),
+});
+
+async function owner() {
+  const { user, organizationId } = await withAuth({ ensureSignedIn: true });
+  if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId)) {
+    throw new Error("Choose an organization first.");
+  }
+  if (!(await getActiveOrganizationMembership(user.id, organizationId))) {
+    throw new Error("Your organization access is no longer active.");
+  }
+  return { organizationId, userId: user.id };
+}
+
+export async function createProjectAction(formData: FormData) {
+  const input = projectSchema.parse({
+    name: formData.get("name"),
+    instructions: formData.get("instructions") || undefined,
+  });
+  const project = await createProject({ ...(await owner()), ...input });
+  redirect(`/workspace/projects/${project.id}`);
+}
+
+export async function updateProjectAction(formData: FormData) {
+  const projectId = z.uuid().parse(formData.get("projectId"));
+  const input = projectSchema.parse({
+    name: formData.get("name"),
+    instructions: formData.get("instructions") || undefined,
+  });
+  const project = await updateProject({
+    ...(await owner()),
+    ...input,
+    projectId,
+  });
+  if (!project) throw new Error("This project is unavailable.");
+  revalidatePath(`/workspace/projects/${projectId}`);
+  revalidatePath("/workspace/projects");
+}
+
+export async function addProjectConversationAction(formData: FormData) {
+  const projectId = z.uuid().parse(formData.get("projectId"));
+  const conversationId = z.uuid().parse(formData.get("conversationId"));
+  const project = await addProjectConversation({
+    ...(await owner()),
+    projectId,
+    conversationId,
+  });
+  if (!project) throw new Error("This conversation is unavailable.");
+  revalidatePath(`/workspace/projects/${projectId}`);
+}

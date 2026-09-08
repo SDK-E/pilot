@@ -114,9 +114,11 @@ export function AgentFleetShell({
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton disabled tooltip="Projects are coming soon">
-                <FolderKanban aria-hidden="true" />
-                <span>Projects</span>
+              <SidebarMenuButton asChild tooltip="Projects">
+                <Link href="/workspace/projects">
+                  <FolderKanban aria-hidden="true" />
+                  <span>Projects</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

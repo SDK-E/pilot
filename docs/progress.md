@@ -203,15 +203,32 @@ preference repository and keyboard behavior have direct integration and unit
 test coverage. This migration is applied to development only until a
 user-requested production deployment runs the Vercel production migration.
 
+# Current slice: projects
+
+The `0011_fancy_mephistopheles` migration adds creator-scoped projects and
+their conversation associations. An authenticated active member can create a
+project, edit its name and stored instructions, and add only chats that they
+created in the active WorkOS organization. Project repositories independently
+apply the organization and creator filters, including when an association is
+created, and the live Neon integration test covers cross-member denial. The
+sidebar Projects link now leads to this real surface.
+
+This slice deliberately does not claim shared chat memory, project files,
+knowledge retrieval, or agent instruction injection. Those require a new
+server-verified Pilot-to-runtime command, a resource model, and a storage
+contract. Mastra observational memory would also perform background observer
+model calls, so it remains unavailable until a model is explicitly authorized.
+See the [project boundary](decisions/0009-project-boundary.md).
+
 # Current slice: navigation and account menu
 
 The responsive workspace sidebar now centers New chat and private Chat history.
 It loads up to 50 of the signed-in creator’s recent chats and lets shadcn’s
 sidebar scroll them independently of the fixed footer. The footer provides
-Dashboard, an explicitly disabled Projects entry until its storage model is
-implemented, and a shadcn account dropdown. That menu uses the WorkOS API’s
+Dashboard, the persisted Projects route, and a shadcn account dropdown. That
+menu uses the WorkOS API’s
 active memberships (including organization display names), rechecks membership
 inside the existing organization-switch Server Action, exposes the read-only
 profile and Settings, and signs out through the existing POST action. Settings
-now contains the Agent fleet and Persona management links. This navigation
-slice has no project, attachment, or sharing model yet.
+now contains the Agent fleet and Persona management links. Project sharing,
+attachments, and shared context are not implemented.

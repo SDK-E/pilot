@@ -33,7 +33,11 @@ export async function deletePersonaAction(
   }
 
   try {
-    const conversations = await listConversations(organizationId, id.data);
+    const conversations = await listConversations(
+      organizationId,
+      id.data,
+      user.id,
+    );
     for (const conversation of conversations) {
       await deleteConversationMemory({
         organizationId,

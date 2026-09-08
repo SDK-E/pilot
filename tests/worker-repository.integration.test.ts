@@ -20,6 +20,13 @@ import {
   startExecution,
 } from "@/executions/execution-repository";
 import {
+  addProjectConversation,
+  createProject,
+  getProject,
+  listProjectConversations,
+  listProjects,
+} from "@/projects/project-repository";
+import {
   createWorker,
   getWorker,
   listWorkers,
@@ -105,7 +112,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     undefined,
   );
   assert.deepEqual(
-    (await listConversations(organizationId, created.id)).map(
+    (await listConversations(organizationId, created.id, `user_${suffix}`)).map(
       (item) => item.id,
     ),
     [conversation.id],
@@ -152,6 +159,63 @@ test("workers are persisted and isolated by organization", async (t) => {
       `another_user_${suffix}`,
     ),
     undefined,
+  );
+
+  const project = await createProject({
+    organizationId,
+    userId: `user_${suffix}`,
+    name: "Launch research",
+    instructions: "Keep the work focused on launch evidence.",
+  });
+  assert.ok(project);
+  assert.deepEqual(
+    (await listProjects({ organizationId, userId: `user_${suffix}` })).map(
+      (item) => item.name,
+    ),
+    ["Launch research"],
+  );
+  assert.equal(
+    await getProject({
+      organizationId,
+      userId: `another_user_${suffix}`,
+      projectId: project.id,
+    }),
+    undefined,
+  );
+  assert.equal(
+    await addProjectConversation({
+      organizationId,
+      userId: `another_user_${suffix}`,
+      projectId: project.id,
+      conversationId: conversation.id,
+    }),
+    undefined,
+  );
+  assert.ok(
+    await addProjectConversation({
+      organizationId,
+      userId: `user_${suffix}`,
+      projectId: project.id,
+      conversationId: conversation.id,
+    }),
+  );
+  assert.deepEqual(
+    (
+      await listProjectConversations({
+        organizationId,
+        userId: `user_${suffix}`,
+        projectId: project.id,
+      })
+    ).map((item) => item.id),
+    [conversation.id],
+  );
+  assert.deepEqual(
+    await listProjectConversations({
+      organizationId,
+      userId: `another_user_${suffix}`,
+      projectId: project.id,
+    }),
+    [],
   );
 
   const task = await createTask({

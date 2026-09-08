@@ -132,6 +132,58 @@ export const conversations = pgTable(
   ],
 );
 
+export const projects = pgTable(
+  "projects",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
+    name: text("name").notNull(),
+    instructions: text("instructions"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    unique("projects_organization_creator_name_unique").on(
+      table.organizationId,
+      table.createdByWorkosUserId,
+      table.name,
+    ),
+    index("projects_organization_creator_updated_at_index").on(
+      table.organizationId,
+      table.createdByWorkosUserId,
+      table.updatedAt,
+    ),
+  ],
+);
+
+export const projectConversations = pgTable(
+  "project_conversations",
+  {
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.projectId, table.conversationId] }),
+    index("project_conversations_conversation_id_index").on(
+      table.conversationId,
+    ),
+  ],
+);
+
 export const conversationMessages = pgTable(
   "conversation_messages",
   {
