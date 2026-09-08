@@ -43,8 +43,9 @@ export function DeleteProjectButton({ projectId }: { projectId: string }) {
         <AlertDialogHeader>
           <AlertDialogTitle>Delete this project?</AlertDialogTitle>
           <AlertDialogDescription>
-            This removes the project and its chat associations. Your chats and
-            their messages remain available in Chat history.
+            This removes the project, its chat associations, and any shared
+            project memory. Your chats and their messages remain available in
+            Chat history.
           </AlertDialogDescription>
         </AlertDialogHeader>
         {state.status === "error" ? (

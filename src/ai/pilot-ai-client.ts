@@ -306,3 +306,27 @@ export async function deleteConversationMemory(input: {
     );
   }
 }
+
+export async function deleteProjectMemory(input: {
+  organizationId: string;
+  workerId: string;
+  projectId: string;
+}) {
+  const url = new URL("/v1/projects/delete-memory", getRuntimeUrl());
+  const oidcToken = await getVercelOidcToken();
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-pilot-runtime-oidc-token": oidcToken,
+      "x-vercel-trusted-oidc-idp-token": oidcToken,
+    },
+    body: JSON.stringify(input),
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new PilotAiRuntimeError(
+      `Pilot Project cleanup returned ${response.status}.`,
+    );
+  }
+}

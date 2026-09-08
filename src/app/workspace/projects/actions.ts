@@ -4,11 +4,14 @@ import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { deleteProjectMemory } from "@/ai/pilot-ai-client";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import {
   addProjectConversation,
   createProject,
   deleteProject,
+  getProject,
+  listProjectConversations,
   removeProjectConversation,
   updateProject,
 } from "@/projects/project-repository";
@@ -72,8 +75,29 @@ export async function deleteProjectAction(
   }
 
   try {
+    const activeOwner = await owner();
+    const project = await getProject({
+      ...activeOwner,
+      projectId: projectId.data,
+    });
+    if (!project) {
+      return { status: "error", message: "This project is unavailable." };
+    }
+    if (project.sharedMemoryEnabled) {
+      const conversations = await listProjectConversations({
+        ...activeOwner,
+        projectId: project.id,
+      });
+      for (const conversation of conversations) {
+        await deleteProjectMemory({
+          organizationId: activeOwner.organizationId,
+          workerId: conversation.workerId,
+          projectId: project.id,
+        });
+      }
+    }
     const deleted = await deleteProject({
-      ...(await owner()),
+      ...activeOwner,
       projectId: projectId.data,
     });
     if (!deleted) {

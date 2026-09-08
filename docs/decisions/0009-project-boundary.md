@@ -33,6 +33,9 @@ Kilo Gateway model (`kilo/kilo-auto/free`), selected by the user for this
 runtime. Files, knowledge retrieval, project sharing, and cross-user project
 memory remain unavailable: they each need their own protected storage,
 retrieval, authorization, and deletion contracts.
+Deleting a project first removes every runtime thread associated with its
+enabled project-memory resources, then deletes the Pilot project and its
+associations. The underlying Pilot conversations remain in Chat history.
 
 ## Sources checked on 2026-09-08
 
