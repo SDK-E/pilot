@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { listOrganizationConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { DeleteConversationButton } from "@/components/conversations/delete-conversation-button";
+import { RenameConversationForm } from "@/components/conversations/rename-conversation-form";
 
 export default async function ChatsPage() {
   const { user, organizationId } = await withAuth();
@@ -64,6 +65,11 @@ export default async function ChatsPage() {
                 <DeleteConversationButton
                   workerId={chat.workerId}
                   conversationId={chat.id}
+                />
+                <RenameConversationForm
+                  conversationId={chat.id}
+                  title={chat.title ?? "New conversation"}
+                  workerId={chat.workerId}
                 />
               </div>
             </li>

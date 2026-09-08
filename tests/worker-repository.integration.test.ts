@@ -12,6 +12,7 @@ import {
   listConversationMessages,
   listConversations,
   listOrganizationConversations,
+  renameConversation,
 } from "@/conversations/conversation-repository";
 import {
   appendToolActivity,
@@ -129,6 +130,26 @@ test("workers are persisted and isolated by organization", async (t) => {
     title: "Remember this question",
   });
   assert.ok(conversation);
+  assert.deepEqual(
+    await renameConversation({
+      organizationId,
+      workerId: created.id,
+      conversationId: conversation.id,
+      userId: `another_user_${suffix}`,
+      title: "Forged rename",
+    }),
+    undefined,
+  );
+  assert.deepEqual(
+    await renameConversation({
+      organizationId,
+      workerId: created.id,
+      conversationId: conversation.id,
+      userId: `user_${suffix}`,
+      title: "Renamed conversation",
+    }),
+    { id: conversation.id, title: "Renamed conversation" },
+  );
   assert.equal(
     await createConversation({
       organizationId: otherOrganizationId,
@@ -148,7 +169,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     (await listOrganizationConversations(organizationId, `user_${suffix}`)).map(
       (item) => [item.id, item.title],
     ),
-    [[conversation.id, "Remember this question"]],
+    [[conversation.id, "Renamed conversation"]],
   );
   assert.deepEqual(
     await listOrganizationConversations(

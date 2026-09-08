@@ -202,6 +202,28 @@ export async function deleteConversation(
   return deleted;
 }
 
+export async function renameConversation(input: {
+  organizationId: string;
+  workerId: string;
+  conversationId: string;
+  userId: string;
+  title: string;
+}) {
+  const [renamed] = await db
+    .update(conversations)
+    .set({ title: input.title, updatedAt: new Date() })
+    .where(
+      and(
+        eq(conversations.organizationId, input.organizationId),
+        eq(conversations.workerId, input.workerId),
+        eq(conversations.id, input.conversationId),
+        eq(conversations.createdByWorkosUserId, input.userId),
+      ),
+    )
+    .returning({ id: conversations.id, title: conversations.title });
+  return renamed;
+}
+
 type ConversationMessageInput = {
   organizationId: string;
   workerId: string;
