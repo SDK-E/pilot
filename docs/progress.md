@@ -207,8 +207,8 @@ user-requested production deployment runs the Vercel production migration.
 
 The `0011_fancy_mephistopheles` migration adds creator-scoped projects and
 their conversation associations. An authenticated active member can create a
-project, edit its name and stored instructions, and add only chats that they
-created in the active WorkOS organization. Project repositories independently
+project, edit its name and stored instructions, and add or remove only chats
+that they created in the active WorkOS organization. Project repositories independently
 apply the organization and creator filters, including when an association is
 created, and the live Neon integration test covers cross-member denial. The
 sidebar Projects link now leads to this real surface.

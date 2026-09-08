@@ -8,6 +8,7 @@ import { getActiveOrganizationMembership } from "@/organizations/active-membersh
 import {
   addProjectConversation,
   createProject,
+  removeProjectConversation,
   updateProject,
 } from "@/projects/project-repository";
 
@@ -61,5 +62,17 @@ export async function addProjectConversationAction(formData: FormData) {
     conversationId,
   });
   if (!project) throw new Error("This conversation is unavailable.");
+  revalidatePath(`/workspace/projects/${projectId}`);
+}
+
+export async function removeProjectConversationAction(formData: FormData) {
+  const projectId = z.uuid().parse(formData.get("projectId"));
+  const conversationId = z.uuid().parse(formData.get("conversationId"));
+  const removed = await removeProjectConversation({
+    ...(await owner()),
+    projectId,
+    conversationId,
+  });
+  if (!removed) throw new Error("This project conversation is unavailable.");
   revalidatePath(`/workspace/projects/${projectId}`);
 }

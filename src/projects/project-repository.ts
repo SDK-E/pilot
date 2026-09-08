@@ -116,6 +116,24 @@ export async function addProjectConversation(
   return project;
 }
 
+export async function removeProjectConversation(
+  input: ProjectOwner & { projectId: string; conversationId: string },
+) {
+  const project = await getProject(input);
+  if (!project) return undefined;
+
+  const [removed] = await db
+    .delete(projectConversations)
+    .where(
+      and(
+        eq(projectConversations.projectId, input.projectId),
+        eq(projectConversations.conversationId, input.conversationId),
+      ),
+    )
+    .returning({ conversationId: projectConversations.conversationId });
+  return removed;
+}
+
 export function listProjectConversations(
   input: ProjectOwner & { projectId: string },
 ) {

@@ -9,7 +9,11 @@ import {
   getProject,
   listProjectConversations,
 } from "@/projects/project-repository";
-import { addProjectConversationAction, updateProjectAction } from "../actions";
+import {
+  addProjectConversationAction,
+  removeProjectConversationAction,
+  updateProjectAction,
+} from "../actions";
 
 export default async function ProjectPage({
   params,
@@ -104,9 +108,12 @@ export default async function ProjectPage({
         {projectChats.length ? (
           <ul className="mt-4 space-y-2">
             {projectChats.map((chat) => (
-              <li key={chat.id}>
+              <li
+                className="flex items-center gap-3 rounded-xl border border-border px-4 py-3"
+                key={chat.id}
+              >
                 <Link
-                  className="block rounded-xl border border-border px-4 py-3 text-sm hover:bg-muted/50"
+                  className="min-w-0 flex-1 text-sm hover:text-primary"
                   href={`/workspace/workers/${chat.workerId}/conversations/${chat.id}`}
                 >
                   {chat.title || "New conversation"}{" "}
@@ -114,6 +121,13 @@ export default async function ProjectPage({
                     · {chat.agentName}
                   </span>
                 </Link>
+                <form action={removeProjectConversationAction}>
+                  <input name="projectId" type="hidden" value={project.id} />
+                  <input name="conversationId" type="hidden" value={chat.id} />
+                  <Button size="sm" type="submit" variant="ghost">
+                    Remove
+                  </Button>
+                </form>
               </li>
             ))}
           </ul>

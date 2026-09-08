@@ -25,6 +25,7 @@ import {
   getProject,
   listProjectConversations,
   listProjects,
+  removeProjectConversation,
 } from "@/projects/project-repository";
 import {
   createWorker,
@@ -213,6 +214,36 @@ test("workers are persisted and isolated by organization", async (t) => {
     await listProjectConversations({
       organizationId,
       userId: `another_user_${suffix}`,
+      projectId: project.id,
+    }),
+    [],
+  );
+  assert.equal(
+    (
+      await removeProjectConversation({
+        organizationId,
+        userId: `another_user_${suffix}`,
+        projectId: project.id,
+        conversationId: conversation.id,
+      })
+    )?.conversationId,
+    undefined,
+  );
+  assert.equal(
+    (
+      await removeProjectConversation({
+        organizationId,
+        userId: `user_${suffix}`,
+        projectId: project.id,
+        conversationId: conversation.id,
+      })
+    )?.conversationId,
+    conversation.id,
+  );
+  assert.deepEqual(
+    await listProjectConversations({
+      organizationId,
+      userId: `user_${suffix}`,
       projectId: project.id,
     }),
     [],

@@ -12,6 +12,7 @@ Every project repository query includes the active organization and the
 creator's WorkOS user ID. Adding a conversation independently verifies that
 the conversation has the same organization and creator. This prevents a member
 from using a project form to discover or attach another member's private chat.
+The creator can remove an association without deleting the underlying chat.
 
 Project instructions are stored configuration only. They are not injected into
 an agent request, and membership in a Project does not change Mastra memory,
