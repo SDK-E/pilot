@@ -89,6 +89,22 @@ export async function updateProject(
   return project;
 }
 
+export async function deleteProject(
+  input: ProjectOwner & { projectId: string },
+) {
+  const [deleted] = await db
+    .delete(projects)
+    .where(
+      and(
+        eq(projects.id, input.projectId),
+        eq(projects.organizationId, input.organizationId),
+        eq(projects.createdByWorkosUserId, input.userId),
+      ),
+    )
+    .returning({ id: projects.id });
+  return deleted;
+}
+
 export async function addProjectConversation(
   input: ProjectOwner & { projectId: string; conversationId: string },
 ) {

@@ -8,6 +8,7 @@ import { getActiveOrganizationMembership } from "@/organizations/active-membersh
 import {
   addProjectConversation,
   createProject,
+  deleteProject,
   removeProjectConversation,
   updateProject,
 } from "@/projects/project-repository";
@@ -27,6 +28,11 @@ async function owner() {
   }
   return { organizationId, userId: user.id };
 }
+
+export type DeleteProjectState = {
+  message?: string;
+  status: "idle" | "error" | "success";
+};
 
 export async function createProjectAction(formData: FormData) {
   const input = projectSchema.parse({
@@ -51,6 +57,31 @@ export async function updateProjectAction(formData: FormData) {
   if (!project) throw new Error("This project is unavailable.");
   revalidatePath(`/workspace/projects/${projectId}`);
   revalidatePath("/workspace/projects");
+}
+
+export async function deleteProjectAction(
+  _previousState: DeleteProjectState,
+  formData: FormData,
+): Promise<DeleteProjectState> {
+  const projectId = z.uuid().safeParse(formData.get("projectId"));
+  if (!projectId.success) {
+    return { status: "error", message: "This project is unavailable." };
+  }
+
+  try {
+    const deleted = await deleteProject({
+      ...(await owner()),
+      projectId: projectId.data,
+    });
+    if (!deleted) {
+      return { status: "error", message: "This project is unavailable." };
+    }
+  } catch {
+    return { status: "error", message: "Pilot could not delete this project." };
+  }
+
+  revalidatePath("/workspace/projects");
+  return { status: "success" };
 }
 
 export async function addProjectConversationAction(formData: FormData) {

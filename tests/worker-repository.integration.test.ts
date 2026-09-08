@@ -22,6 +22,7 @@ import {
 import {
   addProjectConversation,
   createProject,
+  deleteProject,
   getProject,
   listProjectConversations,
   listProjects,
@@ -271,6 +272,40 @@ test("workers are persisted and isolated by organization", async (t) => {
       projectId: project.id,
     }),
     [],
+  );
+  assert.equal(
+    await deleteProject({
+      organizationId,
+      userId: `another_user_${suffix}`,
+      projectId: project.id,
+    }),
+    undefined,
+  );
+  assert.ok(
+    await deleteProject({
+      organizationId,
+      userId: `user_${suffix}`,
+      projectId: project.id,
+    }),
+  );
+  assert.equal(
+    await getProject({
+      organizationId,
+      userId: `user_${suffix}`,
+      projectId: project.id,
+    }),
+    undefined,
+  );
+  assert.equal(
+    (
+      await getConversation(
+        organizationId,
+        created.id,
+        conversation.id,
+        `user_${suffix}`,
+      )
+    )?.id,
+    conversation.id,
   );
 
   const task = await createTask({

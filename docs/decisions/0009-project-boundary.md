@@ -13,6 +13,8 @@ creator's WorkOS user ID. Adding a conversation independently verifies that
 the conversation has the same organization and creator. This prevents a member
 from using a project form to discover or attach another member's private chat.
 The creator can remove an association without deleting the underlying chat.
+Deleting a Project requires the same creator scope and cascades only its
+associations; it never deletes the underlying conversations or messages.
 
 Project instructions are stored configuration only. They are not injected into
 an agent request, and membership in a Project does not change Mastra memory,

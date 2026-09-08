@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { DeleteProjectButton } from "@/components/projects/delete-project-button";
 import { listOrganizationConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import {
@@ -49,6 +50,7 @@ export default async function ProjectPage({
             {project.name}
           </h1>
         </div>
+        <DeleteProjectButton projectId={project.id} />
       </header>
       <section className="rounded-2xl border border-border bg-card/50 p-5">
         <h2 className="font-medium">Project settings</h2>
