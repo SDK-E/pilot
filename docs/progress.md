@@ -173,8 +173,9 @@ to Persona creation instead of an invalid runtime request.
 # Current slice: private chat ownership
 
 Chats are now filtered by their existing `created_by_workos_user_id` field.
-History, recent chat links, direct chat pages, message streaming, deletion, and
-activity polling all require the creator's authenticated WorkOS user ID.
+History, recent chat links, direct chat pages, message reads and inserts,
+streaming, deletion, and activity polling all require the creator's
+authenticated WorkOS user ID.
 Ownerless historical records remain in the database but are intentionally
 inaccessible until an explicit recovery or sharing workflow exists.
 

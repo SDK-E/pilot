@@ -292,6 +292,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     organizationId,
     workerId: created.id,
     conversationId: conversation.id,
+    createdByWorkosUserId: `user_${suffix}`,
     role: "user",
     content: "What did I ask you to remember?",
   });
@@ -301,6 +302,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     organizationId,
     workerId: created.id,
     conversationId: conversation.id,
+    createdByWorkosUserId: `user_${suffix}`,
     role: "worker",
     content: "You asked me to remember this question.",
     modelId: "kilo/kilo-auto/free",
@@ -318,12 +320,33 @@ test("workers are persisted and isolated by organization", async (t) => {
         organizationId,
         created.id,
         conversation.id,
+        `user_${suffix}`,
       )
     )?.map((message) => message.content),
     [
       "What did I ask you to remember?",
       "You asked me to remember this question.",
     ],
+  );
+  assert.equal(
+    await createConversationMessage({
+      organizationId,
+      workerId: created.id,
+      conversationId: conversation.id,
+      createdByWorkosUserId: `another_user_${suffix}`,
+      role: "user",
+      content: "Forged cross-member message.",
+    }),
+    undefined,
+  );
+  assert.equal(
+    await listConversationMessages(
+      organizationId,
+      created.id,
+      conversation.id,
+      `another_user_${suffix}`,
+    ),
+    undefined,
   );
 
   const execution = await startExecution({
@@ -434,6 +457,7 @@ test("workers are persisted and isolated by organization", async (t) => {
       organizationId: otherOrganizationId,
       workerId: created.id,
       conversationId: conversation.id,
+      createdByWorkosUserId: `user_${suffix}`,
       role: "user",
       content: "Forged cross-organization message.",
     }),
@@ -444,6 +468,7 @@ test("workers are persisted and isolated by organization", async (t) => {
       otherOrganizationId,
       created.id,
       conversation.id,
+      `user_${suffix}`,
     ),
     undefined,
   );

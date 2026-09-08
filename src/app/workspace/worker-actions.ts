@@ -227,6 +227,7 @@ export async function startChatWithMessageAction(
       organizationId,
       worker: prepared.worker,
       conversationId: prepared.conversation.id,
+      userId: user.id,
       message: input.data.message,
     });
   } catch (error) {

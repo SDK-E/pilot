@@ -20,6 +20,7 @@ type StreamConversationMessageInput = {
     enabledToolIds: string[];
   };
   conversationId: string;
+  userId: string;
   message: string;
   signal: AbortSignal;
 };
@@ -47,6 +48,7 @@ export async function streamConversationMessage(
     organizationId: input.organizationId,
     workerId: input.worker.id,
     conversationId: input.conversationId,
+    createdByWorkosUserId: input.userId,
     role: "user",
     content: input.message,
   });
@@ -91,6 +93,7 @@ export async function streamConversationMessage(
             organizationId: input.organizationId,
             workerId: input.worker.id,
             conversationId: input.conversationId,
+            createdByWorkosUserId: input.userId,
             role: "worker",
             content: text,
             modelId: event.modelId,

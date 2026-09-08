@@ -165,6 +165,7 @@ async function getConversationForOrganization(
   organizationId: string,
   workerId: string,
   conversationId: string,
+  userId: string,
 ) {
   const [conversation] = await db
     .select({ id: conversations.id })
@@ -174,6 +175,7 @@ async function getConversationForOrganization(
         eq(conversations.organizationId, organizationId),
         eq(conversations.workerId, workerId),
         eq(conversations.id, conversationId),
+        eq(conversations.createdByWorkosUserId, userId),
       ),
     )
     .limit(1);
@@ -204,6 +206,7 @@ type ConversationMessageInput = {
   organizationId: string;
   workerId: string;
   conversationId: string;
+  createdByWorkosUserId: string;
   role: "user" | "worker";
   content: string;
   modelId?: string;
@@ -221,6 +224,7 @@ export async function createConversationMessage(
     input.organizationId,
     input.workerId,
     input.conversationId,
+    input.createdByWorkosUserId,
   );
   if (!conversation) return undefined;
 
@@ -257,11 +261,13 @@ export async function listConversationMessages(
   organizationId: string,
   workerId: string,
   conversationId: string,
+  userId: string,
 ) {
   const conversation = await getConversationForOrganization(
     organizationId,
     workerId,
     conversationId,
+    userId,
   );
   if (!conversation) return undefined;
 

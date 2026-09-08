@@ -70,6 +70,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       enabledToolIds: worker.enabledToolIds,
     },
     conversationId: conversation.id,
+    userId: user.id,
     message: input.data.prompt,
     signal: request.signal,
   });

@@ -48,7 +48,12 @@ export default async function ConversationPage({
     await Promise.all([
       getWorker(organizationId, workerId),
       getConversation(organizationId, workerId, conversationId, user.id),
-      listConversationMessages(organizationId, workerId, conversationId),
+      listConversationMessages(
+        organizationId,
+        workerId,
+        conversationId,
+        user.id,
+      ),
       listConversationActivity(organizationId, conversationId, user.id),
       listConversationTasks({
         organizationId,

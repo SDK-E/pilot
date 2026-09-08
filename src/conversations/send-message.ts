@@ -17,6 +17,7 @@ type SendConversationMessageInput = {
     enabledToolIds: string[];
   };
   conversationId: string;
+  userId: string;
   message: string;
 };
 
@@ -44,6 +45,7 @@ export async function sendConversationMessage(
     organizationId: input.organizationId,
     workerId: input.worker.id,
     conversationId: input.conversationId,
+    createdByWorkosUserId: input.userId,
     role: "user",
     content: input.message,
   });
@@ -85,6 +87,7 @@ export async function sendConversationMessage(
       organizationId: input.organizationId,
       workerId: input.worker.id,
       conversationId: input.conversationId,
+      createdByWorkosUserId: input.userId,
       role: "worker",
       content: reply.text,
       modelId: reply.modelId,

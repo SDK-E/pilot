@@ -53,6 +53,7 @@ export async function POST(request: Request) {
     organizationId,
     worker: prepared.worker,
     conversationId: prepared.conversation.id,
+    userId: user.id,
     message: input.data.prompt,
     signal: request.signal,
   });
