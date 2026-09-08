@@ -1,0 +1,1 @@
+ALTER TABLE "project_conversations" ADD CONSTRAINT "project_conversations_conversation_id_unique" UNIQUE("conversation_id");

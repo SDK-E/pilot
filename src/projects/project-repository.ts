@@ -128,7 +128,10 @@ export async function addProjectConversation(
       projectId: input.projectId,
       conversationId: input.conversationId,
     })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: projectConversations.conversationId,
+      set: { projectId: input.projectId, createdAt: new Date() },
+    });
   return project;
 }
 

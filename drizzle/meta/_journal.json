@@ -92,6 +92,13 @@
       "when": 1788898863764,
       "tag": "0012_lush_titanium_man",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788905506624,
+      "tag": "0013_careful_lifeguard",
+      "breakpoints": true
     }
   ]
 }

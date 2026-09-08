@@ -264,12 +264,52 @@ test("workers are persisted and isolated by organization", async (t) => {
     }),
     [],
   );
+  const movedProject = await createProject({
+    organizationId,
+    userId: `user_${suffix}`,
+    name: "Moved research",
+  });
+  assert.ok(movedProject);
+  assert.ok(
+    await addProjectConversation({
+      organizationId,
+      userId: `user_${suffix}`,
+      projectId: project.id,
+      conversationId: conversation.id,
+    }),
+  );
+  assert.ok(
+    await addProjectConversation({
+      organizationId,
+      userId: `user_${suffix}`,
+      projectId: movedProject.id,
+      conversationId: conversation.id,
+    }),
+  );
+  assert.deepEqual(
+    await listProjectConversations({
+      organizationId,
+      userId: `user_${suffix}`,
+      projectId: project.id,
+    }),
+    [],
+  );
+  assert.deepEqual(
+    (
+      await listProjectConversations({
+        organizationId,
+        userId: `user_${suffix}`,
+        projectId: movedProject.id,
+      })
+    ).map((item) => item.id),
+    [conversation.id],
+  );
   assert.equal(
     (
       await removeProjectConversation({
         organizationId,
         userId: `another_user_${suffix}`,
-        projectId: project.id,
+        projectId: movedProject.id,
         conversationId: conversation.id,
       })
     )?.conversationId,
@@ -280,7 +320,7 @@ test("workers are persisted and isolated by organization", async (t) => {
       await removeProjectConversation({
         organizationId,
         userId: `user_${suffix}`,
-        projectId: project.id,
+        projectId: movedProject.id,
         conversationId: conversation.id,
       })
     )?.conversationId,
@@ -290,7 +330,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     await listProjectConversations({
       organizationId,
       userId: `user_${suffix}`,
-      projectId: project.id,
+      projectId: movedProject.id,
     }),
     [],
   );

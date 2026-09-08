@@ -193,6 +193,9 @@ export const projectConversations = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.projectId, table.conversationId] }),
+    unique("project_conversations_conversation_id_unique").on(
+      table.conversationId,
+    ),
     index("project_conversations_conversation_id_index").on(
       table.conversationId,
     ),

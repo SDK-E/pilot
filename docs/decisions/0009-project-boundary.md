@@ -15,6 +15,8 @@ from using a project form to discover or attach another member's private chat.
 The creator can remove an association without deleting the underlying chat.
 Deleting a Project requires the same creator scope and cascades only its
 associations; it never deletes the underlying conversations or messages.
+One conversation belongs to one Project at a time. Adding it to another Project
+moves the association, making future project memory scope unambiguous.
 
 Project instructions are stored configuration only. They are not injected into
 an agent request, and membership in a Project does not change Mastra memory,
