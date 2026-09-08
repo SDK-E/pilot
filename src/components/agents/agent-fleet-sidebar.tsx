@@ -32,7 +32,7 @@ const primaryNavigation = [
   { icon: UsersRound, label: "Agent fleet", href: "/workspace/fleet" },
   { icon: Bot, label: "Personas", href: "/workspace/personas" },
   { icon: Gauge, label: "Dashboard", href: "/workspace/dashboard" },
-  { icon: Settings, label: "Settings", href: "/workspace" },
+  { icon: Settings, label: "Settings", href: "/workspace/settings" },
 ] as const;
 
 type RecentChat = {

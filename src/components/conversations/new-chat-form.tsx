@@ -8,7 +8,9 @@ import { Bot, Check, SendHorizontal, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
+import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
 import type { ActivityEventType } from "@/executions/activity-event";
+import { shouldSubmitMessage } from "@/hooks/use-message-submit-shortcut";
 
 type AgentOption = {
   id: string;
@@ -20,6 +22,7 @@ type Activity = { id: string; summary: string; type: ActivityEventType };
 
 export function NewChatForm({ agents }: { agents: AgentOption[] }) {
   const router = useRouter();
+  const sendMessageShortcut = useSendMessageShortcut();
   const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(
     agents[0]?.id,
   );
@@ -62,6 +65,17 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
     },
   });
   const selectedAgent = agents.find((agent) => agent.id === selectedAgentId);
+  const submitMessage = () => {
+    const prompt = input.trim();
+    if (!prompt || isLoading) return;
+    conversationHref.current = undefined;
+    setActivityConversationId(undefined);
+    setLiveActivities([]);
+    setPendingPrompt(prompt);
+    setCompletion("");
+    setInput("");
+    void complete(prompt);
+  };
 
   useEffect(() => {
     if (!isLoading || !activityConversationId) return;
@@ -156,15 +170,7 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
         className="space-y-3"
         onSubmit={(event) => {
           event.preventDefault();
-          const prompt = input.trim();
-          if (!prompt || isLoading) return;
-          conversationHref.current = undefined;
-          setActivityConversationId(undefined);
-          setLiveActivities([]);
-          setPendingPrompt(prompt);
-          setCompletion("");
-          setInput("");
-          void complete(prompt);
+          submitMessage();
         }}
       >
         <Textarea
@@ -173,6 +179,12 @@ export function NewChatForm({ agents }: { agents: AgentOption[] }) {
           disabled={isLoading}
           maxLength={10_000}
           onChange={(event) => setInput(event.target.value)}
+          onKeyDown={(event) => {
+            if (shouldSubmitMessage(event, sendMessageShortcut)) {
+              event.preventDefault();
+              submitMessage();
+            }
+          }}
           placeholder="Message Pilot…"
           required
           rows={3}

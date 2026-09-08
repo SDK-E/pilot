@@ -17,10 +17,12 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message";
 import { ConversationDetailsPanel } from "@/components/conversations/conversation-details-panel";
+import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
 import type { ActivityEventType } from "@/executions/activity-event";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { shouldSubmitMessage } from "@/hooks/use-message-submit-shortcut";
 
 type PersistedMessage = {
   id: string;
@@ -61,6 +63,7 @@ export function ConversationShell({
   approvals,
 }: ConversationShellProps) {
   const router = useRouter();
+  const sendMessageShortcut = useSendMessageShortcut();
   const [pendingUserMessage, setPendingUserMessage] = useState<string>();
   const [liveActivities, setLiveActivities] = useState(activities);
   const {
@@ -88,6 +91,14 @@ export function ConversationShell({
     },
   });
   const handleTaskCreated = useCallback(() => router.refresh(), [router]);
+  const submitMessage = useCallback(() => {
+    const message = input.trim();
+    if (!message || isLoading) return;
+    setPendingUserMessage(message);
+    setCompletion("");
+    setInput("");
+    void complete(message);
+  }, [complete, input, isLoading, setCompletion, setInput]);
 
   useEffect(() => {
     if (!isLoading) return;
@@ -202,12 +213,7 @@ export function ConversationShell({
               className="space-y-2"
               onSubmit={(event) => {
                 event.preventDefault();
-                const message = input.trim();
-                if (!message || isLoading) return;
-                setPendingUserMessage(message);
-                setCompletion("");
-                setInput("");
-                void complete(message);
+                submitMessage();
               }}
             >
               <Textarea
@@ -215,6 +221,12 @@ export function ConversationShell({
                 className="min-h-28 resize-y rounded-2xl border-border bg-card px-4 py-3 shadow-lg shadow-black/10 focus-visible:ring-2"
                 maxLength={10_000}
                 onChange={(event) => setInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (shouldSubmitMessage(event, sendMessageShortcut)) {
+                    event.preventDefault();
+                    submitMessage();
+                  }
+                }}
                 placeholder="Message Pilot…"
                 required
                 rows={3}

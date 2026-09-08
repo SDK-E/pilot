@@ -191,3 +191,14 @@ organization. The integration test proves that another member cannot read or
 create a task on that chat. The migration has not yet been deployed to
 production, so this slice remains local until its full quality gate and a
 user-requested deployment are complete.
+
+# Current slice: composer preference
+
+The `0010_funny_hiroim` migration adds a per-user `user_preferences` record.
+Settings now persists whether Enter sends a message or adds a line. The default
+is Ctrl/⌘ + Enter to send, with Enter reserved for a new line. Both the new and
+existing chat composers use the stored preference, preserve Shift + Enter for
+new lines in Enter-send mode, and do not submit during IME composition. The
+preference repository and keyboard behavior have direct integration and unit
+test coverage. This migration is applied to development only until a
+user-requested production deployment runs the Vercel production migration.

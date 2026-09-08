@@ -4,7 +4,7 @@ import test from "node:test";
 import { eq } from "drizzle-orm";
 import type { ConfigurableToolId } from "@/agents/agent-configuration";
 import { db } from "@/db/client";
-import { organizations } from "@/db/schema";
+import { organizations, userPreferences } from "@/db/schema";
 import {
   createConversation,
   createConversationMessage,
@@ -25,6 +25,10 @@ import {
   listWorkers,
 } from "@/workers/worker-repository";
 import { createTask, listConversationTasks } from "@/tasks/task-repository";
+import {
+  getUserPreferences,
+  updateUserPreferences,
+} from "@/users/user-preference-repository";
 
 const suffix = randomUUID().replaceAll("-", "");
 const organizationId = `org_pilot_test_${suffix}`;
@@ -53,6 +57,9 @@ function workerInput(overrides: Partial<{ name: string }> = {}) {
 
 test("workers are persisted and isolated by organization", async (t) => {
   t.after(async () => {
+    await db
+      .delete(userPreferences)
+      .where(eq(userPreferences.workosUserId, `user_${suffix}`));
     await db.delete(organizations).where(eq(organizations.id, organizationId));
     await db
       .delete(organizations)
@@ -69,6 +76,17 @@ test("workers are persisted and isolated by organization", async (t) => {
   assert.equal(fetched?.baseAgentId, "conversational");
   assert.deepEqual(fetched?.enabledToolIds, ["web-search"]);
   assert.deepEqual(fetched?.approvalRules, { "web-search": "ask" });
+
+  assert.deepEqual(await getUserPreferences(`user_${suffix}`), {
+    sendMessageShortcut: "mod_enter",
+  });
+  await updateUserPreferences({
+    workosUserId: `user_${suffix}`,
+    sendMessageShortcut: "enter",
+  });
+  assert.deepEqual(await getUserPreferences(`user_${suffix}`), {
+    sendMessageShortcut: "enter",
+  });
   assert.equal(await getWorker(otherOrganizationId, created.id), undefined);
 
   const conversation = await createConversation({

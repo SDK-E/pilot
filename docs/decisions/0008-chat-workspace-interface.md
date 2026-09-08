@@ -54,6 +54,12 @@ approval records from other chats or members are never shown. Approval records
 are read-only until the protected Mastra suspension and decision contract is
 implemented.
 
+Composer behavior is a Pilot-owned per-user preference. The default preserves
+new lines and sends with Ctrl/⌘ + Enter; a user may choose Enter to send, with
+Shift + Enter then adding a new line. The same preference is applied to both
+new-chat and existing-chat composers, and composition events never submit a
+partially entered IME character.
+
 If a runtime request fails after Pilot has persisted the submitted user message,
 Pilot takes the user to that conversation rather than leaving it hidden on the
 new-chat screen. The failed execution is rendered as a collapsed error activity

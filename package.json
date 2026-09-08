@@ -14,7 +14,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
     "test": "playwright test",
-    "test:server": "NODE_OPTIONS='--conditions=react-server' tsx --test server-tests/pilot-ai-stream.test.ts src/ai/pilot-runtime-oidc.test.ts",
+    "test:server": "NODE_OPTIONS='--conditions=react-server' tsx --test server-tests/pilot-ai-stream.test.ts src/ai/pilot-runtime-oidc.test.ts tests/message-submit-shortcut.test.ts",
     "test:db": "NODE_OPTIONS='--conditions=react-server' dotenv -e .env.local -- tsx --test tests/worker-repository.integration.test.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm format:check && pnpm knip"
   },

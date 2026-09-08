@@ -44,6 +44,20 @@ export const members = pgTable(
   ],
 );
 
+export const userPreferences = pgTable("user_preferences", {
+  workosUserId: text("workos_user_id").primaryKey(),
+  sendMessageShortcut: text("send_message_shortcut")
+    .$type<"enter" | "mod_enter">()
+    .notNull()
+    .default("mod_enter"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const workers = pgTable(
   "workers",
   {

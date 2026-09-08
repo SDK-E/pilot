@@ -71,6 +71,13 @@
       "when": 1788825092291,
       "tag": "0009_sudden_siren",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788897340263,
+      "tag": "0010_funny_hiroim",
+      "breakpoints": true
     }
   ]
 }
