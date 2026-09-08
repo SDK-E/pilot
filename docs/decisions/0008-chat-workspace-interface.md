@@ -60,6 +60,14 @@ Shift + Enter then adding a new line. The same preference is applied to both
 new-chat and existing-chat composers, and composition events never submit a
 partially entered IME character.
 
+The sidebar keeps New chat at the top and the current user’s private chat
+history at the bottom, with scrolling provided by the shadcn Sidebar when the
+history grows. Dashboard and the unavailable-but-explicit Projects entry sit
+above the account menu. The account menu displays the signed-in profile,
+provides only WorkOS-active organizations, reuses the server-side membership
+check before changing the session organization, and signs out through a POST
+Server Action. Agent fleet and Personas are reached through Settings.
+
 If a runtime request fails after Pilot has persisted the submitted user message,
 Pilot takes the user to that conversation rather than leaving it hidden on the
 new-chat screen. The failed execution is rendered as a collapsed error activity

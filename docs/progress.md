@@ -202,3 +202,16 @@ new lines in Enter-send mode, and do not submit during IME composition. The
 preference repository and keyboard behavior have direct integration and unit
 test coverage. This migration is applied to development only until a
 user-requested production deployment runs the Vercel production migration.
+
+# Current slice: navigation and account menu
+
+The responsive workspace sidebar now centers New chat and private Chat history.
+It loads up to 50 of the signed-in creator’s recent chats and lets shadcn’s
+sidebar scroll them independently of the fixed footer. The footer provides
+Dashboard, an explicitly disabled Projects entry until its storage model is
+implemented, and a shadcn account dropdown. That menu uses the WorkOS API’s
+active memberships (including organization display names), rechecks membership
+inside the existing organization-switch Server Action, exposes the read-only
+profile and Settings, and signs out through the existing POST action. Settings
+now contains the Agent fleet and Persona management links. This navigation
+slice has no project, attachment, or sharing model yet.

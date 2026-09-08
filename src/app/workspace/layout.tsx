@@ -3,6 +3,7 @@ import { ComposerPreferencesProvider } from "@/components/conversations/composer
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { listRecentOrganizationConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { listUserOrganizations } from "@/organizations/user-organizations";
 import { getUserPreferences } from "@/users/user-preference-repository";
 
 export default async function WorkspaceLayout({
@@ -19,19 +20,34 @@ export default async function WorkspaceLayout({
   const preferencesPromise = user
     ? getUserPreferences(user.id)
     : Promise.resolve(undefined);
-  const [membership, preferences] = await Promise.all([
+  const organizationsPromise = user
+    ? listUserOrganizations(user.id)
+    : Promise.resolve([]);
+  const [membership, preferences, organizations] = await Promise.all([
     membershipPromise,
     preferencesPromise,
+    organizationsPromise,
   ]);
   const recentChats = membership
-    ? await listRecentOrganizationConversations(organizationId!, user?.id ?? "")
+    ? await listRecentOrganizationConversations(
+        organizationId!,
+        user?.id ?? "",
+        50,
+      )
     : [];
 
   return (
     <ComposerPreferencesProvider
       sendMessageShortcut={preferences?.sendMessageShortcut ?? "mod_enter"}
     >
-      <AgentFleetShell recentChats={recentChats}>{children}</AgentFleetShell>
+      <AgentFleetShell
+        activeOrganizationId={organizationId}
+        organizations={organizations}
+        recentChats={recentChats}
+        user={user ? { email: user.email, name: user.name } : undefined}
+      >
+        {children}
+      </AgentFleetShell>
     </ComposerPreferencesProvider>
   );
 }

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { getUserPreferences } from "@/users/user-preference-repository";
 import { updateMessageShortcutAction } from "./actions";
 
@@ -57,6 +58,20 @@ export default async function SettingsPage() {
           </label>
           <Button type="submit">Save composer preference</Button>
         </form>
+      </section>
+      <section className="rounded-2xl border border-border bg-card/50 p-5">
+        <h2 className="font-medium">Agents</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Manage the organization’s available agents and personas.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href="/workspace/fleet">Agent fleet</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href="/workspace/personas">Personas</Link>
+          </Button>
+        </div>
       </section>
     </main>
   );

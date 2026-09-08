@@ -1,14 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Bot,
-  Gauge,
-  MessageSquareMore,
-  Plus,
-  Settings,
-  UsersRound,
-} from "lucide-react";
+import { Gauge, FolderKanban, MessageSquareMore, Plus } from "lucide-react";
+import { AccountMenu } from "@/components/agents/account-menu";
 import { PilotWordmark } from "@/components/brand/pilot-wordmark";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import {
@@ -27,14 +21,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-const primaryNavigation = [
-  { icon: MessageSquareMore, label: "Chats", href: "/workspace/chats" },
-  { icon: UsersRound, label: "Agent fleet", href: "/workspace/fleet" },
-  { icon: Bot, label: "Personas", href: "/workspace/personas" },
-  { icon: Gauge, label: "Dashboard", href: "/workspace/dashboard" },
-  { icon: Settings, label: "Settings", href: "/workspace/settings" },
-] as const;
-
 type RecentChat = {
   id: string;
   workerId: string;
@@ -42,13 +28,19 @@ type RecentChat = {
 };
 
 type AgentFleetShellProps = {
+  activeOrganizationId?: string;
   children: React.ReactNode;
+  organizations: Array<{ id: string; name: string }>;
   recentChats: RecentChat[];
+  user?: { email: string; name?: string | null };
 };
 
 export function AgentFleetShell({
+  activeOrganizationId,
   children,
+  organizations,
   recentChats,
+  user,
 }: AgentFleetShellProps) {
   return (
     <SidebarProvider>
@@ -79,23 +71,13 @@ export function AgentFleetShell({
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                {primaryNavigation.map((item) => (
-                  <SidebarMenuItem key={item.label}>
-                    <SidebarMenuButton asChild tooltip={item.label}>
-                      <Link href={item.href}>
-                        <item.icon aria-hidden="true" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-          {recentChats.length > 0 ? (
-            <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-              <SidebarGroupLabel>Recent chats</SidebarGroupLabel>
-              <SidebarGroupContent>
+          <SidebarGroup className="mt-auto group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel>Chat history</SidebarGroupLabel>
+            <SidebarGroupContent>
+              {recentChats.length ? (
                 <SidebarMenu>
                   {recentChats.map((chat) => (
                     <SidebarMenuItem key={chat.id}>
@@ -113,14 +95,38 @@ export function AgentFleetShell({
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ) : null}
+              ) : (
+                <p className="px-3 py-2 text-xs text-sidebar-foreground/60">
+                  No chats yet
+                </p>
+              )}
+            </SidebarGroupContent>
+          </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter className="p-3">
-          <p className="px-2 text-xs text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
-            Agent fleet
-          </p>
+        <SidebarFooter className="space-y-2 p-3">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Dashboard">
+                <Link href="/workspace/dashboard">
+                  <Gauge aria-hidden="true" />
+                  <span>Dashboard</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton disabled tooltip="Projects are coming soon">
+                <FolderKanban aria-hidden="true" />
+                <span>Projects</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+          {user ? (
+            <AccountMenu
+              activeOrganizationId={activeOrganizationId}
+              organizations={organizations}
+              user={user}
+            />
+          ) : null}
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="min-w-0 bg-background">
