@@ -1,6 +1,8 @@
 # Task approval workflow boundary
 
-Status: accepted for the first-worker milestone; implementation pending.
+Status: partially implemented. Pilot now persists creator-scoped chat tasks and
+renders the task, approval, and sanitized activity rail; the Mastra workflow,
+approval decision, suspend/resume, and protected action remain pending.
 
 Pilot owns organization-scoped goals, tasks, assignments, approvals, execution
 records, authorization, and the user-facing activity trail. A model never
@@ -22,6 +24,21 @@ to require Vercel OIDC before parsing a command. The first action will be a
 safe, deterministic result-producing action; tools, integrations, and external
 side effects remain unavailable until their capability adapters and approval
 rules are enforced.
+
+## Implemented chat-task boundary
+
+The `0009_sudden_siren` migration links a task to an optional Pilot
+conversation. The chat rail creates a task only after its Server Action has
+checked the current WorkOS membership and that the caller owns the selected
+conversation and agent in the active organization. The repository repeats that
+creator, organization, agent, and conversation check before a conversation task
+is inserted, so a future caller cannot create a task by substituting an ID.
+
+Conversation task and approval queries join through the owned conversation;
+another organization member cannot use them to discover task or approval
+metadata. The activity rail contains only the existing safe summaries from
+Pilot-owned execution activity records. It does not expose tool payloads,
+outputs, URLs, errors, reasoning, approval decisions, or an action control.
 
 ## Sources checked on 2026-09-07
 

@@ -19,6 +19,14 @@ function error(message: string, status: number) {
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
+  const { user, organizationId } = await withAuth({ ensureSignedIn: true });
+  if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId)) {
+    return error("Choose an organization before sending a message.", 403);
+  }
+  if (!(await getActiveOrganizationMembership(user.id, organizationId))) {
+    return error("Your organization access is no longer active.", 403);
+  }
+
   const { conversationId } = await params;
   const parsedConversationId = z.uuid().safeParse(conversationId);
   if (!parsedConversationId.success)
@@ -33,13 +41,6 @@ export async function POST(request: Request, { params }: RouteContext) {
   const input = inputSchema.safeParse(body);
   if (!input.success) return error("A message is required.", 400);
 
-  const { user, organizationId } = await withAuth({ ensureSignedIn: true });
-  if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId)) {
-    return error("Choose an organization before sending a message.", 403);
-  }
-  if (!(await getActiveOrganizationMembership(user.id, organizationId))) {
-    return error("Your organization access is no longer active.", 403);
-  }
   const [worker, conversation] = await Promise.all([
     getWorker(organizationId, input.data.workerId),
     getConversation(

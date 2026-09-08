@@ -24,6 +24,7 @@ import {
   getWorker,
   listWorkers,
 } from "@/workers/worker-repository";
+import { createTask, listConversationTasks } from "@/tasks/task-repository";
 
 const suffix = randomUUID().replaceAll("-", "");
 const organizationId = `org_pilot_test_${suffix}`;
@@ -98,6 +99,13 @@ test("workers are persisted and isolated by organization", async (t) => {
     ),
     [[conversation.id, "Remember this question"]],
   );
+  assert.deepEqual(
+    await listOrganizationConversations(
+      organizationId,
+      `another_user_${suffix}`,
+    ),
+    [],
+  );
   assert.equal(
     (
       await getConversation(
@@ -116,6 +124,54 @@ test("workers are persisted and isolated by organization", async (t) => {
       conversation.id,
       `user_${suffix}`,
     ),
+    undefined,
+  );
+  assert.equal(
+    await getConversation(
+      organizationId,
+      created.id,
+      conversation.id,
+      `another_user_${suffix}`,
+    ),
+    undefined,
+  );
+
+  const task = await createTask({
+    organizationId,
+    createdByWorkosUserId: `user_${suffix}`,
+    workerId: created.id,
+    conversationId: conversation.id,
+    title: "Document the answer",
+    instructions: "Capture the answer in the project notes.",
+  });
+  assert.ok(task);
+  assert.deepEqual(
+    (
+      await listConversationTasks({
+        organizationId,
+        conversationId: conversation.id,
+        userId: `user_${suffix}`,
+      })
+    ).map((item) => item.title),
+    ["Document the answer"],
+  );
+  assert.deepEqual(
+    await listConversationTasks({
+      organizationId,
+      conversationId: conversation.id,
+      userId: `another_user_${suffix}`,
+    }),
+    [],
+  );
+  assert.equal(
+    await createTask({
+      organizationId,
+      createdByWorkosUserId: `another_user_${suffix}`,
+      workerId: created.id,
+      conversationId: conversation.id,
+      title: "Forged task",
+      instructions: "This must not be created.",
+    }),
     undefined,
   );
 

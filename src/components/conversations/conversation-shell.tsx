@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCompletion } from "@ai-sdk/react";
 import { ArrowLeft, Bot, SendHorizontal, Square } from "lucide-react";
@@ -16,7 +16,7 @@ import {
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
-import { ConversationActivity } from "@/components/conversations/conversation-activity";
+import { ConversationDetailsPanel } from "@/components/conversations/conversation-details-panel";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
 import type { ActivityEventType } from "@/executions/activity-event";
 import { Button } from "@/components/ui/button";
@@ -87,11 +87,7 @@ export function ConversationShell({
       router.refresh();
     },
   });
-  const failedActivities = activities.filter(
-    (activity) =>
-      activity.conversationMessageId === null &&
-      activity.type === "execution.failed",
-  );
+  const handleTaskCreated = useCallback(() => router.refresh(), [router]);
 
   useEffect(() => {
     if (!isLoading) return;
@@ -140,7 +136,7 @@ export function ConversationShell({
       </header>
 
       <section className="flex min-h-0 flex-1 flex-col xl:flex-row">
-        <Conversation className="min-h-0">
+        <Conversation className="min-h-0 min-w-0 flex-1">
           <ConversationContent className="mx-auto w-full max-w-3xl gap-8 px-5 py-8 sm:px-8 sm:py-12">
             {messages.length === 0 ? (
               <ConversationEmptyState
@@ -152,9 +148,6 @@ export function ConversationShell({
             ) : (
               messages.map((message) => {
                 const from = message.role === "user" ? "user" : "assistant";
-                const messageActivities = activities.filter(
-                  (activity) => activity.conversationMessageId === message.id,
-                );
 
                 return (
                   <Message from={from} key={message.id}>
@@ -165,9 +158,6 @@ export function ConversationShell({
                         <p className="whitespace-pre-wrap">{message.content}</p>
                       )}
                     </MessageContent>
-                    {from === "assistant" ? (
-                      <ConversationActivity events={messageActivities} />
-                    ) : null}
                   </Message>
                 );
               })
@@ -191,126 +181,89 @@ export function ConversationShell({
                 </MessageContent>
               </Message>
             ) : null}
-            {failedActivities.length > 0 ? (
-              <ConversationActivity events={failedActivities} />
-            ) : null}
           </ConversationContent>
           <ConversationScrollButton />
         </Conversation>
 
-        <aside className="order-first w-full border-b border-border bg-muted/20 p-4 xl:order-last xl:w-72 xl:border-b-0 xl:border-l">
-          <h2 className="text-sm font-medium">Activity</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Tool activity, tasks, and approvals for this chat.
-          </p>
-          <div className="mt-4 space-y-4 text-sm">
-            <section>
-              <h3 className="font-medium">Tasks</h3>
-              {tasks.length ? (
-                <ul className="mt-2 space-y-2">
-                  {tasks.map((task) => (
-                    <li key={task.id}>
-                      {task.title}{" "}
-                      <span className="text-muted-foreground">
-                        {task.status}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-1 text-muted-foreground">No tasks.</p>
-              )}
-            </section>
-            <section>
-              <h3 className="font-medium">Approvals</h3>
-              {approvals.length ? (
-                <ul className="mt-2 space-y-2">
-                  {approvals.map((approval) => (
-                    <li key={approval.id}>
-                      {approval.summary}{" "}
-                      <span className="text-muted-foreground">
-                        {approval.status}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-1 text-muted-foreground">No approvals.</p>
-              )}
-            </section>
-          </div>
-        </aside>
-
-        <div className="border-t border-border bg-background/95 px-4 py-4 backdrop-blur sm:px-6 sm:pb-6">
-          <div className="mx-auto w-full max-w-3xl">
-            {runtimeConfigured ? (
-              <form
-                className="space-y-2"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const message = input.trim();
-                  if (!message || isLoading) return;
-                  setPendingUserMessage(message);
-                  setCompletion("");
-                  setInput("");
-                  void complete(message);
-                }}
-              >
-                <Textarea
-                  aria-label="Message"
-                  className="min-h-28 resize-y rounded-2xl border-border bg-card px-4 py-3 shadow-lg shadow-black/10 focus-visible:ring-2"
-                  maxLength={10_000}
-                  onChange={(event) => setInput(event.target.value)}
-                  placeholder="Message Pilot…"
-                  required
-                  rows={3}
-                  value={input}
-                />
-                {error ? (
-                  <p aria-live="polite" className="text-sm text-destructive">
-                    {error.message || "Pilot could not complete this message."}
-                  </p>
-                ) : null}
-                <div className="flex items-center justify-between gap-3 px-1">
-                  <p
-                    aria-live="polite"
-                    className="inline-flex items-center gap-2 text-xs text-muted-foreground"
-                  >
-                    <Bot className="size-3.5 text-primary" aria-hidden="true" />
-                    {isLoading
-                      ? "Pilot is responding…"
-                      : "Pilot can make mistakes. Check important work."}
-                  </p>
-                  {isLoading ? (
-                    <Button
-                      aria-label="Stop generating"
-                      onClick={stop}
-                      size="icon"
-                      type="button"
-                      variant="outline"
-                    >
-                      <Square
-                        aria-hidden="true"
-                        className="size-3.5 fill-current"
-                      />
-                    </Button>
-                  ) : (
-                    <Button size="icon" type="submit">
-                      <SendHorizontal aria-hidden="true" className="size-4" />
-                      <span className="sr-only">Send message</span>
-                    </Button>
-                  )}
-                </div>
-              </form>
-            ) : (
-              <p className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-center text-sm text-muted-foreground">
-                Messaging becomes available after this environment is connected
-                to Pilot AI.
-              </p>
-            )}
-          </div>
-        </div>
+        <ConversationDetailsPanel
+          activities={liveActivities}
+          agentId={agentId}
+          approvals={approvals}
+          conversationId={conversationId}
+          onTaskCreated={handleTaskCreated}
+          tasks={tasks}
+        />
       </section>
+
+      <div className="border-t border-border bg-background/95 px-4 py-4 backdrop-blur sm:px-6 sm:pb-6">
+        <div className="mx-auto w-full max-w-3xl">
+          {runtimeConfigured ? (
+            <form
+              className="space-y-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const message = input.trim();
+                if (!message || isLoading) return;
+                setPendingUserMessage(message);
+                setCompletion("");
+                setInput("");
+                void complete(message);
+              }}
+            >
+              <Textarea
+                aria-label="Message"
+                className="min-h-28 resize-y rounded-2xl border-border bg-card px-4 py-3 shadow-lg shadow-black/10 focus-visible:ring-2"
+                maxLength={10_000}
+                onChange={(event) => setInput(event.target.value)}
+                placeholder="Message Pilot…"
+                required
+                rows={3}
+                value={input}
+              />
+              {error ? (
+                <p aria-live="polite" className="text-sm text-destructive">
+                  {error.message || "Pilot could not complete this message."}
+                </p>
+              ) : null}
+              <div className="flex items-center justify-between gap-3 px-1">
+                <p
+                  aria-live="polite"
+                  className="inline-flex items-center gap-2 text-xs text-muted-foreground"
+                >
+                  <Bot className="size-3.5 text-primary" aria-hidden="true" />
+                  {isLoading
+                    ? "Pilot is responding…"
+                    : "Pilot can make mistakes. Check important work."}
+                </p>
+                {isLoading ? (
+                  <Button
+                    aria-label="Stop generating"
+                    onClick={stop}
+                    size="icon"
+                    type="button"
+                    variant="outline"
+                  >
+                    <Square
+                      aria-hidden="true"
+                      className="size-3.5 fill-current"
+                    />
+                  </Button>
+                ) : (
+                  <Button size="icon" type="submit">
+                    <SendHorizontal aria-hidden="true" className="size-4" />
+                    <span className="sr-only">Send message</span>
+                  </Button>
+                )}
+              </div>
+            </form>
+          ) : (
+            <p className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-center text-sm text-muted-foreground">
+              Messaging becomes available after this environment is connected to
+              Pilot AI.
+            </p>
+          )}
+        </div>
+      </div>
     </main>
   );
 }

@@ -6,9 +6,27 @@ import { conversations, tasks } from "@/db/schema";
 export async function createTask(input: {
   organizationId: string;
   createdByWorkosUserId: string;
+  conversationId?: string;
+  workerId?: string;
   title: string;
   instructions: string;
 }) {
+  if (input.conversationId) {
+    const conditions = [
+      eq(conversations.organizationId, input.organizationId),
+      eq(conversations.id, input.conversationId),
+      eq(conversations.createdByWorkosUserId, input.createdByWorkosUserId),
+    ];
+    if (input.workerId)
+      conditions.push(eq(conversations.workerId, input.workerId));
+
+    const [conversation] = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(and(...conditions))
+      .limit(1);
+    if (!conversation) return undefined;
+  }
   const [task] = await db
     .insert(tasks)
     .values({ ...input, status: "ready" })

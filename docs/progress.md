@@ -177,3 +177,17 @@ History, recent chat links, direct chat pages, message streaming, deletion, and
 activity polling all require the creator's authenticated WorkOS user ID.
 Ownerless historical records remain in the database but are intentionally
 inaccessible until an explicit recovery or sharing workflow exists.
+
+# Current slice: conversation details and tasks
+
+The `0009_sudden_siren` migration adds an optional conversation foreign key to
+Pilot-owned tasks. The open-chat rail is now the single surface for its safe
+activity timeline, tasks, and approvals. The timeline expands only server
+generated execution summaries; it never receives tool arguments, outputs,
+URLs, errors, secrets, or model reasoning. A member can add a manual task from
+that rail after the Server Action and repository independently confirm the
+active WorkOS membership and the caller's creator-scoped chat, agent, and
+organization. The integration test proves that another member cannot read or
+create a task on that chat. The migration has not yet been deployed to
+production, so this slice remains local until its full quality gate and a
+user-requested deployment are complete.

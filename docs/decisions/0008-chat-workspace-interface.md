@@ -10,7 +10,7 @@ The maintained `next-themes` provider defaults to the operating system setting,
 persists a user choice, and exposes System, Light, and Dark controls on the
 public and authenticated headers.
 The Pilot mark is rendered as text: expanded navigation shows `Pilot.` and
-collapsed navigation shows `P`. Image branding belongs only in the favicon.
+collapsed navigation shows `P.`. Image branding belongs only in the favicon.
 
 The New chat screen lets an active organization member choose one of that
 organization's configured Conversational personas. If none exists, Pilot
@@ -45,6 +45,14 @@ and the complete assistant message plus execution only after the stream ends.
 Streaming tool traces, browser/scratchpad views, and reasoning detail remain
 unimplemented because their event, persistence, and approval contracts are not
 yet present.
+
+The desktop conversation rail groups safe, persisted runtime activity, tasks,
+and approvals for the open chat. Activity is collapsed by default and expands
+into a timeline of the same sanitized server-generated summaries used by the
+live feed. A member may add a manual task only to a chat they own; task and
+approval records from other chats or members are never shown. Approval records
+are read-only until the protected Mastra suspension and decision contract is
+implemented.
 
 If a runtime request fails after Pilot has persisted the submitted user message,
 Pilot takes the user to that conversation rather than leaving it hidden on the
