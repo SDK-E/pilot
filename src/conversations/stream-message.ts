@@ -5,6 +5,7 @@ import {
   streamConversationReply,
 } from "@/ai/pilot-ai-client";
 import { createConversationMessage } from "@/conversations/conversation-repository";
+import { isResearchAvailable } from "@/conversations/research-availability";
 import {
   finishExecution,
   startExecution,
@@ -44,6 +45,9 @@ function allowedToolIds(
 export async function streamConversationMessage(
   input: StreamConversationMessageInput,
 ) {
+  if (!isResearchAvailable(input.worker.baseAgentId)) {
+    throw new Error("Research is not enabled for this environment yet.");
+  }
   const userMessage = await createConversationMessage({
     organizationId: input.organizationId,
     workerId: input.worker.id,

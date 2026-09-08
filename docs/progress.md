@@ -160,6 +160,10 @@ Turso-backed Mastra workflow suspension. Its boundary is recorded in
 
 # Current slice: live safe activity
 
+Research availability is enforced by the shared synchronous and streaming
+message paths before a user message or execution is created. An existing
+Research conversation cannot bypass a disabled `PILOT_RESEARCH_ENABLED` flag.
+
 During a streamed reply, the conversation UI polls a WorkOS-protected activity
 endpoint and shows sanitized execution and tool lifecycle summaries in a
 collapsed disclosure. The endpoint is organization-scoped and does not expose

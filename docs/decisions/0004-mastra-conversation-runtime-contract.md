@@ -52,6 +52,11 @@ then creates a generated lifecycle summary. This callback carries no prompt,
 tool arguments, results, URLs, errors, or reasoning, which keeps the OpenAI
 completion stream standard while preserving truthful activity history.
 
+Pilot checks `PILOT_RESEARCH_ENABLED=true` immediately before both synchronous
+and streamed message paths create a message or execution. The same check is
+performed when a new Research conversation is prepared. Disabling the flag
+therefore takes effect for existing Research conversations as well as new ones.
+
 For a verified request with OpenAI `stream: true`, the runtime emits
 OpenAI-compatible server-sent chat-completion chunks and a final usage chunk.
 Pilot consumes that stream through its authenticated server-side client; the
