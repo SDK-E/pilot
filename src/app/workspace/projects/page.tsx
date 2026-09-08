@@ -26,9 +26,9 @@ export default async function ProjectsPage() {
           Group your own conversations around a focused piece of work.
         </p>
         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Project instructions and chat organization are available now. Shared
-          memory, files, and knowledge stay disabled until their protected
-          runtime and storage contracts are implemented.
+          Project instructions and optional shared memory are available. Files
+          and knowledge stay disabled until their protected storage and
+          retrieval contracts are implemented.
         </p>
       </header>
       <form

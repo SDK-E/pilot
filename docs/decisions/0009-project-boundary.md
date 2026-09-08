@@ -1,7 +1,7 @@
 # Project boundary
 
-Status: first storage and organization slice implemented; shared context is
-pending its runtime and file-storage contracts.
+Status: private project instructions and opt-in shared conversational memory are
+implemented; file and knowledge retrieval are pending separate contracts.
 
 A Project is a Pilot-owned, creator-scoped collection of that creator's
 conversations inside one WorkOS organization. The `projects` table stores the
@@ -18,19 +18,24 @@ associations; it never deletes the underlying conversations or messages.
 One conversation belongs to one Project at a time. Adding it to another Project
 moves the association, making future project memory scope unambiguous.
 
-Project instructions are stored configuration only. They are not injected into
-an agent request, and membership in a Project does not change Mastra memory,
-conversation access, file access, knowledge retrieval, or sharing. Those
-behaviors need a protected Pilot-to-runtime project command and a storage
-provider with explicit ownership, retrieval, deletion, and authorization rules.
-Mastra observational memory also needs an explicitly authorized observer model;
-Pilot must not add background model calls from the configured chat model by
-assumption.
+Pilot resolves project context only on its server after it has verified the
+conversation's organization and creator. It sends a typed, authenticated project
+command to Pilot AI; the browser never submits a project ID, instructions, or
+memory setting to the runtime. Project instructions are therefore available to
+the assigned agent without changing tool or data-access rules.
+
+Shared project memory is an explicit per-project setting, disabled by default.
+When enabled, Pilot AI uses the project as a Mastra resource and keeps each
+conversation as its own thread. Its Mastra Observational Memory is scoped to
+that resource, so it can build context across the Project's private
+conversations. The observer model is the already configured and allowlisted
+Kilo Gateway model (`kilo/kilo-auto/free`), selected by the user for this
+runtime. Files, knowledge retrieval, project sharing, and cross-user project
+memory remain unavailable: they each need their own protected storage,
+retrieval, authorization, and deletion contracts.
 
 ## Sources checked on 2026-09-08
 
-- Installed `@mastra/memory` `1.28.2` documentation and types: memory scopes
-  state by resource and thread; observational memory can create background
-  observer generations.
-- [Mastra memory overview](https://mastra.ai/docs/memory/overview): persistent
-  history depends on a configured storage provider and stable scope IDs.
+- Installed `@mastra/memory` `1.28.2` types and the current
+  [Mastra Observational Memory documentation](https://mastra.ai/docs/memory/observational-memory): resource-scoped observations span threads for the
+  same resource; persistent history requires stable resource and thread IDs.

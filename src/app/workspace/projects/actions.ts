@@ -16,6 +16,7 @@ import {
 const projectSchema = z.object({
   name: z.string().trim().min(1).max(100),
   instructions: z.string().trim().max(10_000).optional(),
+  sharedMemoryEnabled: z.boolean(),
 });
 
 async function owner() {
@@ -38,6 +39,7 @@ export async function createProjectAction(formData: FormData) {
   const input = projectSchema.parse({
     name: formData.get("name"),
     instructions: formData.get("instructions") || undefined,
+    sharedMemoryEnabled: false,
   });
   const project = await createProject({ ...(await owner()), ...input });
   redirect(`/workspace/projects/${project.id}`);
@@ -48,6 +50,7 @@ export async function updateProjectAction(formData: FormData) {
   const input = projectSchema.parse({
     name: formData.get("name"),
     instructions: formData.get("instructions") || undefined,
+    sharedMemoryEnabled: formData.get("sharedMemoryEnabled") === "on",
   });
   const project = await updateProject({
     ...(await owner()),

@@ -1,0 +1,1 @@
+ALTER TABLE "projects" ADD COLUMN "shared_memory_enabled" boolean DEFAULT false NOT NULL;

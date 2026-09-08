@@ -9,6 +9,7 @@ import {
   renameConversation,
 } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 
 export type DeleteConversationState = {
   message?: string;
@@ -89,10 +90,18 @@ export async function deleteConversationAction(
   }
 
   try {
+    const project = await getProjectMemoryContextForConversation({
+      organizationId,
+      userId: user.id,
+      conversationId: input.data.conversationId,
+    });
     await deleteConversationMemory({
       organizationId,
       workerId: input.data.workerId,
       conversationId: input.data.conversationId,
+      project: project
+        ? { id: project.id, sharedMemoryEnabled: project.sharedMemoryEnabled }
+        : undefined,
     });
     const deleted = await deleteConversation(
       organizationId,

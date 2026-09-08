@@ -12,7 +12,11 @@ import {
 type ProjectOwner = { organizationId: string; userId: string };
 
 export async function createProject(
-  input: ProjectOwner & { name: string; instructions?: string },
+  input: ProjectOwner & {
+    name: string;
+    instructions?: string;
+    sharedMemoryEnabled?: boolean;
+  },
 ) {
   const [project] = await db
     .insert(projects)
@@ -21,6 +25,7 @@ export async function createProject(
       createdByWorkosUserId: input.userId,
       name: input.name,
       instructions: input.instructions,
+      sharedMemoryEnabled: input.sharedMemoryEnabled ?? false,
     })
     .returning({ id: projects.id });
   return project;
@@ -32,6 +37,7 @@ export function listProjects(input: ProjectOwner) {
       id: projects.id,
       name: projects.name,
       instructions: projects.instructions,
+      sharedMemoryEnabled: projects.sharedMemoryEnabled,
       updatedAt: projects.updatedAt,
     })
     .from(projects)
@@ -50,6 +56,7 @@ export async function getProject(input: ProjectOwner & { projectId: string }) {
       id: projects.id,
       name: projects.name,
       instructions: projects.instructions,
+      sharedMemoryEnabled: projects.sharedMemoryEnabled,
       updatedAt: projects.updatedAt,
     })
     .from(projects)
@@ -69,6 +76,7 @@ export async function updateProject(
     projectId: string;
     name: string;
     instructions?: string;
+    sharedMemoryEnabled: boolean;
   },
 ) {
   const [project] = await db
@@ -76,6 +84,7 @@ export async function updateProject(
     .set({
       name: input.name,
       instructions: input.instructions,
+      sharedMemoryEnabled: input.sharedMemoryEnabled,
       updatedAt: new Date(),
     })
     .where(
@@ -180,4 +189,32 @@ export function listProjectConversations(
       ),
     )
     .orderBy(desc(conversations.updatedAt));
+}
+
+export async function getProjectMemoryContextForConversation(
+  input: ProjectOwner & { conversationId: string },
+) {
+  const [project] = await db
+    .select({
+      id: projects.id,
+      instructions: projects.instructions,
+      sharedMemoryEnabled: projects.sharedMemoryEnabled,
+    })
+    .from(projectConversations)
+    .innerJoin(projects, eq(projectConversations.projectId, projects.id))
+    .innerJoin(
+      conversations,
+      eq(projectConversations.conversationId, conversations.id),
+    )
+    .where(
+      and(
+        eq(projectConversations.conversationId, input.conversationId),
+        eq(projects.organizationId, input.organizationId),
+        eq(projects.createdByWorkosUserId, input.userId),
+        eq(conversations.organizationId, input.organizationId),
+        eq(conversations.createdByWorkosUserId, input.userId),
+      ),
+    )
+    .limit(1);
+  return project;
 }

@@ -25,9 +25,11 @@ import {
   createProject,
   deleteProject,
   getProject,
+  getProjectMemoryContextForConversation,
   listProjectConversations,
   listProjects,
   removeProjectConversation,
+  updateProject,
 } from "@/projects/project-repository";
 import {
   createWorker,
@@ -164,7 +166,6 @@ test("workers are persisted and isolated by organization", async (t) => {
     ),
     [conversation.id],
   );
-
   assert.deepEqual(
     (await listOrganizationConversations(organizationId, `user_${suffix}`)).map(
       (item) => [item.id, item.title],
@@ -255,6 +256,48 @@ test("workers are persisted and isolated by organization", async (t) => {
       })
     ).map((item) => item.id),
     [conversation.id],
+  );
+  assert.deepEqual(
+    await getProjectMemoryContextForConversation({
+      organizationId,
+      userId: `user_${suffix}`,
+      conversationId: conversation.id,
+    }),
+    {
+      id: project.id,
+      instructions: "Keep the work focused on launch evidence.",
+      sharedMemoryEnabled: false,
+    },
+  );
+  assert.equal(
+    await getProjectMemoryContextForConversation({
+      organizationId,
+      userId: `another_user_${suffix}`,
+      conversationId: conversation.id,
+    }),
+    undefined,
+  );
+  assert.ok(
+    await updateProject({
+      organizationId,
+      userId: `user_${suffix}`,
+      projectId: project.id,
+      name: "Launch research",
+      instructions: "Keep the research plan current.",
+      sharedMemoryEnabled: true,
+    }),
+  );
+  assert.deepEqual(
+    await getProjectMemoryContextForConversation({
+      organizationId,
+      userId: `user_${suffix}`,
+      conversationId: conversation.id,
+    }),
+    {
+      id: project.id,
+      instructions: "Keep the research plan current.",
+      sharedMemoryEnabled: true,
+    },
   );
   assert.deepEqual(
     await listProjectConversations({

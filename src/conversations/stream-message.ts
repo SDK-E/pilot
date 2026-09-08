@@ -6,6 +6,7 @@ import {
 } from "@/ai/pilot-ai-client";
 import { createConversationMessage } from "@/conversations/conversation-repository";
 import { isResearchAvailable } from "@/conversations/research-availability";
+import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 import {
   finishExecution,
   startExecution,
@@ -40,6 +41,20 @@ function allowedToolIds(
     worker.enabledToolIds.includes("web-search")
     ? ["web-search"]
     : [];
+}
+
+async function projectContext(input: StreamConversationMessageInput) {
+  const project = await getProjectMemoryContextForConversation({
+    organizationId: input.organizationId,
+    userId: input.userId,
+    conversationId: input.conversationId,
+  });
+  if (!project) return undefined;
+  return {
+    id: project.id,
+    instructions: project.instructions || undefined,
+    sharedMemoryEnabled: project.sharedMemoryEnabled,
+  };
 }
 
 export async function streamConversationMessage(
@@ -84,6 +99,7 @@ export async function streamConversationMessage(
             message: input.message,
             executionId: execution.id,
             allowedToolIds: allowedToolIds(input.worker),
+            project: await projectContext(input),
           },
           abortController.signal,
         )) {

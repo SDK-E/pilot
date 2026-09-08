@@ -3,6 +3,7 @@ import "server-only";
 import { generateConversationReply } from "@/ai/pilot-ai-client";
 import { createConversationMessage } from "@/conversations/conversation-repository";
 import { isResearchAvailable } from "@/conversations/research-availability";
+import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 import {
   finishExecution,
   startExecution,
@@ -39,6 +40,20 @@ function allowedToolIds(
     : [];
 }
 
+async function projectContext(input: SendConversationMessageInput) {
+  const project = await getProjectMemoryContextForConversation({
+    organizationId: input.organizationId,
+    userId: input.userId,
+    conversationId: input.conversationId,
+  });
+  if (!project) return undefined;
+  return {
+    id: project.id,
+    instructions: project.instructions || undefined,
+    sharedMemoryEnabled: project.sharedMemoryEnabled,
+  };
+}
+
 export async function sendConversationMessage(
   input: SendConversationMessageInput,
 ) {
@@ -73,6 +88,7 @@ export async function sendConversationMessage(
       message: input.message,
       executionId: execution.id,
       allowedToolIds: allowedToolIds(input.worker),
+      project: await projectContext(input),
     });
   } catch (error) {
     if (execution)

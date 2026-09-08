@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -157,6 +158,9 @@ export const projects = pgTable(
     createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
     name: text("name").notNull(),
     instructions: text("instructions"),
+    sharedMemoryEnabled: boolean("shared_memory_enabled")
+      .default(false)
+      .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

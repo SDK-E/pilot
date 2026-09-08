@@ -57,6 +57,13 @@ const generateConversationRequestSchema = z.object({
   message: z.string().min(1).max(10_000),
   executionId: z.uuid(),
   allowedToolIds: z.array(z.literal("web-search")).max(1),
+  project: z
+    .object({
+      id: z.uuid(),
+      instructions: z.string().min(1).max(10_000).optional(),
+      sharedMemoryEnabled: z.boolean(),
+    })
+    .optional(),
 });
 
 export type GenerateConversationRequest = z.infer<
@@ -122,6 +129,15 @@ function headersForRuntime(
     "x-pilot-execution-id": request.executionId,
     "x-pilot-base-agent-id": request.worker.baseAgentId,
     "x-pilot-allowed-tool-ids": JSON.stringify(request.allowedToolIds),
+    ...(request.project
+      ? {
+          "x-pilot-project-id": request.project.id,
+          "x-pilot-project-instructions": request.project.instructions ?? "",
+          "x-pilot-project-shared-memory-enabled": String(
+            request.project.sharedMemoryEnabled,
+          ),
+        }
+      : {}),
   };
 }
 
@@ -270,6 +286,7 @@ export async function deleteConversationMemory(input: {
   organizationId: string;
   workerId: string;
   conversationId: string;
+  project?: { id: string; sharedMemoryEnabled: boolean };
 }) {
   const url = new URL("/v1/conversations/delete", getRuntimeUrl());
   const oidcToken = await getVercelOidcToken();

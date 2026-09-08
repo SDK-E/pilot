@@ -2,6 +2,18 @@
 
 Updated 2026-09-07. This is an implementation record, not a completion claim.
 
+## Verified project-memory boundary
+
+Projects remain private, creator-scoped collections. Pilot now resolves a
+conversation's single project association on the server and passes its typed
+project context over the authenticated Pilot-to-runtime channel. Project
+instructions are available to the agent. Shared project memory is disabled by
+default; when its owner enables it, Pilot AI uses a project-scoped Mastra
+resource and resource-scoped Observational Memory, while each conversation
+keeps its separate thread. The existing allowlisted Kilo Gateway model runs
+the observer. Files, knowledge, shared projects, and cross-user context are
+still unavailable.
+
 ## Goal
 
 Ship an open-source, self-hostable AI workforce platform with persistent organizational agents. Pilot owns the domain; Mastra provides runtime capabilities behind typed boundaries. First prove one agent end-to-end, including durable execution, protected actions, approval, suspend/resume, results and history. Do not expand into multiple agent architectures or secondary features before that works.

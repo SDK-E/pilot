@@ -55,8 +55,8 @@ export default async function ProjectPage({
       <section className="rounded-2xl border border-border bg-card/50 p-5">
         <h2 className="font-medium">Project settings</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          These instructions are stored for this project. They are not yet sent
-          to an agent until the project runtime boundary is available.
+          Project instructions apply to conversations in this project. Shared
+          memory is opt-in and stays scoped to your private project chats.
         </p>
         <form action={updateProjectAction} className="mt-4 space-y-3">
           <input name="projectId" type="hidden" value={project.id} />
@@ -74,6 +74,21 @@ export default async function ProjectPage({
             name="instructions"
             placeholder="Instructions for work in this project"
           />
+          <label className="flex items-start gap-3 rounded-xl border border-border p-3 text-sm">
+            <input
+              className="mt-0.5 size-4 accent-primary"
+              defaultChecked={project.sharedMemoryEnabled}
+              name="sharedMemoryEnabled"
+              type="checkbox"
+            />
+            <span>
+              <span className="block font-medium">Shared project memory</span>
+              <span className="text-muted-foreground">
+                Let this project&apos;s conversations contribute context to one
+                another. Disable it to keep each conversation separate.
+              </span>
+            </span>
+          </label>
           <Button type="submit" variant="outline">
             Save settings
           </Button>
@@ -82,7 +97,8 @@ export default async function ProjectPage({
       <section className="rounded-2xl border border-border bg-card/50 p-5">
         <h2 className="font-medium">Conversations</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Only your private conversations can be added.
+          Only your private conversations can be added. Moving a conversation
+          here removes it from its previous project.
         </p>
         {chats.some((chat) => !contained.has(chat.id)) ? (
           <form
