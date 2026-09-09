@@ -98,3 +98,8 @@ composer.
   components.
 - Installed Next.js `16.3.4` documentation for Server Actions and Server/
   Client Component boundaries.
+
+The new-chat selector and organization default use the same environment
+availability rule as server-side conversation preparation. A disabled Research
+runtime is omitted from both controls, and the default-agent Server Action
+rejects a forged or stale disabled Research ID before saving it.

@@ -3,6 +3,8 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { isResearchAvailable } from "@/conversations/research-availability";
+import { getWorker } from "@/workers/worker-repository";
 import { updateUserPreferences } from "@/users/user-preference-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { updateOrganizationDefaultWorker } from "@/organizations/organization-preference-repository";
@@ -37,6 +39,11 @@ export async function updateDefaultAgentAction(formData: FormData) {
   }
   if (!(await getActiveOrganizationMembership(user.id, organizationId))) {
     throw new Error("Your organization access is no longer active.");
+  }
+
+  const agent = await getWorker(organizationId, input.data.defaultWorkerId);
+  if (!agent || !isResearchAvailable(agent.baseAgentId)) {
+    throw new Error("This agent is unavailable in this environment.");
   }
 
   const preferences = await updateOrganizationDefaultWorker({

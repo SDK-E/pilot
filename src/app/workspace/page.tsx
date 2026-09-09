@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { ArrowUpRight, MessageSquareMore, Sparkles } from "lucide-react";
+import { isResearchAvailable } from "@/conversations/research-availability";
 import { NewChatForm } from "@/components/conversations/new-chat-form";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
@@ -39,11 +40,13 @@ export default async function WorkspaceHome() {
           </p>
         </div>
         <NewChatForm
-          agents={agents.map((agent) => ({
-            id: agent.id,
-            name: agent.name,
-            baseAgentId: agent.baseAgentId,
-          }))}
+          agents={agents
+            .filter((agent) => isResearchAvailable(agent.baseAgentId))
+            .map((agent) => ({
+              id: agent.id,
+              name: agent.name,
+              baseAgentId: agent.baseAgentId,
+            }))}
           defaultAgentId={organizationPreferences.defaultWorkerId}
         />
         <div className="grid gap-3 text-left sm:grid-cols-3">

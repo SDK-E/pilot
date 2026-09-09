@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { isResearchAvailable } from "@/conversations/research-availability";
 import { getUserPreferences } from "@/users/user-preference-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
@@ -27,6 +28,10 @@ export default async function SettingsPage() {
       : Promise.resolve({ defaultWorkerId: null }),
     membership ? listWorkers(organizationId!) : Promise.resolve([]),
   ]);
+
+  const availableAgents = agents.filter((agent) =>
+    isResearchAvailable(agent.baseAgentId),
+  );
 
   return (
     <main className="mx-auto w-full max-w-3xl space-y-8 px-5 py-8 sm:px-8 sm:py-10">
@@ -83,7 +88,7 @@ export default async function SettingsPage() {
           New chats start with this agent selected. Each person can choose a
           different agent before sending their first message.
         </p>
-        {membership && agents.length ? (
+        {membership && availableAgents.length ? (
           <form
             action={updateDefaultAgentAction}
             className="mt-4 flex flex-wrap gap-3"
@@ -91,11 +96,12 @@ export default async function SettingsPage() {
             <select
               className="h-9 min-w-52 rounded-xl border border-border bg-background px-3 text-sm"
               defaultValue={
-                organizationPreferences.defaultWorkerId ?? agents[0]?.id
+                organizationPreferences.defaultWorkerId ??
+                availableAgents[0]?.id
               }
               name="defaultWorkerId"
             >
-              {agents.map((agent) => (
+              {availableAgents.map((agent) => (
                 <option key={agent.id} value={agent.id}>
                   {agent.name}
                 </option>
