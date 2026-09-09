@@ -107,6 +107,10 @@ export async function streamConversationMessage(
             controller.enqueue(encoder.encode(event.text));
             continue;
           }
+          if (event.type === "suspended") {
+            controller.close();
+            return;
+          }
 
           const workerMessage = await createConversationMessage({
             organizationId: input.organizationId,

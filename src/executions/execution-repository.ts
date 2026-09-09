@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, eq } from "drizzle-orm";
+import { and, asc, count, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { activityEvents, conversations, executions } from "@/db/schema";
 import {
@@ -48,7 +48,7 @@ export async function finishExecution(input: {
       and(
         eq(executions.organizationId, input.organizationId),
         eq(executions.id, input.executionId),
-        eq(executions.status, "running"),
+        inArray(executions.status, ["running", "awaiting_approval"]),
       ),
     )
     .returning({ id: executions.id });
@@ -83,7 +83,7 @@ export async function appendToolActivity(input: {
       and(
         eq(executions.organizationId, input.organizationId),
         eq(executions.id, input.executionId),
-        eq(executions.status, "running"),
+        inArray(executions.status, ["running", "awaiting_approval"]),
       ),
     )
     .limit(1);

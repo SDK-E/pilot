@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { canUseResearchWebSearch } from "@/conversations/research-tool-authorization";
 
-test("Research web search requires an explicit allow rule", () => {
-  for (const approval of [undefined, "ask", "deny", "auto-classifier"]) {
+test("Research web search is offered only for allow or ask, never other rules", () => {
+  for (const approval of [undefined, "deny", "auto-classifier"]) {
     assert.equal(
       canUseResearchWebSearch({
         baseAgentId: "research",
@@ -13,14 +13,16 @@ test("Research web search requires an explicit allow rule", () => {
       false,
     );
   }
-  assert.equal(
-    canUseResearchWebSearch({
-      baseAgentId: "research",
-      enabledToolIds: ["web-search"],
-      approvalRules: { "web-search": "allow" },
-    }),
-    true,
-  );
+  for (const approval of ["allow", "ask"]) {
+    assert.equal(
+      canUseResearchWebSearch({
+        baseAgentId: "research",
+        enabledToolIds: ["web-search"],
+        approvalRules: { "web-search": approval },
+      }),
+      true,
+    );
+  }
   assert.equal(
     canUseResearchWebSearch({
       baseAgentId: "conversational",

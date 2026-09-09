@@ -10,7 +10,8 @@ const inputSchema = z
     executionId: z.uuid(),
     toolId: z.enum(toolActivityToolIds),
     toolCallId: z.string().min(1).max(255).optional(),
-    state: z.enum(["started", "completed", "failed"]),
+    state: z.enum(["started", "completed", "failed", "awaiting_approval"]),
+    runtimeRunId: z.string().min(1).max(255).optional(),
   })
   .strict();
 
@@ -27,6 +28,22 @@ export async function POST(request: Request) {
 
   const { appendToolActivity } =
     await import("@/executions/execution-repository");
+  if (input.data.state === "awaiting_approval") {
+    if (!input.data.runtimeRunId || !input.data.toolCallId) {
+      return Response.json(
+        { error: "Invalid approval event." },
+        { status: 400 },
+      );
+    }
+    const { createResearchWebSearchApproval } =
+      await import("@/approvals/approval-repository");
+    await createResearchWebSearchApproval({
+      organizationId: input.data.organizationId,
+      executionId: input.data.executionId,
+      runtimeRunId: input.data.runtimeRunId,
+      toolCallId: input.data.toolCallId,
+    });
+  }
   await appendToolActivity(input.data);
   return new Response(null, { status: 204 });
 }

@@ -10,7 +10,9 @@ import {
 } from "lucide-react";
 import {
   createConversationTaskAction,
+  decideConversationApprovalAction,
   type CreateConversationTaskState,
+  type DecideConversationApprovalState,
 } from "@/app/workspace/conversation-actions";
 import type { ActivityEventType } from "@/executions/activity-event";
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 const initialTaskState: CreateConversationTaskState = { status: "idle" };
+const initialApprovalState: DecideConversationApprovalState = {
+  status: "idle",
+};
 
 type ConversationDetailsPanelProps = {
   activities: Array<{ id: string; summary: string; type: ActivityEventType }>;
@@ -54,10 +59,16 @@ export function ConversationDetailsPanel({
     createConversationTaskAction,
     initialTaskState,
   );
+  const [approvalState, approvalAction, approvalPending] = useActionState(
+    decideConversationApprovalAction,
+    initialApprovalState,
+  );
 
   useEffect(() => {
-    if (taskState.status === "success") onTaskCreated();
-  }, [onTaskCreated, taskState.status]);
+    if (taskState.status === "success" || approvalState.status === "success") {
+      onTaskCreated();
+    }
+  }, [approvalState.status, onTaskCreated, taskState.status]);
 
   return (
     <aside
@@ -188,6 +199,40 @@ export function ConversationDetailsPanel({
                   <p className="mt-1 text-xs capitalize text-muted-foreground">
                     {approval.status}
                   </p>
+                  {approval.status === "pending" ? (
+                    <form action={approvalAction} className="mt-3 flex gap-2">
+                      <input name="workerId" type="hidden" value={agentId} />
+                      <input
+                        name="conversationId"
+                        type="hidden"
+                        value={conversationId}
+                      />
+                      <input
+                        name="approvalId"
+                        type="hidden"
+                        value={approval.id}
+                      />
+                      <Button
+                        disabled={approvalPending}
+                        name="decision"
+                        size="sm"
+                        type="submit"
+                        value="approve"
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        disabled={approvalPending}
+                        name="decision"
+                        size="sm"
+                        type="submit"
+                        value="reject"
+                        variant="outline"
+                      >
+                        Decline
+                      </Button>
+                    </form>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -196,6 +241,11 @@ export function ConversationDetailsPanel({
               No approvals are waiting in this chat.
             </p>
           )}
+          {approvalState.status === "error" ? (
+            <p aria-live="polite" className="mt-2 text-xs text-destructive">
+              {approvalState.message}
+            </p>
+          ) : null}
         </section>
       </div>
     </aside>

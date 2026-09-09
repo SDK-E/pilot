@@ -98,6 +98,15 @@ export async function sendConversationMessage(
       });
     throw error;
   }
+  if (
+    reply.type !== "completed" ||
+    typeof reply.text !== "string" ||
+    !reply.usage ||
+    typeof reply.modelId !== "string"
+  ) {
+    return { userMessage, suspended: true };
+  }
+  const completedReply = reply;
   const latencyMs = toStoredCount(Math.round(performance.now() - startedAt));
 
   let workerMessage;
@@ -108,13 +117,13 @@ export async function sendConversationMessage(
       conversationId: input.conversationId,
       createdByWorkosUserId: input.userId,
       role: "worker",
-      content: reply.text,
-      modelId: reply.modelId,
-      runtimeRunId: reply.runId ?? undefined,
+      content: completedReply.text,
+      modelId: completedReply.modelId,
+      runtimeRunId: completedReply.runId ?? undefined,
       latencyMs,
-      inputTokens: toStoredCount(reply.usage.inputTokens),
-      outputTokens: toStoredCount(reply.usage.outputTokens),
-      totalTokens: toStoredCount(reply.usage.totalTokens),
+      inputTokens: toStoredCount(completedReply.usage.inputTokens),
+      outputTokens: toStoredCount(completedReply.usage.outputTokens),
+      totalTokens: toStoredCount(completedReply.usage.totalTokens),
     });
     if (!workerMessage) {
       throw new Error("Pilot Conversation no longer belongs to this Worker.");

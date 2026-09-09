@@ -3,6 +3,12 @@ import "server-only";
 import { getVercelOidcToken } from "@vercel/oidc";
 import { z } from "zod";
 
+const approvalRequiredResponseSchema = z.object({
+  object: z.literal("pilot.approval.required"),
+  run_id: z.string().min(1),
+  tool_call_id: z.string().min(1),
+});
+
 const runtimeResponseSchema = z.object({
   id: z.string().min(1),
   object: z.literal("chat.completion"),
@@ -52,6 +58,7 @@ const generateConversationRequestSchema = z.object({
     modelId: z.literal("kilo/kilo-auto/free"),
     baseAgentId: z.enum(["conversational", "research"]),
     enabledToolIds: z.array(z.string()).max(20),
+    approvalRules: z.record(z.string(), z.string()),
   }),
   conversationId: z.uuid(),
   message: z.string().min(1).max(10_000),
@@ -79,6 +86,7 @@ export class PilotAiRuntimeError extends Error {
 
 export type PilotAiStreamEvent =
   | { type: "text"; text: string }
+  | { type: "suspended"; runId: string; toolCallId: string }
   | {
       type: "completed";
       modelId: "kilo/kilo-auto/free";
@@ -115,6 +123,16 @@ function getRuntimeUrl(): URL {
   return url;
 }
 
+function researchToolApprovalMode(request: GenerateConversationRequest) {
+  if (
+    request.worker.baseAgentId !== "research" ||
+    !request.allowedToolIds.includes("web-search")
+  )
+    return undefined;
+  const mode = request.worker.approvalRules["web-search"];
+  return mode === "allow" || mode === "ask" ? mode : undefined;
+}
+
 function headersForRuntime(
   request: GenerateConversationRequest,
   oidcToken: string,
@@ -129,6 +147,9 @@ function headersForRuntime(
     "x-pilot-execution-id": request.executionId,
     "x-pilot-base-agent-id": request.worker.baseAgentId,
     "x-pilot-allowed-tool-ids": JSON.stringify(request.allowedToolIds),
+    ...(researchToolApprovalMode(request)
+      ? { "x-pilot-tool-approval-mode": researchToolApprovalMode(request) }
+      : {}),
     ...(request.project
       ? {
           "x-pilot-project-id": request.project.id,
@@ -167,10 +188,18 @@ export async function generateConversationReply(
     );
   }
 
-  const completion = runtimeResponseSchema.parse(await response.json());
+  const payload: unknown = await response.json();
+  const approval = approvalRequiredResponseSchema.safeParse(payload);
+  if (approval.success)
+    return {
+      type: "suspended",
+      runId: approval.data.run_id,
+      toolCallId: approval.data.tool_call_id,
+    };
+  const completion = runtimeResponseSchema.parse(payload);
   const choice = completion.choices[0];
-
   return {
+    type: "completed",
     text: choice.message.content,
     finishReason: choice.finish_reason,
     modelId: completion.model,
@@ -221,6 +250,8 @@ export async function* parseConversationRuntimeStream(
   let buffer = "";
   let finalEvent:
     Extract<PilotAiStreamEvent, { type: "completed" }> | undefined;
+  let suspensionEvent:
+    Extract<PilotAiStreamEvent, { type: "suspended" }> | undefined;
 
   const handleEvent = (event: string): PilotAiStreamEvent | undefined => {
     const data = event
@@ -230,7 +261,24 @@ export async function* parseConversationRuntimeStream(
       .join("\n");
     if (!data || data === "[DONE]") return undefined;
 
-    const chunk = runtimeStreamChunkSchema.parse(JSON.parse(data));
+    const rawChunk: unknown = JSON.parse(data);
+    const suspension = z
+      .object({
+        object: z.literal("pilot.approval.required"),
+        pilot: z.object({
+          run_id: z.string().min(1),
+          tool_call_id: z.string().min(1),
+        }),
+      })
+      .safeParse(rawChunk);
+    if (suspension.success) {
+      return {
+        type: "suspended",
+        runId: suspension.data.pilot.run_id,
+        toolCallId: suspension.data.pilot.tool_call_id,
+      };
+    }
+    const chunk = runtimeStreamChunkSchema.parse(rawChunk);
     const text = chunk.choices[0]?.delta.content;
     if (text) return { type: "text", text };
     if (!chunk.usage) return undefined;
@@ -261,6 +309,7 @@ export async function* parseConversationRuntimeStream(
         const parsed = handleEvent(event);
         if (!parsed) continue;
         if (parsed.type === "completed") finalEvent = parsed;
+        else if (parsed.type === "suspended") suspensionEvent = parsed;
         else yield parsed;
       }
     }
@@ -272,7 +321,12 @@ export async function* parseConversationRuntimeStream(
   if (buffer) {
     const parsed = handleEvent(buffer);
     if (parsed?.type === "completed") finalEvent = parsed;
+    else if (parsed?.type === "suspended") suspensionEvent = parsed;
     else if (parsed) yield parsed;
+  }
+  if (suspensionEvent) {
+    yield suspensionEvent;
+    return;
   }
   if (!finalEvent) {
     throw new PilotAiRuntimeError(
@@ -280,6 +334,48 @@ export async function* parseConversationRuntimeStream(
     );
   }
   yield finalEvent;
+}
+
+export async function resumeResearchApproval(
+  input: GenerateConversationRequest & {
+    runtimeRunId: string;
+    toolCallId: string;
+    approved: boolean;
+  },
+) {
+  const request = generateConversationRequestSchema
+    .extend({
+      runtimeRunId: z.string().min(1),
+      toolCallId: z.string().min(1),
+      approved: z.boolean(),
+    })
+    .parse(input);
+  const oidcToken = await getVercelOidcToken();
+  const response = await fetch(
+    new URL("/v1/approvals/resume", getRuntimeUrl()),
+    {
+      method: "POST",
+      headers: headersForRuntime(request, oidcToken),
+      body: JSON.stringify({ ...request }),
+      cache: "no-store",
+    },
+  );
+  if (!response.ok)
+    throw new PilotAiRuntimeError(
+      `Pilot approval runtime returned ${response.status}.`,
+    );
+  const completion = runtimeResponseSchema.parse(await response.json());
+  const choice = completion.choices[0];
+  return {
+    text: choice.message.content,
+    modelId: completion.model,
+    runId: completion.id.replace(/^chatcmpl_/, "") || null,
+    usage: {
+      inputTokens: completion.usage.prompt_tokens,
+      outputTokens: completion.usage.completion_tokens,
+      totalTokens: completion.usage.total_tokens,
+    },
+  };
 }
 
 export async function deleteConversationMemory(input: {

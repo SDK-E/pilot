@@ -271,3 +271,25 @@ inside the existing organization-switch Server Action, exposes the read-only
 profile and Settings, and signs out through the existing POST action. Settings
 now contains the Agent fleet and Persona management links. Project sharing,
 attachments, and shared context are not implemented.
+
+## Durable Research web-search approval
+
+Research personas may now configure `web-search` as **Ask**. Pilot passes the
+capability only when the Research base agent and the persisted tool preference
+allow it; Mastra suspends the exact tool call before LangSearch or URL fetching
+can begin. Pilot AI reports only the verified organization, execution, fixed
+capability ID, Mastra run ID, and tool-call ID through its OIDC-authenticated
+callback. Pilot creates the creator-scoped task and pending approval from that
+server-derived data, records a concise `Searching the web needs approval`
+activity event, and never stores the query, URL, model output, or reasoning.
+
+Only the conversation creator can claim a pending approval. The server action
+rechecks WorkOS membership, the private conversation, its Research persona and
+the pending record before calling Pilot AI. The runtime reopens Turso-backed
+Mastra storage and verifies that the requested run is still suspended for that
+conversation resource and exact `web-search` call before approving or
+declining it. A claimed approval is one-time: a resume failure cancels the
+approval and fails its execution instead of retrying a possibly executed tool
+call. Approved or declined runs persist the returned assistant response and
+finish the original execution. `allow` remains direct execution; `deny` and
+`auto-classifier` remain unavailable until their own enforced policy exists.

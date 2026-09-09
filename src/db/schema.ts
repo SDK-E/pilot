@@ -8,6 +8,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -255,7 +256,7 @@ export const executions = pgTable(
       .references(() => conversations.id, { onDelete: "cascade" }),
     runtimeRunId: text("runtime_run_id"),
     status: text("status")
-      .$type<"running" | "completed" | "failed">()
+      .$type<"running" | "awaiting_approval" | "completed" | "failed">()
       .notNull(),
     errorMessage: text("error_message"),
     startedAt: timestamp("started_at", { withTimezone: true })
@@ -297,6 +298,7 @@ export const activityEvents = pgTable(
         | "tool.started"
         | "tool.completed"
         | "tool.failed"
+        | "tool.awaiting_approval"
       >()
       .notNull(),
     toolId: text("tool_id"),
@@ -411,9 +413,10 @@ export const approvals = pgTable(
       onDelete: "set null",
     }),
     runtimeRunId: text("runtime_run_id"),
+    toolCallId: text("tool_call_id"),
     summary: text("summary").notNull(),
     status: text("status")
-      .$type<"pending" | "approved" | "rejected" | "cancelled">()
+      .$type<"pending" | "deciding" | "approved" | "rejected" | "cancelled">()
       .notNull()
       .default("pending"),
     decidedByWorkosUserId: text("decided_by_workos_user_id"),
@@ -426,6 +429,11 @@ export const approvals = pgTable(
     index("approvals_organization_status_index").on(
       table.organizationId,
       table.status,
+    ),
+    uniqueIndex("approvals_execution_runtime_tool_call_unique").on(
+      table.executionId,
+      table.runtimeRunId,
+      table.toolCallId,
     ),
   ],
 );

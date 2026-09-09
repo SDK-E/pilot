@@ -4,8 +4,10 @@ export type ActivityEventType =
   | "execution.failed"
   | "tool.started"
   | "tool.completed"
-  | "tool.failed";
-export type ToolActivityState = "started" | "completed" | "failed";
+  | "tool.failed"
+  | "tool.awaiting_approval";
+export type ToolActivityState =
+  "started" | "completed" | "failed" | "awaiting_approval";
 
 export const toolActivityToolIds = [
   "web-search",
@@ -49,6 +51,8 @@ export function createToolActivity(input: {
         ? `${label}…`
         : input.state === "completed"
           ? `${label} completed`
-          : `${label} failed`,
+          : input.state === "awaiting_approval"
+            ? `${label} needs approval`
+            : `${label} failed`,
   };
 }
