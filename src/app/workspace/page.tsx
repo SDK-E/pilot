@@ -50,7 +50,11 @@ export default async function WorkspaceHome() {
           {[
             ["Plan", "Turn an idea into clear steps", Sparkles],
             ["Draft", "Write and refine a first version", MessageSquareMore],
-            ["Explore", "Research is coming with safe tools", ArrowUpRight],
+            [
+              "Research",
+              "Search the public web with cited sources",
+              ArrowUpRight,
+            ],
           ].map(([title, description, Icon]) => {
             const IconComponent = Icon as typeof Sparkles;
             return (
