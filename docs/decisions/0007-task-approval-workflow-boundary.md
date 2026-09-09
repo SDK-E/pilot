@@ -1,8 +1,7 @@
 # Task approval workflow boundary
 
-Status: partially implemented. Pilot now persists creator-scoped chat tasks and
-renders the task, approval, and sanitized activity rail; the Mastra workflow,
-approval decision, suspend/resume, and protected action remain pending.
+Status: implemented for the production Research web-search capability. Generic
+task workflows and all other protected actions remain pending.
 
 Pilot owns organization-scoped goals, tasks, assignments, approvals, execution
 records, authorization, and the user-facing activity trail. A model never
@@ -10,20 +9,19 @@ chooses whether an action is permitted. Pilot AI receives only a verified,
 minimal command from Pilot after WorkOS membership and task/worker ownership
 have been checked.
 
-The first protected action will use a registered Mastra workflow backed by the
-existing Turso storage provider. Its approval step suspends with safe context;
-Pilot records a pending approval and links it to the Pilot execution and Mastra
-workflow run. An authorized Pilot decision resumes that exact run with typed
-resume data. Rejection stops the workflow without performing the protected
-action. This makes approval and resume durable across requests and deployments
-without adding a custom queue or workflow engine.
+Research web-search uses Mastra's built-in `requireToolApproval` suspension,
+backed by the existing Turso storage provider. Pilot records a pending approval
+from an OIDC-authenticated runtime callback and links it to the Pilot execution,
+exact Mastra run ID, and tool-call ID. An authorized Pilot decision recreates
+the request-scoped agent over that storage, verifies the suspended run belongs
+to the owned conversation resource and `web-search` call, then approves or
+declines it. Rejection prevents the tool from executing.
 
 Pilot must reject stale, cross-organization, already-decided, or mismatched
 workflow-run approvals before calling the runtime. Runtime endpoints continue
-to require Vercel OIDC before parsing a command. The first action will be a
-safe, deterministic result-producing action; tools, integrations, and external
-side effects remain unavailable until their capability adapters and approval
-rules are enforced.
+to require Vercel OIDC before parsing a command. The implemented action is public web search. Other tools, integrations, and
+external side effects remain unavailable until their capability adapters and
+approval rules are enforced.
 
 ## Implemented chat-task boundary
 
@@ -37,8 +35,9 @@ is inserted, so a future caller cannot create a task by substituting an ID.
 Conversation task and approval queries join through the owned conversation;
 another organization member cannot use them to discover task or approval
 metadata. The activity rail contains only the existing safe summaries from
-Pilot-owned execution activity records. It does not expose tool payloads,
-outputs, URLs, errors, reasoning, approval decisions, or an action control.
+Pilot-owned execution activity records. A pending Research web-search approval
+has Approve and Decline controls for that chat's creator; it does not expose
+tool payloads, outputs, URLs, errors, or reasoning.
 
 ## Sources checked on 2026-09-07
 
