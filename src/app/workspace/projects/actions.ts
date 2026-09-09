@@ -11,6 +11,7 @@ import {
   createProject,
   deleteProject,
   getProject,
+  getProjectMemoryCleanupTargetForConversation,
   listProjectConversations,
   removeProjectConversation,
   updateProject,
@@ -114,23 +115,55 @@ export async function deleteProjectAction(
 export async function addProjectConversationAction(formData: FormData) {
   const projectId = z.uuid().parse(formData.get("projectId"));
   const conversationId = z.uuid().parse(formData.get("conversationId"));
+  const activeOwner = await owner();
+  const currentProject = await getProjectMemoryCleanupTargetForConversation({
+    ...activeOwner,
+    conversationId,
+  });
+
+  // Observational Memory is resource-scoped, so moving a chat must clear the
+  // prior project's resource before its database association changes.
+  if (currentProject?.sharedMemoryEnabled && currentProject.id !== projectId) {
+    await deleteProjectMemory({
+      organizationId: activeOwner.organizationId,
+      workerId: currentProject.workerId,
+      projectId: currentProject.id,
+    });
+  }
   const project = await addProjectConversation({
-    ...(await owner()),
+    ...activeOwner,
     projectId,
     conversationId,
   });
   if (!project) throw new Error("This conversation is unavailable.");
   revalidatePath(`/workspace/projects/${projectId}`);
+  revalidatePath("/workspace/chats");
 }
 
 export async function removeProjectConversationAction(formData: FormData) {
   const projectId = z.uuid().parse(formData.get("projectId"));
   const conversationId = z.uuid().parse(formData.get("conversationId"));
+  const activeOwner = await owner();
+  const currentProject = await getProjectMemoryCleanupTargetForConversation({
+    ...activeOwner,
+    conversationId,
+  });
+  if (currentProject?.id !== projectId) {
+    throw new Error("This project conversation is unavailable.");
+  }
+  if (currentProject.sharedMemoryEnabled) {
+    await deleteProjectMemory({
+      organizationId: activeOwner.organizationId,
+      workerId: currentProject.workerId,
+      projectId: currentProject.id,
+    });
+  }
   const removed = await removeProjectConversation({
-    ...(await owner()),
+    ...activeOwner,
     projectId,
     conversationId,
   });
   if (!removed) throw new Error("This project conversation is unavailable.");
   revalidatePath(`/workspace/projects/${projectId}`);
+  revalidatePath("/workspace/chats");
 }

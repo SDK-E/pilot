@@ -219,3 +219,36 @@ export async function getProjectMemoryContextForConversation(
     .limit(1);
   return project;
 }
+
+/**
+ * Returns the runtime resource that must be cleared before a private chat
+ * leaves a shared-memory project. This is deliberately narrower than the
+ * generation context: callers must still own both the project and chat.
+ */
+export async function getProjectMemoryCleanupTargetForConversation(
+  input: ProjectOwner & { conversationId: string },
+) {
+  const [project] = await db
+    .select({
+      id: projects.id,
+      sharedMemoryEnabled: projects.sharedMemoryEnabled,
+      workerId: conversations.workerId,
+    })
+    .from(projectConversations)
+    .innerJoin(projects, eq(projectConversations.projectId, projects.id))
+    .innerJoin(
+      conversations,
+      eq(projectConversations.conversationId, conversations.id),
+    )
+    .where(
+      and(
+        eq(projectConversations.conversationId, input.conversationId),
+        eq(projects.organizationId, input.organizationId),
+        eq(projects.createdByWorkosUserId, input.userId),
+        eq(conversations.organizationId, input.organizationId),
+        eq(conversations.createdByWorkosUserId, input.userId),
+      ),
+    )
+    .limit(1);
+  return project;
+}

@@ -13,6 +13,10 @@ resource and resource-scoped Observational Memory, while each conversation
 keeps its separate thread. The existing allowlisted Kilo Gateway model runs
 the observer. Files, knowledge, shared projects, and cross-user context are
 still unavailable.
+Moving or removing a conversation first clears the former shared-memory
+resource before the database association can change. A cleanup failure leaves
+the chat in its existing project, preventing resource-scoped summaries from
+remaining available to a former project's chats.
 
 ## Goal
 
