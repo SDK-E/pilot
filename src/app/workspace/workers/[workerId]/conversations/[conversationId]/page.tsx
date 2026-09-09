@@ -12,6 +12,7 @@ import { listConversationActivity } from "@/executions/execution-repository";
 import { getWorker } from "@/workers/worker-repository";
 import { listConversationTasks } from "@/tasks/task-repository";
 import { listConversationApprovals } from "@/approvals/approval-repository";
+import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 
 export const metadata: Metadata = { title: "Conversation" };
 
@@ -44,28 +45,35 @@ export default async function ConversationPage({
   );
   if (!membership) notFound();
 
-  const [worker, conversation, messages, activities, tasks, approvals] =
-    await Promise.all([
-      getWorker(organizationId, workerId),
-      getConversation(organizationId, workerId, conversationId, user.id),
-      listConversationMessages(
-        organizationId,
-        workerId,
-        conversationId,
-        user.id,
-      ),
-      listConversationActivity(organizationId, conversationId, user.id),
-      listConversationTasks({
-        organizationId,
-        conversationId,
-        userId: user.id,
-      }),
-      listConversationApprovals({
-        organizationId,
-        conversationId,
-        userId: user.id,
-      }),
-    ]);
+  const [
+    worker,
+    conversation,
+    messages,
+    activities,
+    tasks,
+    approvals,
+    project,
+  ] = await Promise.all([
+    getWorker(organizationId, workerId),
+    getConversation(organizationId, workerId, conversationId, user.id),
+    listConversationMessages(organizationId, workerId, conversationId, user.id),
+    listConversationActivity(organizationId, conversationId, user.id),
+    listConversationTasks({
+      organizationId,
+      conversationId,
+      userId: user.id,
+    }),
+    listConversationApprovals({
+      organizationId,
+      conversationId,
+      userId: user.id,
+    }),
+    getProjectMemoryContextForConversation({
+      organizationId,
+      userId: user.id,
+      conversationId,
+    }),
+  ]);
   if (!worker || !conversation || !messages) notFound();
 
   const isRuntimeConfigured = Boolean(process.env.PILOT_AI_RUNTIME_URL?.trim());
@@ -82,6 +90,7 @@ export default async function ConversationPage({
       title={conversation.title ?? "New conversation"}
       agentId={worker.id}
       agentName={worker.name}
+      project={project}
     />
   );
 }

@@ -197,6 +197,7 @@ export async function getProjectMemoryContextForConversation(
   const [project] = await db
     .select({
       id: projects.id,
+      name: projects.name,
       instructions: projects.instructions,
       sharedMemoryEnabled: projects.sharedMemoryEnabled,
     })

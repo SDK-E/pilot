@@ -265,6 +265,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     }),
     {
       id: project.id,
+      name: "Launch research",
       instructions: "Keep the work focused on launch evidence.",
       sharedMemoryEnabled: false,
     },
@@ -295,6 +296,7 @@ test("workers are persisted and isolated by organization", async (t) => {
     }),
     {
       id: project.id,
+      name: "Launch research",
       instructions: "Keep the research plan current.",
       sharedMemoryEnabled: true,
     },

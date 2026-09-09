@@ -49,6 +49,11 @@ type ConversationShellProps = {
   agentName: string;
   tasks: Array<{ id: string; title: string; status: string }>;
   approvals: Array<{ id: string; summary: string; status: string }>;
+  project?: {
+    id: string;
+    name: string;
+    sharedMemoryEnabled: boolean;
+  };
 };
 
 export function ConversationShell({
@@ -62,6 +67,7 @@ export function ConversationShell({
   agentName,
   tasks,
   approvals,
+  project,
 }: ConversationShellProps) {
   const router = useRouter();
   const sendMessageShortcut = useSendMessageShortcut();
@@ -145,6 +151,17 @@ export function ConversationShell({
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{agentName}</p>
             <p className="truncate text-xs text-muted-foreground">{title}</p>
+            {project ? (
+              <Link
+                className="block truncate text-xs text-primary hover:underline"
+                href={`/workspace/projects/${project.id}`}
+              >
+                {project.name} ·{" "}
+                {project.sharedMemoryEnabled
+                  ? "Shared memory on"
+                  : "Project context"}
+              </Link>
+            ) : null}
           </div>
         </div>
         <div className="w-12" aria-hidden="true" />
