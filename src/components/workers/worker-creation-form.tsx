@@ -76,8 +76,8 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
           ))}
         </select>
         <p className="text-xs text-muted-foreground">
-          Research remains unavailable until its production tool boundary is
-          verified.
+          Research can use public-web search when its web-search preference is
+          enabled. Conversational agents have no production tools.
         </p>
       </div>
       <div className="space-y-2">
@@ -134,8 +134,8 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
       <div className="space-y-3">
         <Label>Enabled tools</Label>
         <p className="text-xs text-muted-foreground">
-          These are persona preferences only. No tool is available until its
-          server-side capability boundary is implemented and authorized.
+          Only web-search is available to Research today. Other preferences are
+          saved for future capabilities and cannot grant runtime access.
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {configurableToolIds.map((toolId) => (
