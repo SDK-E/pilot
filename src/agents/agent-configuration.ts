@@ -2,7 +2,8 @@ export const baseAgents = [
   {
     id: "conversational",
     name: "Conversational",
-    description: "General-purpose chat with no production tools yet.",
+    description:
+      "General-purpose chat with optional protected public-web search.",
     available: true,
   },
   {

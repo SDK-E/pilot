@@ -21,11 +21,13 @@ other base-agent type, so a browser form cannot route a chat into Research or
 another future agent merely by changing a hidden field.
 
 Research is available when the configured production feature flag is enabled.
-Its only production capability is the tenant-scoped, hardened `web-search`
-adapter. `allow` executes it directly and `ask` suspends the exact Mastra call
-for a creator-scoped approval before external access. Attachments, browser and
-scratchpad views, and reasoning detail remain absent until their runtime event
-contract, durable records, and authorization checks are implemented.
+The tenant-scoped, hardened `web-search` adapter is available to either a
+Conversational or Research persona only when that persona enables it and saves
+an explicit `allow` or `ask` rule. `allow` executes it directly and `ask`
+suspends the exact Mastra call for a creator-scoped approval before external
+access. Attachments, browser and scratchpad views, and reasoning detail remain
+absent until their runtime event contract, durable records, and authorization
+checks are implemented.
 
 The interface displays a collapsed, transient “Pilot is responding”
 activity only while the browser has an active protected stream. It reports the
@@ -38,11 +40,12 @@ and messages, executions, and completed activity are persisted through the
 authorized Pilot-to-runtime path. The UI displays completed activity in a
 collapsed disclosure. The opening message receives a local, deterministic title
 without another model request, and the newest organization-scoped conversations
-appear in the expanded sidebar for direct return to a chat. New and existing conversations stream text through WorkOS-authorized Pilot
-routes. Conversational runs remain tool-free; Research is restricted to its
-explicitly authorized web-search capability. A new conversation is created only
-after its validated first prompt; Pilot persists that prompt before streaming
-and the complete assistant message plus execution only after the stream ends.
+appear in the expanded sidebar for direct return to a chat. New and existing
+conversations stream text through WorkOS-authorized Pilot routes. Both agent
+bases can use only their explicitly authorized public web-search capability. A
+new conversation is created only after its validated first prompt; Pilot
+persists that prompt before streaming and the complete assistant message plus
+execution only after the stream ends.
 Streaming tool traces, browser/scratchpad views, and reasoning detail remain
 unimplemented because their event, persistence, and approval contracts are not
 yet present.

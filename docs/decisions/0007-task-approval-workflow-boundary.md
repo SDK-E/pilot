@@ -1,7 +1,8 @@
 # Task approval workflow boundary
 
-Status: implemented for the production Research web-search capability. Generic
-task workflows and all other protected actions remain pending.
+Status: implemented for the production public web-search capability shared by
+Conversational and Research personas. Generic task workflows and all other
+protected actions remain pending.
 
 Pilot owns organization-scoped goals, tasks, assignments, approvals, execution
 records, authorization, and the user-facing activity trail. A model never
@@ -9,13 +10,13 @@ chooses whether an action is permitted. Pilot AI receives only a verified,
 minimal command from Pilot after WorkOS membership and task/worker ownership
 have been checked.
 
-Research web-search uses Mastra's built-in `requireToolApproval` suspension,
+Public web-search uses Mastra's built-in `requireToolApproval` suspension,
 backed by the existing Turso storage provider. Pilot records a pending approval
 from an OIDC-authenticated runtime callback and links it to the Pilot execution,
 exact Mastra run ID, and tool-call ID. An authorized Pilot decision recreates
-the request-scoped agent over that storage, verifies the suspended run belongs
-to the owned conversation resource and `web-search` call, then approves or
-declines it. Rejection prevents the tool from executing.
+the selected request-scoped agent over that storage, verifies the suspended run
+belongs to the owned conversation resource and `web-search` call, then
+approves or declines it. Rejection prevents the tool from executing.
 
 Pilot must reject stale, cross-organization, already-decided, or mismatched
 workflow-run approvals before calling the runtime. Runtime endpoints continue

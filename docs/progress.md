@@ -27,6 +27,15 @@ Ship an open-source, self-hostable AI workforce platform with persistent organiz
 
 ## Current slice: production chat workspace interface
 
+The bounded public `web-search` capability is now shared by Conversational and
+Research personas. Pilot authorizes it only when the saved persona preference
+contains `web-search` with an `allow` or `ask` rule, and Pilot AI initializes
+the request-scoped tool adapter only from that server-derived command. Both
+paths preserve the existing OIDC activity callback, public-network fetch
+boundary, Turso-backed Mastra suspension, and creator-scoped approval decision.
+All other saved tool preferences remain non-capabilities until their own
+authorization, storage, activity, and approval contracts are implemented.
+
 Pilot's authenticated workspace now has a production-focused, responsive chat
 shell built with the existing shadcn sidebar and AI Elements conversation and
 message components. The text-only mark is `Pilot.` when expanded and `P` when

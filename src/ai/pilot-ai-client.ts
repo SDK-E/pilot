@@ -123,12 +123,8 @@ function getRuntimeUrl(): URL {
   return url;
 }
 
-function researchToolApprovalMode(request: GenerateConversationRequest) {
-  if (
-    request.worker.baseAgentId !== "research" ||
-    !request.allowedToolIds.includes("web-search")
-  )
-    return undefined;
+function publicWebSearchApprovalMode(request: GenerateConversationRequest) {
+  if (!request.allowedToolIds.includes("web-search")) return undefined;
   const mode = request.worker.approvalRules["web-search"];
   return mode === "allow" || mode === "ask" ? mode : undefined;
 }
@@ -147,8 +143,10 @@ function headersForRuntime(
     "x-pilot-execution-id": request.executionId,
     "x-pilot-base-agent-id": request.worker.baseAgentId,
     "x-pilot-allowed-tool-ids": JSON.stringify(request.allowedToolIds),
-    ...(researchToolApprovalMode(request)
-      ? { "x-pilot-tool-approval-mode": researchToolApprovalMode(request) }
+    ...(publicWebSearchApprovalMode(request)
+      ? {
+          "x-pilot-tool-approval-mode": publicWebSearchApprovalMode(request),
+        }
       : {}),
     ...(request.project
       ? {

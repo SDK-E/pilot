@@ -113,7 +113,12 @@ export async function decideConversationApprovalAction(
       input.data.workerId,
     ),
   ]);
-  if (!conversation || !worker || worker.baseAgentId !== "research")
+  if (
+    !conversation ||
+    !worker ||
+    (worker.baseAgentId !== "conversational" &&
+      worker.baseAgentId !== "research")
+  )
     return { status: "error", message: "This approval is unavailable." };
 
   const {
@@ -142,7 +147,7 @@ export async function decideConversationApprovalAction(
         id: worker.id,
         instructions: buildPersonaInstructions(worker),
         modelId: "kilo/kilo-auto/free",
-        baseAgentId: "research",
+        baseAgentId: worker.baseAgentId,
         enabledToolIds: worker.enabledToolIds,
         approvalRules: worker.approvalRules,
       },

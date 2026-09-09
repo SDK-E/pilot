@@ -76,8 +76,9 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
           ))}
         </select>
         <p className="text-xs text-muted-foreground">
-          Research can use public-web search only when web-search is enabled and
-          explicitly allowed. Conversational agents have no production tools.
+          Conversational and Research agents can use public-web search only when
+          it is enabled and explicitly allowed. Other tools stay unavailable
+          until their protected runtime boundary is complete.
         </p>
       </div>
       <div className="space-y-2">
@@ -134,8 +135,9 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
       <div className="space-y-3">
         <Label>Enabled tools</Label>
         <p className="text-xs text-muted-foreground">
-          Only web-search is available to Research today. Other preferences are
-          saved for future capabilities and cannot grant runtime access.
+          Public web search is available to either base agent today. The other
+          options are retained as future preferences and cannot grant runtime
+          access.
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {configurableToolIds.map((toolId) => (

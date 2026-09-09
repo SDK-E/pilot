@@ -3,7 +3,7 @@ import "server-only";
 import { generateConversationReply } from "@/ai/pilot-ai-client";
 import { createConversationMessage } from "@/conversations/conversation-repository";
 import { isResearchAvailable } from "@/conversations/research-availability";
-import { canUseResearchWebSearch } from "@/conversations/research-tool-authorization";
+import { canUsePublicWebSearch } from "@/conversations/public-web-search-authorization";
 import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 import {
   finishExecution,
@@ -36,7 +36,7 @@ function toStoredCount(value: number): number | undefined {
 function allowedToolIds(
   worker: SendConversationMessageInput["worker"],
 ): Array<"web-search"> {
-  return canUseResearchWebSearch(worker) ? ["web-search"] : [];
+  return canUsePublicWebSearch(worker) ? ["web-search"] : [];
 }
 
 async function projectContext(input: SendConversationMessageInput) {
