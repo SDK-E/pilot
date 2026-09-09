@@ -13,7 +13,7 @@ export default async function TasksPage() {
     organizationId,
   );
   if (!membership) redirect("/workspace");
-  const tasks = await listTasks(organizationId);
+  const tasks = await listTasks({ organizationId, userId: user.id });
   return (
     <main className="mx-auto w-full max-w-5xl space-y-6 px-6 py-10">
       <header>

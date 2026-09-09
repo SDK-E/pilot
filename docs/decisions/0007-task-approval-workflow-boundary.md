@@ -50,3 +50,9 @@ tool payloads, outputs, URLs, errors, or reasoning.
 - [Mastra AI SDK UI](https://mastra.ai/integrations/agentic-ui/ai-sdk-ui)
   — maintained handlers can stream workflow/agent events into AI SDK UI when
   the protected runtime transport is extended.
+
+The legacy Tasks and Approvals pages use the same ownership boundary as the
+chat rail. A task list includes only tasks created by the current user or tasks
+attached to that user's conversations. An approval list joins through the owned
+conversation. Organization membership alone never grants access to another
+member's task or approval metadata.

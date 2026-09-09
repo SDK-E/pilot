@@ -37,7 +37,11 @@ import {
   getWorker,
   listWorkers,
 } from "@/workers/worker-repository";
-import { createTask, listConversationTasks } from "@/tasks/task-repository";
+import {
+  createTask,
+  listConversationTasks,
+  listTasks,
+} from "@/tasks/task-repository";
 import {
   getUserPreferences,
   updateUserPreferences,
@@ -472,6 +476,16 @@ test("workers are persisted and isolated by organization", async (t) => {
       conversationId: conversation.id,
       userId: `another_user_${suffix}`,
     }),
+    [],
+  );
+  assert.deepEqual(
+    (await listTasks({ organizationId, userId: `user_${suffix}` })).map(
+      (item) => item.id,
+    ),
+    [task.id],
+  );
+  assert.deepEqual(
+    await listTasks({ organizationId, userId: `another_user_${suffix}` }),
     [],
   );
   assert.equal(

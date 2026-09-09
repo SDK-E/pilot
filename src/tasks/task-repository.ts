@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { db } from "@/db/client";
 import { conversations, tasks } from "@/db/schema";
 
@@ -34,7 +34,10 @@ export async function createTask(input: {
   return task;
 }
 
-export async function listTasks(organizationId: string) {
+export async function listTasks(input: {
+  organizationId: string;
+  userId: string;
+}) {
   return db
     .select({
       id: tasks.id,
@@ -43,7 +46,16 @@ export async function listTasks(organizationId: string) {
       updatedAt: tasks.updatedAt,
     })
     .from(tasks)
-    .where(eq(tasks.organizationId, organizationId))
+    .leftJoin(conversations, eq(tasks.conversationId, conversations.id))
+    .where(
+      and(
+        eq(tasks.organizationId, input.organizationId),
+        or(
+          eq(tasks.createdByWorkosUserId, input.userId),
+          eq(conversations.createdByWorkosUserId, input.userId),
+        ),
+      ),
+    )
     .orderBy(desc(tasks.updatedAt));
 }
 

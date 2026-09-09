@@ -4,7 +4,10 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { approvals, conversations, executions, tasks } from "@/db/schema";
 
-export async function listApprovals(organizationId: string) {
+export async function listApprovals(input: {
+  organizationId: string;
+  userId: string;
+}) {
   return db
     .select({
       id: approvals.id,
@@ -13,7 +16,14 @@ export async function listApprovals(organizationId: string) {
       createdAt: approvals.createdAt,
     })
     .from(approvals)
-    .where(eq(approvals.organizationId, organizationId))
+    .innerJoin(tasks, eq(approvals.taskId, tasks.id))
+    .innerJoin(conversations, eq(tasks.conversationId, conversations.id))
+    .where(
+      and(
+        eq(approvals.organizationId, input.organizationId),
+        eq(conversations.createdByWorkosUserId, input.userId),
+      ),
+    )
     .orderBy(desc(approvals.createdAt));
 }
 
