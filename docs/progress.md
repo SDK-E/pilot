@@ -1,6 +1,6 @@
 # Pilot implementation status
 
-Updated 2026-09-07. This is an implementation record, not a completion claim.
+Updated 2026-09-09. This is an implementation record, not a completion claim.
 
 ## Verified project-memory boundary
 
@@ -34,14 +34,15 @@ collapsed; the former decorative `logo.png` is removed, leaving image branding
 to the favicon. The home surface presents a conversational-first composer and
 an organization-scoped chooser for configured Conversational personas. A
 missing persona is created as `Pilot` only when an active member sends a
-non-empty first message. Research appears as unavailable because its
-production, tenant-scoped read-only capability boundary is not yet verified.
+non-empty first message. Research is available when its matching production
+feature flags are enabled. It has one tenant-scoped, read-only capability:
+the hardened `web-search` adapter.
 
 This is an interface and routing improvement over the durable-execution
 foundation below. It does not add message streaming, attachments, runtime tool
-events, browser/scratchpad panes, reasoning content, Research production tools,
-or tool approvals. The collapsed completed activity remains the only runtime
-activity the UI can truthfully render today. See
+events, browser/scratchpad panes, reasoning content, or tool approvals.
+Research tool lifecycle is the sole production tool activity the UI can
+truthfully render today. See
 [chat workspace interface](decisions/0008-chat-workspace-interface.md).
 
 Each submitted first message receives a deterministic local title, avoiding an
@@ -151,7 +152,7 @@ Not verified: successful browser sign-in against the hosted WorkOS local or prod
 ## Provisioned resources
 
 - Vercel project: `sdk-enterprises/pilot`, ID `prj_RZRmVOvddx1yCNe6j25Cj4w3ugZn`. Node 24 and the `nextjs` framework preset are configured. The GitHub connection to `SDK-E/pilot` is verified, with `main` as the production branch and automatic deployment creation enabled. The production deployment for commit `1f9efcb` is Ready; the earlier `7eb4588` deployment also completed successfully after allowing the required `esbuild` install scripts.
-- Vercel project: `sdk-enterprises/pilot-ai`, ID `prj_glOhpsCd37RwbvGhMWIerVAIHSXA`, serves the runtime at `https://ai.pilot.sdk.enterprises`. Its remote Linux build emits one 8.3 MB Node 24 OpenAI-compatible `POST /v1/chat/completions` function, with no Research runtime dependencies. The function validates a team-issued Vercel OIDC token against the exact `pilot` project and matching environment before it parses input, so the custom domain is protected even though Vercel Deployment Protection excludes custom domains. An unauthenticated production request returned 401 on 2026-09-07. Kilo Gateway credentials, `TURSO_DATABASE_URL`, and `TURSO_AUTH_TOKEN` are sensitive Preview and Production variables. Pilot is configured as the Trusted Source, and Production `PILOT_AI_RUNTIME_URL` points to the runtime; the first authenticated Pilot browser conversation still needs to verify that OIDC path.
+- Vercel project: `sdk-enterprises/pilot-ai`, ID `prj_glOhpsCd37RwbvGhMWIerVAIHSXA`, serves the runtime at `https://ai.pilot.sdk.enterprises`. Its remote Linux build emits an OpenAI-compatible `POST /v1/chat/completions` function. The function validates a team-issued Vercel OIDC token against the exact `pilot` project and matching environment before it parses input, so the custom domain is protected even though Vercel Deployment Protection excludes custom domains. Production Research is feature-gated in both projects and imports only hardened LangSearch-backed `web-search`; its OIDC-authenticated callback persists sanitized lifecycle summaries only. Kilo Gateway credentials, `TURSO_DATABASE_URL`, and `TURSO_AUTH_TOKEN` are sensitive Preview and Production variables. Pilot is configured as the Trusted Source, and Production `PILOT_AI_RUNTIME_URL` points to the runtime; an authenticated production browser conversation still needs end-to-end verification.
 - Production origin: `https://pilot.sdk.enterprises`. Its Cloudflare DNS zone has an unproxied automatic-TTL A record to Vercel's required `76.76.21.21`; Vercel verified the project domain. The parent domain remains on its existing Cloudflare nameservers.
 - WorkOS production environment: `environment_01KX6CY4Y7671HC2VRQ5ADYGBA`. SDK Pilot application `app_01M1R77E90YV8T78ZPY7WC8JSM`, client `client_01M1R77E8ZZ7689T03CF1SANDY`. Its application API key and cookie password are sensitive Vercel production variables. Callback `/auth/callback`, initiate-login `/sign-in`, homepage and sign-out at the production origin were saved and read back.
 - WorkOS local environment: `environment_01M1QD1AE9B8TKKBT4VWH8N60T`. SDK Pilot application `app_01M1S3YKJ0TBQYPA2J3T9GSDTC`, client `client_01M1S3YKJ02RNG615NFDW51FHH`. It has an application-scoped local API key stored only in local/Vercel development configuration. Callback URIs allow `http://localhost:3000/auth/callback` and the current machine's `http://localhost:3001/auth/callback`; homepage and sign-out are `http://localhost:3000`; initiate login is `http://localhost:3000/sign-in`.
@@ -175,7 +176,7 @@ The next vertical slice is a Pilot-owned task and approval record paired with a
 Turso-backed Mastra workflow suspension. Its boundary is recorded in
 [task approval workflow boundary](decisions/0007-task-approval-workflow-boundary.md).
 
-`pilot-ai` uses `src/index.ts` as its Mastra development entrypoint, with agent-specific modules in `src/conversation` and `src/research`, and shared runtime code in `src/runtime`. Pilot Research remains local-development work with no tenant-scoped service adapter or approved deployment path. The deployed Conversation function imports only the no-tools Pilot adapter. Pilot owns organization-scoped task and approval records plus their read-only workspace routes; starting, deciding, resuming, and rendering a durable approval workflow are still pending. `pilot-integrations` and `pilot-ui` remain package stubs. There are no user-facing memory controls or integration capabilities.
+`pilot-ai` uses `src/index.ts` as its Mastra development entrypoint, with agent-specific modules in `src/conversation` and `src/research`, and shared runtime code in `src/runtime`. The deployed runtime selects a request-scoped Research adapter only for an explicitly enabled Research persona, and only with `web-search`; broader development tools remain absent. Pilot owns organization-scoped task and approval records plus their read-only workspace routes; starting, deciding, resuming, and rendering a durable approval workflow are still pending. `pilot-integrations` and `pilot-ui` remain package stubs. There are no user-facing file, browser, scratchpad, MCP, or integration controls.
 
 # Current slice: live safe activity
 
