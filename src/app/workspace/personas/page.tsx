@@ -13,6 +13,7 @@ import {
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { listWorkers } from "@/workers/worker-repository";
 import { DeletePersonaButton } from "@/components/workers/delete-persona-button";
+import { DuplicatePersonaButton } from "@/components/workers/duplicate-persona-button";
 
 export default async function PersonasPage() {
   const { user, organizationId } = await withAuth();
@@ -90,6 +91,10 @@ export default async function PersonasPage() {
                         </span>
                       </Link>
                       <DeletePersonaButton
+                        workerId={persona.id}
+                        name={persona.name}
+                      />
+                      <DuplicatePersonaButton
                         workerId={persona.id}
                         name={persona.name}
                       />

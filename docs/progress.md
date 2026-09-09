@@ -36,6 +36,12 @@ boundary, Turso-backed Mastra suspension, and creator-scoped approval decision.
 All other saved tool preferences remain non-capabilities until their own
 authorization, storage, activity, and approval contracts are implemented.
 
+The Personas index can duplicate a configured persona. Pilot reloads the source
+from the active organization after rechecking WorkOS membership, generates a
+unique readable copy name, and opens the new persona for editing. A copy carries
+only its saved agent configuration; conversations, runtime memory, tasks,
+approvals, executions, and activity never cross to it.
+
 Pilot's authenticated workspace now has a production-focused, responsive chat
 shell built with the existing shadcn sidebar and AI Elements conversation and
 message components. The text-only mark is `Pilot.` when expanded and `P` when
