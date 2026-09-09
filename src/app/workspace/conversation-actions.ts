@@ -1,5 +1,6 @@
 "use server";
 
+import { buildPersonaInstructions } from "@/agents/persona-instructions";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -139,7 +140,7 @@ export async function decideConversationApprovalAction(
       organizationId,
       worker: {
         id: worker.id,
-        instructions: worker.instructions,
+        instructions: buildPersonaInstructions(worker),
         modelId: "kilo/kilo-auto/free",
         baseAgentId: "research",
         enabledToolIds: worker.enabledToolIds,

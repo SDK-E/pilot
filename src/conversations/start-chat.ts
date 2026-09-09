@@ -1,5 +1,6 @@
 import "server-only";
 
+import { buildPersonaInstructions } from "@/agents/persona-instructions";
 import { createConversation } from "@/conversations/conversation-repository";
 import { deriveConversationTitle } from "@/conversations/conversation-title";
 import {
@@ -131,7 +132,7 @@ export async function prepareConversation(
     conversation,
     worker: {
       id: worker.id,
-      instructions: worker.instructions,
+      instructions: buildPersonaInstructions(worker),
       modelId: "kilo/kilo-auto/free",
       baseAgentId: worker.baseAgentId,
       enabledToolIds: worker.enabledToolIds,

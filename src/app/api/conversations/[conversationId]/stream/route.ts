@@ -1,3 +1,4 @@
+import { buildPersonaInstructions } from "@/agents/persona-instructions";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
 import { streamConversationMessage } from "@/conversations/stream-message";
@@ -64,7 +65,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     organizationId,
     worker: {
       id: worker.id,
-      instructions: worker.instructions,
+      instructions: buildPersonaInstructions(worker),
       modelId: "kilo/kilo-auto/free",
       baseAgentId: worker.baseAgentId,
       enabledToolIds: worker.enabledToolIds,

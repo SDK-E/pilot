@@ -44,3 +44,8 @@ infer state from a browser session.
 4. Research service adapter with the first read-only capabilities and collapsed
    live tool activity.
 5. Approval modes, browser/scratchpad views, then write-capable integrations.
+
+Pilot composes each saved persona's general instructions, optional goals, tone,
+and output format into a server-owned runtime instruction packet. This happens
+at each new-chat, follow-up, and approval-resume boundary, rather than trusting
+browser-provided fields or treating persona configuration as display-only.
