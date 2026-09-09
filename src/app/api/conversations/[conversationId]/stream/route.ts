@@ -68,6 +68,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       modelId: "kilo/kilo-auto/free",
       baseAgentId: worker.baseAgentId,
       enabledToolIds: worker.enabledToolIds,
+      approvalRules: worker.approvalRules,
     },
     conversationId: conversation.id,
     userId: user.id,

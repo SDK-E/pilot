@@ -33,6 +33,7 @@ export type PreparedConversation =
         modelId: "kilo/kilo-auto/free";
         baseAgentId: "conversational" | "research";
         enabledToolIds: string[];
+        approvalRules: Record<string, string>;
       };
     };
 
@@ -134,6 +135,7 @@ export async function prepareConversation(
       modelId: "kilo/kilo-auto/free",
       baseAgentId: worker.baseAgentId,
       enabledToolIds: worker.enabledToolIds,
+      approvalRules: worker.approvalRules,
     },
   };
 }

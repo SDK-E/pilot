@@ -17,6 +17,7 @@ type SendConversationMessageInput = {
     modelId: "kilo/kilo-auto/free";
     baseAgentId: "conversational" | "research";
     enabledToolIds: string[];
+    approvalRules: Record<string, string>;
   };
   conversationId: string;
   userId: string;
@@ -35,7 +36,8 @@ function allowedToolIds(
   worker: SendConversationMessageInput["worker"],
 ): Array<"web-search"> {
   return worker.baseAgentId === "research" &&
-    worker.enabledToolIds.includes("web-search")
+    worker.enabledToolIds.includes("web-search") &&
+    worker.approvalRules["web-search"] === "allow"
     ? ["web-search"]
     : [];
 }

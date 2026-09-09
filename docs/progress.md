@@ -44,6 +44,8 @@ events, browser/scratchpad panes, reasoning content, or tool approvals.
 Research tool lifecycle is the sole production tool activity the UI can
 truthfully render today. See
 [chat workspace interface](decisions/0008-chat-workspace-interface.md).
+Tool approval is fail-closed: until a durable approval workflow exists, only
+an explicit `allow` rule can pass `web-search` to the Research runtime.
 
 Each submitted first message receives a deterministic local title, avoiding an
 extra model call or content disclosure. The expanded sidebar lists the newest

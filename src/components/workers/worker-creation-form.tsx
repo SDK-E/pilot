@@ -76,8 +76,8 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
           ))}
         </select>
         <p className="text-xs text-muted-foreground">
-          Research can use public-web search when its web-search preference is
-          enabled. Conversational agents have no production tools.
+          Research can use public-web search only when web-search is enabled and
+          explicitly allowed. Conversational agents have no production tools.
         </p>
       </div>
       <div className="space-y-2">
