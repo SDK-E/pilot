@@ -40,6 +40,12 @@ public web search is marked available, while future browser, file, GitHub,
 scratchpad, and user-input capabilities are visibly planned and cannot be
 enabled by a form submission.
 
+Pilot now has a production-only private Vercel Blob store,
+`pilot-private-files-production`, reserved for the upcoming creator-scoped chat
+attachment slice. No application upload, delivery, or runtime ingestion path is
+enabled until its private metadata, authorization, cleanup, and typed ingestion
+contracts are implemented. See [private chat attachments](decisions/0011-private-chat-attachments.md).
+
 The Personas index can duplicate a configured persona. Pilot reloads the source
 from the active organization after rechecking WorkOS membership, generates a
 unique readable copy name, and opens the new persona for editing. A copy carries
