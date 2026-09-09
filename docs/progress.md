@@ -17,6 +17,9 @@ Moving or removing a conversation first clears the former shared-memory
 resource before the database association can change. A cleanup failure leaves
 the chat in its existing project, preventing resource-scoped summaries from
 remaining available to a former project's chats.
+The conversation header also offers the current user's private projects, so a
+chat can be moved or removed without leaving its conversation. The picker does
+not introduce project sharing, files, or knowledge retrieval.
 
 ## Goal
 

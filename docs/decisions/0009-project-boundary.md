@@ -17,6 +17,11 @@ Deleting a Project requires the same creator scope and cascades only its
 associations; it never deletes the underlying conversations or messages.
 One conversation belongs to one Project at a time. Adding it to another Project
 moves the association, making future project memory scope unambiguous.
+The chat header exposes the creator's private projects as a compact picker, so
+the same protected move or removal is available where a conversation is being
+worked on. The browser submits only a conversation ID and optional project ID;
+the Server Function reloads ownership and membership before it changes either
+association.
 Before Pilot moves or removes an association from a project with shared memory,
 it clears the former project's runtime resource using the verified owner,
 organization, worker, and project identifiers. Cleanup happens before the

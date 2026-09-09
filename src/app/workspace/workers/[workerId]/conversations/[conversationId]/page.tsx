@@ -12,7 +12,10 @@ import { listConversationActivity } from "@/executions/execution-repository";
 import { getWorker } from "@/workers/worker-repository";
 import { listConversationTasks } from "@/tasks/task-repository";
 import { listConversationApprovals } from "@/approvals/approval-repository";
-import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
+import {
+  getProjectMemoryContextForConversation,
+  listProjects,
+} from "@/projects/project-repository";
 
 export const metadata: Metadata = { title: "Conversation" };
 
@@ -53,6 +56,7 @@ export default async function ConversationPage({
     tasks,
     approvals,
     project,
+    projects,
   ] = await Promise.all([
     getWorker(organizationId, workerId),
     getConversation(organizationId, workerId, conversationId, user.id),
@@ -73,6 +77,7 @@ export default async function ConversationPage({
       userId: user.id,
       conversationId,
     }),
+    listProjects({ organizationId, userId: user.id }),
   ]);
   if (!worker || !conversation || !messages) notFound();
 
@@ -91,6 +96,7 @@ export default async function ConversationPage({
       agentId={worker.id}
       agentName={worker.name}
       project={project}
+      projects={projects}
     />
   );
 }

@@ -18,6 +18,7 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message";
 import { ConversationDetailsPanel } from "@/components/conversations/conversation-details-panel";
+import { ConversationProjectPicker } from "@/components/conversations/conversation-project-picker";
 import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
 import type { ActivityEventType } from "@/executions/activity-event";
@@ -54,6 +55,7 @@ type ConversationShellProps = {
     name: string;
     sharedMemoryEnabled: boolean;
   };
+  projects: Array<{ id: string; name: string }>;
 };
 
 export function ConversationShell({
@@ -68,6 +70,7 @@ export function ConversationShell({
   tasks,
   approvals,
   project,
+  projects,
 }: ConversationShellProps) {
   const router = useRouter();
   const sendMessageShortcut = useSendMessageShortcut();
@@ -164,7 +167,11 @@ export function ConversationShell({
             ) : null}
           </div>
         </div>
-        <div className="w-12" aria-hidden="true" />
+        <ConversationProjectPicker
+          conversationId={conversationId}
+          currentProject={project}
+          projects={projects}
+        />
       </header>
 
       <section className="flex min-h-0 flex-1 flex-col xl:flex-row">
