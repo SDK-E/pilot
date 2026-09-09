@@ -1,7 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import { baseAgents, configurableToolIds } from "@/agents/agent-configuration";
+import {
+  baseAgents,
+  isToolAvailableToBaseAgent,
+  toolCapabilities,
+} from "@/agents/agent-configuration";
 import {
   createWorkerAction,
   updateWorkerAction,
@@ -135,26 +139,48 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
       <div className="space-y-3">
         <Label>Enabled tools</Label>
         <p className="text-xs text-muted-foreground">
-          Public web search is available to either base agent today. The other
-          options are retained as future preferences and cannot grant runtime
-          access.
+          Available capabilities are enforced by Pilot’s runtime. Planned
+          capabilities cannot be enabled until their authorization, storage,
+          approval, and activity boundaries are ready.
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
-          {configurableToolIds.map((toolId) => (
-            <label
-              key={toolId}
-              className="flex items-center gap-2 text-sm text-muted-foreground"
-            >
-              <input
-                name="enabledToolIds"
-                type="checkbox"
-                value={toolId}
-                defaultChecked={persona?.enabledToolIds.includes(toolId)}
-                className="size-4 accent-primary"
-              />
-              {toolId.replaceAll("-", " ")}
-            </label>
-          ))}
+          {toolCapabilities.map((tool) => {
+            const available = isToolAvailableToBaseAgent(
+              tool.id,
+              (persona?.baseAgentId ?? "conversational") as
+                "conversational" | "research",
+            );
+            const selected = persona?.enabledToolIds.includes(tool.id) ?? false;
+            return (
+              <label
+                key={tool.id}
+                className="flex items-start gap-2 rounded-md border border-border p-2 text-sm"
+              >
+                {!available && selected ? (
+                  <input name="enabledToolIds" type="hidden" value={tool.id} />
+                ) : null}
+                <input
+                  name={available ? "enabledToolIds" : undefined}
+                  type="checkbox"
+                  value={tool.id}
+                  defaultChecked={selected}
+                  disabled={!available}
+                  className="mt-0.5 size-4 accent-primary"
+                />
+                <span>
+                  <span className="block font-medium text-foreground">
+                    {tool.name}
+                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                      {available ? "Available" : "Planned"}
+                    </span>
+                  </span>
+                  <span className="block text-xs text-muted-foreground">
+                    {tool.description}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
         </div>
       </div>
       <div className="space-y-2">

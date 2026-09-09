@@ -30,6 +30,69 @@ export const configurableToolIds = [
 
 export type ConfigurableToolId = (typeof configurableToolIds)[number];
 
+export const toolCapabilities = [
+  {
+    id: "web-search",
+    name: "Public web search",
+    description:
+      "Search and read public web sources through Pilot's protected runtime.",
+    availableFor: ["conversational", "research"],
+  },
+  {
+    id: "langsearch",
+    name: "LangSearch",
+    description:
+      "Reserved for a separately authorized source-search capability.",
+    availableFor: [],
+  },
+  {
+    id: "browser",
+    name: "Browser actions",
+    description: "Requires a visible, approval-gated browser session.",
+    availableFor: [],
+  },
+  {
+    id: "file-analysis",
+    name: "File analysis",
+    description:
+      "Requires authorized upload, storage, retrieval, and deletion behavior.",
+    availableFor: [],
+  },
+  {
+    id: "github",
+    name: "GitHub",
+    description:
+      "Requires a user-authorized MCP connection and scoped access controls.",
+    availableFor: [],
+  },
+  {
+    id: "scratchpad",
+    name: "Scratchpad",
+    description: "Requires a private persisted workspace and activity view.",
+    availableFor: [],
+  },
+  {
+    id: "ask-user",
+    name: "Ask user",
+    description: "Requires a durable in-chat question and resume contract.",
+    availableFor: [],
+  },
+] as const satisfies ReadonlyArray<{
+  id: ConfigurableToolId;
+  name: string;
+  description: string;
+  availableFor: readonly BaseAgentId[];
+}>;
+
+export function isToolAvailableToBaseAgent(
+  toolId: ConfigurableToolId,
+  baseAgentId: BaseAgentId,
+) {
+  const tool = toolCapabilities.find((candidate) => candidate.id === toolId) as
+    { availableFor: readonly BaseAgentId[] } | undefined;
+  return tool?.availableFor.includes(baseAgentId) ?? false;
+}
+
 export const approvalModes = [
   "ask",
   "allow",

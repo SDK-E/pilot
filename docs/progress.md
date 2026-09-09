@@ -35,6 +35,10 @@ paths preserve the existing OIDC activity callback, public-network fetch
 boundary, Turso-backed Mastra suspension, and creator-scoped approval decision.
 All other saved tool preferences remain non-capabilities until their own
 authorization, storage, activity, and approval contracts are implemented.
+The persona form reads the same capability catalog as runtime authorization:
+public web search is marked available, while future browser, file, GitHub,
+scratchpad, and user-input capabilities are visibly planned and cannot be
+enabled by a form submission.
 
 The Personas index can duplicate a configured persona. Pilot reloads the source
 from the active organization after rechecking WorkOS membership, generates a
