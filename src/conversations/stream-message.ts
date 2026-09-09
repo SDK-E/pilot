@@ -6,6 +6,7 @@ import {
 } from "@/ai/pilot-ai-client";
 import { createConversationMessage } from "@/conversations/conversation-repository";
 import { isResearchAvailable } from "@/conversations/research-availability";
+import { canUseResearchWebSearch } from "@/conversations/research-tool-authorization";
 import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 import {
   finishExecution,
@@ -38,11 +39,7 @@ function toStoredCount(value: number): number | undefined {
 function allowedToolIds(
   worker: StreamConversationMessageInput["worker"],
 ): Array<"web-search"> {
-  return worker.baseAgentId === "research" &&
-    worker.enabledToolIds.includes("web-search") &&
-    worker.approvalRules["web-search"] === "allow"
-    ? ["web-search"]
-    : [];
+  return canUseResearchWebSearch(worker) ? ["web-search"] : [];
 }
 
 async function projectContext(input: StreamConversationMessageInput) {
