@@ -39,6 +39,13 @@ export const toolCapabilities = [
     availableFor: ["conversational", "research"],
   },
   {
+    id: "scratchpad",
+    name: "Scratchpad",
+    description:
+      "Read and update a private, chat-scoped working scratchpad through Pilot's protected runtime.",
+    availableFor: ["conversational", "research"],
+  },
+  {
     id: "langsearch",
     name: "LangSearch",
     description:
@@ -92,6 +99,7 @@ export const toolCapabilities = [
  */
 export const defaultEnabledToolIds: readonly ConfigurableToolId[] = [
   "web-search",
+  "scratchpad",
 ];
 
 export function isToolAvailableToBaseAgent(

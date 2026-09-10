@@ -30,6 +30,7 @@ type ConversationDetailsPanelProps = {
   conversationId: string;
   tasks: Array<{ id: string; title: string; status: string }>;
   approvals: Array<{ id: string; summary: string; status: string }>;
+  scratchpad: string;
   onTaskCreated: () => void;
 };
 
@@ -53,6 +54,7 @@ export function ConversationDetailsPanel({
   conversationId,
   tasks,
   approvals,
+  scratchpad,
   onTaskCreated,
 }: ConversationDetailsPanelProps) {
   const [taskState, taskAction, pending] = useActionState(
@@ -111,6 +113,22 @@ export function ConversationDetailsPanel({
               </p>
             )}
           </details>
+        </section>
+
+        <section>
+          <h2 className="text-sm font-medium">Scratchpad</h2>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Private working notes the agent has saved for this chat.
+          </p>
+          {scratchpad ? (
+            <pre className="mt-3 max-h-60 overflow-auto whitespace-pre-wrap rounded-xl border border-border bg-card/60 p-3 text-xs leading-5 text-muted-foreground">
+              {scratchpad}
+            </pre>
+          ) : (
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              The agent has not saved any working notes yet.
+            </p>
+          )}
         </section>
 
         <section>

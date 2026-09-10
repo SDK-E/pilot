@@ -273,6 +273,39 @@ export const conversationAttachments = pgTable(
   ],
 );
 
+export const conversationScratchpads = pgTable(
+  "conversation_scratchpads",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    workerId: uuid("worker_id")
+      .notNull()
+      .references(() => workers.id, { onDelete: "cascade" }),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
+    content: text("content").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("conversation_scratchpads_conversation_unique").on(
+      table.conversationId,
+    ),
+    index("conversation_scratchpads_organization_updated_at_index").on(
+      table.organizationId,
+      table.updatedAt,
+    ),
+  ],
+);
+
 export const executions = pgTable(
   "executions",
   {
@@ -446,6 +479,7 @@ export const approvals = pgTable(
     }),
     runtimeRunId: text("runtime_run_id"),
     toolCallId: text("tool_call_id"),
+    toolId: text("tool_id"),
     summary: text("summary").notNull(),
     status: text("status")
       .$type<"pending" | "deciding" | "approved" | "rejected" | "cancelled">()

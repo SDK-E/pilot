@@ -35,13 +35,23 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    const { createResearchWebSearchApproval } =
+    const { createRuntimeToolApproval } =
       await import("@/approvals/approval-repository");
-    await createResearchWebSearchApproval({
+    if (
+      input.data.toolId !== "web-search" &&
+      input.data.toolId !== "scratchpad"
+    ) {
+      return Response.json(
+        { error: "Unsupported approval tool." },
+        { status: 400 },
+      );
+    }
+    await createRuntimeToolApproval({
       organizationId: input.data.organizationId,
       executionId: input.data.executionId,
       runtimeRunId: input.data.runtimeRunId,
       toolCallId: input.data.toolCallId,
+      toolId: input.data.toolId,
     });
   }
   await appendToolActivity(input.data);

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { getConversation } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { createTask } from "@/tasks/task-repository";
+import { allowedProductionToolIds } from "@/conversations/tool-authorization";
 
 const inputSchema = z.object({
   workerId: z.uuid(),
@@ -132,13 +133,28 @@ export async function decideConversationApprovalAction(
     conversationId: conversation.id,
     userId: user.id,
   });
-  if (!approval?.executionId || !approval.runtimeRunId || !approval.toolCallId)
+  if (
+    !approval?.executionId ||
+    !approval.runtimeRunId ||
+    !approval.toolCallId ||
+    (approval.toolId !== "web-search" && approval.toolId !== "scratchpad")
+  )
     return {
       status: "error",
       message: "This approval has already been decided or is unavailable.",
     };
 
   const approved = input.data.decision === "approve";
+  const allowedToolIds = allowedProductionToolIds({
+    ...worker,
+    baseAgentId: worker.baseAgentId as "conversational" | "research",
+  });
+  if (!allowedToolIds.includes(approval.toolId)) {
+    return {
+      status: "error",
+      message: "This tool is no longer enabled for the selected persona.",
+    };
+  }
   try {
     const { resumeResearchApproval } = await import("@/ai/pilot-ai-client");
     const reply = await resumeResearchApproval({
@@ -154,9 +170,10 @@ export async function decideConversationApprovalAction(
       conversationId: conversation.id,
       message: "Resume the approved research request.",
       executionId: approval.executionId,
-      allowedToolIds: ["web-search"],
+      allowedToolIds,
       runtimeRunId: approval.runtimeRunId,
       toolCallId: approval.toolCallId,
+      toolId: approval.toolId,
       approved,
     });
     const { createConversationMessage } =
@@ -215,6 +232,6 @@ export async function decideConversationApprovalAction(
   );
   return {
     status: "success",
-    message: approved ? "Web search approved." : "Web search declined.",
+    message: approved ? "Tool use approved." : "Tool use declined.",
   };
 }

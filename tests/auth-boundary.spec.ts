@@ -129,3 +129,19 @@ test("anonymous and forged sessions cannot access private attachments", async ({
     }
   }
 });
+
+test("browser requests cannot use the private runtime scratchpad callback", async ({
+  request,
+}) => {
+  for (const cookie of ["", "wos-session=forged-session"]) {
+    const response = await request.post("/api/runtime/scratchpad", {
+      headers: { cookie, "content-type": "application/json" },
+      data: {
+        organizationId: "org_forged",
+        executionId: "00000000-0000-4000-8000-000000000000",
+        action: "read",
+      },
+    });
+    expect(response.status()).toBe(401);
+  }
+});

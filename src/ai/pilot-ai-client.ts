@@ -7,7 +7,10 @@ const approvalRequiredResponseSchema = z.object({
   object: z.literal("pilot.approval.required"),
   run_id: z.string().min(1),
   tool_call_id: z.string().min(1),
+  tool_id: z.enum(["web-search", "scratchpad"]),
 });
+
+const productionToolIdSchema = z.enum(["web-search", "scratchpad"]);
 
 const runtimeResponseSchema = z.object({
   id: z.string().min(1),
@@ -63,7 +66,7 @@ const generateConversationRequestSchema = z.object({
   conversationId: z.uuid(),
   message: z.string().min(1).max(10_000),
   executionId: z.uuid(),
-  allowedToolIds: z.array(z.literal("web-search")).max(1),
+  allowedToolIds: z.array(productionToolIdSchema).max(2),
   project: z
     .object({
       id: z.uuid(),
@@ -86,7 +89,12 @@ export class PilotAiRuntimeError extends Error {
 
 export type PilotAiStreamEvent =
   | { type: "text"; text: string }
-  | { type: "suspended"; runId: string; toolCallId: string }
+  | {
+      type: "suspended";
+      runId: string;
+      toolCallId: string;
+      toolId: z.infer<typeof productionToolIdSchema>;
+    }
   | {
       type: "completed";
       modelId: "kilo/kilo-auto/free";
@@ -123,10 +131,13 @@ function getRuntimeUrl(): URL {
   return url;
 }
 
-function publicWebSearchApprovalMode(request: GenerateConversationRequest) {
-  if (!request.allowedToolIds.includes("web-search")) return undefined;
-  const mode = request.worker.approvalRules["web-search"];
-  return mode === "allow" || mode === "ask" ? mode : undefined;
+function toolApprovalMode(request: GenerateConversationRequest) {
+  if (!request.allowedToolIds.length) return undefined;
+  return request.allowedToolIds.some(
+    (toolId) => request.worker.approvalRules[toolId] === "ask",
+  )
+    ? "ask"
+    : "allow";
 }
 
 function headersForRuntime(
@@ -143,9 +154,9 @@ function headersForRuntime(
     "x-pilot-execution-id": request.executionId,
     "x-pilot-base-agent-id": request.worker.baseAgentId,
     "x-pilot-allowed-tool-ids": JSON.stringify(request.allowedToolIds),
-    ...(publicWebSearchApprovalMode(request)
+    ...(toolApprovalMode(request)
       ? {
-          "x-pilot-tool-approval-mode": publicWebSearchApprovalMode(request),
+          "x-pilot-tool-approval-mode": toolApprovalMode(request),
         }
       : {}),
     ...(request.project
@@ -193,6 +204,7 @@ export async function generateConversationReply(
       type: "suspended",
       runId: approval.data.run_id,
       toolCallId: approval.data.tool_call_id,
+      toolId: approval.data.tool_id,
     };
   const completion = runtimeResponseSchema.parse(payload);
   const choice = completion.choices[0];
@@ -266,6 +278,7 @@ export async function* parseConversationRuntimeStream(
         pilot: z.object({
           run_id: z.string().min(1),
           tool_call_id: z.string().min(1),
+          tool_id: productionToolIdSchema,
         }),
       })
       .safeParse(rawChunk);
@@ -274,6 +287,7 @@ export async function* parseConversationRuntimeStream(
         type: "suspended",
         runId: suspension.data.pilot.run_id,
         toolCallId: suspension.data.pilot.tool_call_id,
+        toolId: suspension.data.pilot.tool_id,
       };
     }
     const chunk = runtimeStreamChunkSchema.parse(rawChunk);
@@ -338,6 +352,7 @@ export async function resumeResearchApproval(
   input: GenerateConversationRequest & {
     runtimeRunId: string;
     toolCallId: string;
+    toolId: z.infer<typeof productionToolIdSchema>;
     approved: boolean;
   },
 ) {
@@ -345,6 +360,7 @@ export async function resumeResearchApproval(
     .extend({
       runtimeRunId: z.string().min(1),
       toolCallId: z.string().min(1),
+      toolId: productionToolIdSchema,
       approved: z.boolean(),
     })
     .parse(input);

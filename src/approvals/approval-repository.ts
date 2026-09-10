@@ -4,6 +4,21 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { approvals, conversations, executions, tasks } from "@/db/schema";
 
+const approvalToolCopy = {
+  "web-search": {
+    taskTitle: "Approve public web research",
+    taskInstructions:
+      "Pilot requested access to its protected public-web research capability.",
+    summary: "Allow Pilot to search and read public web sources?",
+  },
+  scratchpad: {
+    taskTitle: "Approve scratchpad update",
+    taskInstructions:
+      "Pilot requested access to update this chat's private scratchpad.",
+    summary: "Allow Pilot to update this chat's private scratchpad?",
+  },
+} as const;
+
 export async function listApprovals(input: {
   organizationId: string;
   userId: string;
@@ -56,11 +71,12 @@ export async function listConversationApprovals(input: {
  * Called only by Pilot AI's OIDC-authenticated callback. The callback carries
  * no model-controlled content; this derives the task from the owned execution.
  */
-export async function createResearchWebSearchApproval(input: {
+export async function createRuntimeToolApproval(input: {
   organizationId: string;
   executionId: string;
   runtimeRunId: string;
   toolCallId: string;
+  toolId: keyof typeof approvalToolCopy;
 }) {
   return db.transaction(async (tx) => {
     const [existing] = await tx
@@ -112,15 +128,15 @@ export async function createResearchWebSearchApproval(input: {
       return created;
     }
 
+    const copy = approvalToolCopy[input.toolId];
     const [task] = await tx
       .insert(tasks)
       .values({
         organizationId: input.organizationId,
         workerId: execution.workerId,
         conversationId: execution.conversationId,
-        title: "Approve public web search",
-        instructions:
-          "Pilot Research requested access to its public web-search capability.",
+        title: copy.taskTitle,
+        instructions: copy.taskInstructions,
         status: "awaiting_approval",
         createdByWorkosUserId: "runtime",
       })
@@ -135,7 +151,8 @@ export async function createResearchWebSearchApproval(input: {
         executionId: execution.id,
         runtimeRunId: input.runtimeRunId,
         toolCallId: input.toolCallId,
-        summary: "Allow Pilot Research to search the public web?",
+        toolId: input.toolId,
+        summary: copy.summary,
       })
       .returning({ id: approvals.id });
     return approval;
@@ -167,6 +184,7 @@ export async function claimConversationApproval(input: {
       executionId: approvals.executionId,
       runtimeRunId: approvals.runtimeRunId,
       toolCallId: approvals.toolCallId,
+      toolId: approvals.toolId,
     });
   return approval;
 }

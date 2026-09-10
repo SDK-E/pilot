@@ -3,8 +3,11 @@ import "server-only";
 import { generateConversationReply } from "@/ai/pilot-ai-client";
 import { createConversationMessage } from "@/conversations/conversation-repository";
 import { isResearchAvailable } from "@/conversations/research-availability";
-import { canUsePublicWebSearch } from "@/conversations/public-web-search-authorization";
 import { buildAttachmentContext } from "@/conversations/attachment-context";
+import {
+  allowedProductionToolIds,
+  type ProductionToolId,
+} from "@/conversations/tool-authorization";
 import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 import {
   finishExecution,
@@ -36,8 +39,8 @@ function toStoredCount(value: number): number | undefined {
 
 function allowedToolIds(
   worker: SendConversationMessageInput["worker"],
-): Array<"web-search"> {
-  return canUsePublicWebSearch(worker) ? ["web-search"] : [];
+): ProductionToolId[] {
+  return allowedProductionToolIds(worker);
 }
 
 async function projectContext(input: SendConversationMessageInput) {

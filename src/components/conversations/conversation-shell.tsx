@@ -69,6 +69,7 @@ type ConversationShellProps = {
     contentType: string;
     byteSize: number;
   }>;
+  scratchpad: string;
 };
 
 export function ConversationShell({
@@ -85,6 +86,7 @@ export function ConversationShell({
   project,
   projects,
   attachments,
+  scratchpad,
 }: ConversationShellProps) {
   const router = useRouter();
   const sendMessageShortcut = useSendMessageShortcut();
@@ -276,6 +278,7 @@ export function ConversationShell({
           conversationId={conversationId}
           onTaskCreated={handleTaskCreated}
           tasks={tasks}
+          scratchpad={scratchpad}
         />
       </section>
 

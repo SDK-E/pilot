@@ -5,6 +5,7 @@ import {
   defaultEnabledToolIds,
   isToolAvailableToBaseAgent,
 } from "@/agents/agent-configuration";
+import { allowedProductionToolIds } from "@/conversations/tool-authorization";
 
 test("public web search is offered to either agent only for allow or ask", () => {
   for (const approval of [undefined, "deny", "auto-classifier"]) {
@@ -45,9 +46,29 @@ test("only cataloged production capabilities are offered to a base agent", () =>
     true,
   );
   assert.equal(isToolAvailableToBaseAgent("web-search", "research"), true);
+  assert.equal(isToolAvailableToBaseAgent("scratchpad", "research"), true);
   assert.equal(isToolAvailableToBaseAgent("browser", "research"), false);
 });
 
-test("new personas start with protected public web research selected", () => {
-  assert.deepEqual(defaultEnabledToolIds, ["web-search"]);
+test("production tools require both an enabled capability and allow or ask", () => {
+  assert.deepEqual(
+    allowedProductionToolIds({
+      baseAgentId: "conversational",
+      enabledToolIds: ["web-search", "scratchpad"],
+      approvalRules: { "web-search": "allow", scratchpad: "ask" },
+    }),
+    ["web-search", "scratchpad"],
+  );
+  assert.deepEqual(
+    allowedProductionToolIds({
+      baseAgentId: "research",
+      enabledToolIds: ["scratchpad"],
+      approvalRules: { scratchpad: "deny" },
+    }),
+    [],
+  );
+});
+
+test("new personas start with the production tool baseline selected", () => {
+  assert.deepEqual(defaultEnabledToolIds, ["web-search", "scratchpad"]);
 });

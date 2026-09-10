@@ -52,11 +52,18 @@ test("Pilot rejects a stream without terminal usage", async () => {
 
 test("Pilot recognizes a runtime approval suspension without accepting a partial reply", async () => {
   const events = [
-    'data: {"id":"chatcmpl_run-1","object":"pilot.approval.required","model":"kilo/kilo-auto/free","pilot":{"run_id":"run-1","tool_call_id":"call-1"}}\n\n',
+    'data: {"id":"chatcmpl_run-1","object":"pilot.approval.required","model":"kilo/kilo-auto/free","pilot":{"run_id":"run-1","tool_call_id":"call-1","tool_id":"scratchpad"}}\n\n',
     "data: [DONE]\n\n",
   ];
   assert.deepEqual(
     await Array.fromAsync(parseConversationRuntimeStream(streamOf(...events))),
-    [{ type: "suspended", runId: "run-1", toolCallId: "call-1" }],
+    [
+      {
+        type: "suspended",
+        runId: "run-1",
+        toolCallId: "call-1",
+        toolId: "scratchpad",
+      },
+    ],
   );
 });

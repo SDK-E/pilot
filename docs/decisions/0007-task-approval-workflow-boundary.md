@@ -1,6 +1,6 @@
 # Task approval workflow boundary
 
-Status: implemented for the production public web-search capability shared by
+Status: implemented for the production public web-search and private scratchpad capabilities shared by
 Conversational and Research personas. Generic task workflows and all other
 protected actions remain pending.
 
@@ -10,12 +10,12 @@ chooses whether an action is permitted. Pilot AI receives only a verified,
 minimal command from Pilot after WorkOS membership and task/worker ownership
 have been checked.
 
-Public web-search uses Mastra's built-in `requireToolApproval` suspension,
+Public web-search and the private scratchpad use Mastra's built-in `requireToolApproval` suspension,
 backed by the existing Turso storage provider. Pilot records a pending approval
 from an OIDC-authenticated runtime callback and links it to the Pilot execution,
 exact Mastra run ID, and tool-call ID. An authorized Pilot decision recreates
 the selected request-scoped agent over that storage, verifies the suspended run
-belongs to the owned conversation resource and `web-search` call, then
+belongs to the owned conversation resource and allowlisted tool call, then
 approves or declines it. Rejection prevents the tool from executing.
 
 Pilot must reject stale, cross-organization, already-decided, or mismatched
