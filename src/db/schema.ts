@@ -241,6 +241,38 @@ export const conversationMessages = pgTable(
   ],
 );
 
+export const conversationAttachments = pgTable(
+  "conversation_attachments",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    workerId: uuid("worker_id")
+      .notNull()
+      .references(() => workers.id, { onDelete: "cascade" }),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
+    pathname: text("pathname").notNull(),
+    filename: text("filename").notNull(),
+    contentType: text("content_type").notNull(),
+    byteSize: integer("byte_size").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    unique("conversation_attachments_pathname_unique").on(table.pathname),
+    index("conversation_attachments_conversation_creator_created_at_index").on(
+      table.conversationId,
+      table.createdByWorkosUserId,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const executions = pgTable(
   "executions",
   {
