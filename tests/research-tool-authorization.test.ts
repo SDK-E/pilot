@@ -4,6 +4,7 @@ import { canUsePublicWebSearch } from "@/conversations/public-web-search-authori
 import {
   defaultEnabledToolIds,
   isToolAvailableToBaseAgent,
+  toolCapabilities,
 } from "@/agents/agent-configuration";
 import { allowedProductionToolIds } from "@/conversations/tool-authorization";
 
@@ -71,4 +72,9 @@ test("production tools require both an enabled capability and allow or ask", () 
 
 test("new personas start with the production tool baseline selected", () => {
   assert.deepEqual(defaultEnabledToolIds, ["web-search", "scratchpad"]);
+});
+
+test("the persona tool catalog has no duplicate capabilities", () => {
+  const toolIds = toolCapabilities.map((tool) => tool.id);
+  assert.equal(new Set(toolIds).size, toolIds.length);
 });

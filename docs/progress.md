@@ -43,6 +43,13 @@ OIDC-authenticated runtime callback whose execution record derives ownership.
 Browser, file, GitHub, and user-input capabilities are visibly planned and cannot be
 enabled by a form submission.
 
+Production enables the paired Research feature flags in Pilot and Pilot AI.
+They are an all-or-nothing runtime boundary: if either flag is not exactly
+`true`, Pilot fails closed and hides Research from conversation selection.
+The persona capability catalog has one authoritative entry for every tool, so
+new Conversational and Research personas expose the same two implemented tools:
+Public web research and the private scratchpad.
+
 Pilot now has a production-only private Vercel Blob store,
 `pilot-private-files-production`. Owned chat attachments support server-validated
 uploads of PDF, text, CSV, Office documents, and common images up to 10 MB,

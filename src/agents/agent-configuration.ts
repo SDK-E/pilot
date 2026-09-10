@@ -73,12 +73,6 @@ export const toolCapabilities = [
     availableFor: [],
   },
   {
-    id: "scratchpad",
-    name: "Scratchpad",
-    description: "Requires a private persisted workspace and activity view.",
-    availableFor: [],
-  },
-  {
     id: "ask-user",
     name: "Ask user",
     description: "Requires a durable in-chat question and resume contract.",
