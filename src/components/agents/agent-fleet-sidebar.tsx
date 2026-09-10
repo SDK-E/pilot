@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Gauge, FolderKanban, MessageSquareMore, Plus } from "lucide-react";
+import {
+  Gauge,
+  FolderKanban,
+  MessageSquareMore,
+  Plus,
+  Settings,
+} from "lucide-react";
 import { AccountMenu } from "@/components/agents/account-menu";
 import { PilotWordmark } from "@/components/brand/pilot-wordmark";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
@@ -71,6 +77,14 @@ export function AgentFleetShell({
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Chats">
+                    <Link href="/workspace/chats">
+                      <MessageSquareMore aria-hidden="true" />
+                      <span>Chats</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -118,6 +132,14 @@ export function AgentFleetShell({
                 <Link href="/workspace/projects">
                   <FolderKanban aria-hidden="true" />
                   <span>Projects</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Settings">
+                <Link href="/workspace/settings">
+                  <Settings aria-hidden="true" />
+                  <span>Settings</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
