@@ -1,9 +1,12 @@
 import "server-only";
 
 import { get } from "@vercel/blob";
-import { listTextConversationAttachments } from "@/conversations/attachment-repository";
+import {
+  extractAttachmentText,
+  isTextExtractableContentType,
+} from "@/conversations/attachment-text-extraction";
+import { listTextExtractableConversationAttachments } from "@/conversations/attachment-repository";
 
-const supportedTextTypes = new Set(["text/plain", "text/markdown", "text/csv"]);
 const maximumDocuments = 5;
 const maximumCharactersPerDocument = 8_000;
 const maximumCharacters = 20_000;
@@ -18,7 +21,7 @@ export async function buildAttachmentContext(input: {
   userId: string;
   maximumCharacters?: number;
 }) {
-  const attachments = await listTextConversationAttachments(input);
+  const attachments = await listTextExtractableConversationAttachments(input);
   const excerpts: string[] = [];
   const limit = Math.min(
     input.maximumCharacters ?? maximumCharacters,
@@ -29,14 +32,19 @@ export async function buildAttachmentContext(input: {
 
   for (const attachment of attachments) {
     if (excerpts.length >= maximumDocuments || remaining < 1) break;
-    if (!supportedTextTypes.has(attachment.contentType)) continue;
+    if (!isTextExtractableContentType(attachment.contentType)) continue;
     try {
       const blob = await get(attachment.pathname, { access: "private" });
       if (!blob) continue;
-      const text = normalizeText(await new Response(blob.stream).text()).slice(
-        0,
-        remaining,
+      const bytes = new Uint8Array(
+        await new Response(blob.stream).arrayBuffer(),
       );
+      const extracted = await extractAttachmentText({
+        contentType: attachment.contentType,
+        bytes,
+      });
+      if (!extracted) continue;
+      const text = normalizeText(extracted).slice(0, remaining);
       if (!text.trim()) continue;
       remaining -= text.length;
       excerpts.push(`File: ${attachment.filename}\n---\n${text}\n---`);

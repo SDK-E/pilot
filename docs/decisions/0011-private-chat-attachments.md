@@ -1,8 +1,8 @@
 # Private chat attachments
 
-Status: text attachment context is implemented for private conversations.
-Structured extraction, images, Office/PDF analysis, and project knowledge remain
-pending.
+Status: bounded text extraction is implemented for private conversations.
+Image analysis, spreadsheet extraction, project knowledge, and semantic
+retrieval remain pending.
 
 Attachments belong to the creator-scoped Pilot conversation that received them.
 Pilot must persist attachment metadata in Neon with the organization, owner,
@@ -21,12 +21,14 @@ storage, uses a server-derived random pathname that cannot collide across
 organizations or conversations, and deletes Blob bytes before metadata. If Blob
 cleanup fails, metadata remains so cleanup can be retried. The chat composer
 shows owned attachments and opens them through the authenticated Pilot route.
-For text, Markdown, and CSV files only, Pilot reads owner-authorized private
-Blob bytes at message time, bounds the combined context, and adds explicitly
-untrusted excerpts to the server-built runtime instruction packet. Blob URLs
-and browser-supplied file metadata never reach Pilot AI. The agent is told not
-to follow instructions from attachment text. PDF, Office, and image attachments
-remain storage and delivery features until their extraction contracts exist.
+For text, Markdown, CSV, PDF, and DOCX files, Pilot reads owner-authorized
+private Blob bytes at message time, bounds the combined context, and adds
+explicitly untrusted excerpts to the server-built runtime instruction packet.
+`unpdf` extracts PDF text and Mammoth extracts DOCX raw text; neither parser's
+output is rendered as HTML. Blob URLs and browser-supplied file metadata never
+reach Pilot AI. The agent is told not to follow instructions from attachment
+text. Spreadsheet and image attachments remain storage and delivery features
+until their extraction contracts exist.
 
 ## Sources checked on 2026-09-10
 

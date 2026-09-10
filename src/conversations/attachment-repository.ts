@@ -33,7 +33,7 @@ export async function listConversationAttachments(input: {
     .orderBy(asc(conversationAttachments.createdAt));
 }
 
-export async function listTextConversationAttachments(input: {
+export async function listTextExtractableConversationAttachments(input: {
   organizationId: string;
   conversationId: string;
   userId: string;

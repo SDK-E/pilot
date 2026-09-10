@@ -44,10 +44,11 @@ enabled by a form submission.
 Pilot now has a production-only private Vercel Blob store,
 `pilot-private-files-production`. Owned chat attachments support server-validated
 uploads of PDF, text, CSV, Office documents, and common images up to 10 MB,
-private authenticated delivery, and deletion. Text, Markdown, and CSV files
-also enter the next owned chat request as bounded, explicitly untrusted context;
-they never reach activity records or browser-to-runtime traffic. PDF, Office,
-and image analysis plus project knowledge remain pending. See [private chat
+private authenticated delivery, and deletion. Text, Markdown, CSV, PDF, and
+DOCX files also enter the next owned chat request as bounded, explicitly
+untrusted context; they never reach activity records or browser-to-runtime
+traffic. PDFs use `unpdf` and DOCX uses Mammoth raw-text extraction.
+Spreadsheets and image analysis plus project knowledge remain pending. See [private chat
 attachments](decisions/0011-private-chat-attachments.md).
 
 The Personas index can duplicate a configured persona. Pilot reloads the source
