@@ -1,7 +1,8 @@
 # Project boundary
 
-Status: private project instructions and opt-in shared conversational memory are
-implemented; file and knowledge retrieval are pending separate contracts.
+Status: private project instructions, opt-in shared conversational memory, and
+bounded private Project files are implemented; semantic knowledge retrieval is
+pending a separate contract.
 
 A Project is a Pilot-owned, creator-scoped collection of that creator's
 conversations inside one WorkOS organization. The `projects` table stores the
@@ -41,9 +42,11 @@ conversation as its own thread. Its Mastra Observational Memory is scoped to
 that resource, so it can build context across the Project's private
 conversations. The observer model is the already configured and allowlisted
 Kilo Gateway model (`kilo/kilo-auto/free`), selected by the user for this
-runtime. Files, knowledge retrieval, project sharing, and cross-user project
-memory remain unavailable: they each need their own protected storage,
-retrieval, authorization, and deletion contracts.
+runtime. Project files use private Blob storage, owner-scoped metadata, and
+bounded untrusted excerpts after the current Project association is verified.
+Semantic knowledge retrieval, project sharing, and cross-user project memory
+remain unavailable: they each need their own protected storage, retrieval,
+authorization, and deletion contracts.
 Deleting a project first removes every runtime thread associated with its
 enabled project-memory resources, then deletes the Pilot project and its
 associations. The underlying Pilot conversations remain in Chat history.
