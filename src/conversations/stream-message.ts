@@ -126,6 +126,39 @@ export async function streamConversationMessage(
             controller.close();
             return;
           }
+          if (event.type === "user_input_required") {
+            const workerMessage = await createConversationMessage({
+              organizationId: input.organizationId,
+              workerId: input.worker.id,
+              conversationId: input.conversationId,
+              createdByWorkosUserId: input.userId,
+              role: "worker",
+              content: event.question,
+              userQuestionOptions: event.options,
+              userQuestionSelectionMode: event.selectionMode,
+              modelId: input.worker.modelId,
+              runtimeRunId: event.runId,
+              latencyMs: toStoredCount(
+                Math.round(performance.now() - startedAt),
+              ),
+              inputTokens: toStoredCount(event.usage.inputTokens),
+              outputTokens: toStoredCount(event.usage.outputTokens),
+              totalTokens: toStoredCount(event.usage.totalTokens),
+            });
+            if (!workerMessage) {
+              throw new Error(
+                "Pilot Conversation no longer belongs to this Worker.",
+              );
+            }
+            await finishExecution({
+              organizationId: input.organizationId,
+              executionId: execution.id,
+              conversationMessageId: workerMessage.id,
+              runtimeRunId: event.runId,
+            });
+            controller.close();
+            return;
+          }
 
           const workerMessage = await createConversationMessage({
             organizationId: input.organizationId,

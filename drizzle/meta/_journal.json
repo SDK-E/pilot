@@ -127,6 +127,13 @@
       "when": 1789053812873,
       "tag": "0017_private-conversation-scratchpad",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789063608333,
+      "tag": "0018_plain_silver_samurai",
+      "breakpoints": true
     }
   ]
 }

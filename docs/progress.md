@@ -47,8 +47,16 @@ Production enables the paired Research feature flags in Pilot and Pilot AI.
 They are an all-or-nothing runtime boundary: if either flag is not exactly
 `true`, Pilot fails closed and hides Research from conversation selection.
 The persona capability catalog has one authoritative entry for every tool, so
-new Conversational and Research personas expose the same two implemented tools:
-Public web research and the private scratchpad.
+new Conversational and Research personas expose the same implemented tools:
+Public web research, the private scratchpad, and Ask User.
+
+Conversational and Research personas can also enable Mastra's built-in Ask User
+tool. It suspends the agent on the private Turso-backed conversation thread,
+returns only a bounded user-facing question and optional choices over Pilot's
+authenticated runtime response, and resumes when the chat owner answers in the
+same chat. Questions are persisted as ordinary visible Worker messages so the
+chat remains usable after a refresh. The activity timeline records only the
+fixed `ask-user` capability and never the question, choices, or answer.
 
 Pilot now has a production-only private Vercel Blob store,
 `pilot-private-files-production`. Owned chat attachments support server-validated

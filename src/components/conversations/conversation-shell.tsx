@@ -37,6 +37,8 @@ type PersistedMessage = {
   id: string;
   role: "user" | "worker";
   content: string;
+  userQuestionOptions?: Array<{ label: string; description?: string }> | null;
+  userQuestionSelectionMode?: "single_select" | "multi_select" | null;
 };
 
 type PersistedActivity = {
@@ -119,14 +121,22 @@ export function ConversationShell({
     },
   });
   const handleTaskCreated = useCallback(() => router.refresh(), [router]);
+  const submitText = useCallback(
+    (rawMessage: string) => {
+      const message = rawMessage.trim();
+      if (!message || isLoading) return;
+      setPendingUserMessage(message);
+      setCompletion("");
+      setInput("");
+      void complete(message);
+    },
+    [complete, isLoading, setCompletion, setInput],
+  );
   const submitMessage = useCallback(() => {
     const message = input.trim();
     if (!message || isLoading) return;
-    setPendingUserMessage(message);
-    setCompletion("");
-    setInput("");
-    void complete(message);
-  }, [complete, input, isLoading, setCompletion, setInput]);
+    submitText(message);
+  }, [input, isLoading, submitText]);
   const uploadAttachment = useCallback(
     async (file: File) => {
       setUploading(true);
@@ -239,7 +249,34 @@ export function ConversationShell({
                   <Message from={from} key={message.id}>
                     <MessageContent>
                       {from === "assistant" ? (
-                        <MessageResponse>{message.content}</MessageResponse>
+                        <>
+                          <MessageResponse>{message.content}</MessageResponse>
+                          {message.userQuestionOptions?.length ? (
+                            <div
+                              aria-label={
+                                message.userQuestionSelectionMode ===
+                                "multi_select"
+                                  ? "Select one or more answers, or write a reply"
+                                  : "Select an answer, or write a reply"
+                              }
+                              className="mt-3 flex flex-wrap gap-2"
+                            >
+                              {message.userQuestionOptions.map((option) => (
+                                <Button
+                                  key={option.label}
+                                  disabled={isLoading}
+                                  onClick={() => submitText(option.label)}
+                                  size="sm"
+                                  title={option.description}
+                                  type="button"
+                                  variant="outline"
+                                >
+                                  {option.label}
+                                </Button>
+                              ))}
+                            </div>
+                          ) : null}
+                        </>
                       ) : (
                         <p className="whitespace-pre-wrap">{message.content}</p>
                       )}

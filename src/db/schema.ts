@@ -219,6 +219,12 @@ export const conversationMessages = pgTable(
       .references(() => conversations.id, { onDelete: "cascade" }),
     role: text("role").$type<"user" | "worker">().notNull(),
     content: text("content").notNull(),
+    userQuestionOptions: jsonb("user_question_options").$type<
+      Array<{ label: string; description?: string }>
+    >(),
+    userQuestionSelectionMode: text("user_question_selection_mode").$type<
+      "single_select" | "multi_select"
+    >(),
     modelId: text("model_id"),
     runtimeRunId: text("runtime_run_id"),
     latencyMs: integer("latency_ms"),

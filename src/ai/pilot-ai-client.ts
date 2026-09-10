@@ -10,7 +10,25 @@ const approvalRequiredResponseSchema = z.object({
   tool_id: z.enum(["web-search", "scratchpad"]),
 });
 
-const productionToolIdSchema = z.enum(["web-search", "scratchpad"]);
+const userInputRequiredResponseSchema = z.object({
+  object: z.literal("pilot.user_input.required"),
+  run_id: z.string().min(1),
+  tool_call_id: z.string().min(1),
+  question: z.string().trim().min(1).max(1_000),
+  options: z
+    .array(
+      z.object({
+        label: z.string().trim().min(1).max(120),
+        description: z.string().trim().min(1).max(300).optional(),
+      }),
+    )
+    .min(2)
+    .max(8)
+    .optional(),
+  selection_mode: z.enum(["single_select", "multi_select"]).optional(),
+});
+
+const productionToolIdSchema = z.enum(["web-search", "scratchpad", "ask-user"]);
 
 const runtimeResponseSchema = z.object({
   id: z.string().min(1),
@@ -96,6 +114,14 @@ export type PilotAiStreamEvent =
       toolId: z.infer<typeof productionToolIdSchema>;
     }
   | {
+      type: "user_input_required";
+      runId: string;
+      toolCallId: string;
+      question: string;
+      options?: Array<{ label: string; description?: string }>;
+      selectionMode?: "single_select" | "multi_select";
+    }
+  | {
       type: "completed";
       modelId: "kilo/kilo-auto/free";
       runId: string | null;
@@ -134,7 +160,8 @@ function getRuntimeUrl(): URL {
 function toolApprovalMode(request: GenerateConversationRequest) {
   if (!request.allowedToolIds.length) return undefined;
   return request.allowedToolIds.some(
-    (toolId) => request.worker.approvalRules[toolId] === "ask",
+    (toolId) =>
+      toolId !== "ask-user" && request.worker.approvalRules[toolId] === "ask",
   )
     ? "ask"
     : "allow";
@@ -206,6 +233,16 @@ export async function generateConversationReply(
       toolCallId: approval.data.tool_call_id,
       toolId: approval.data.tool_id,
     };
+  const userInput = userInputRequiredResponseSchema.safeParse(payload);
+  if (userInput.success)
+    return {
+      type: "user_input_required",
+      runId: userInput.data.run_id,
+      toolCallId: userInput.data.tool_call_id,
+      question: userInput.data.question,
+      options: userInput.data.options,
+      selectionMode: userInput.data.selection_mode,
+    };
   const completion = runtimeResponseSchema.parse(payload);
   const choice = completion.choices[0];
   return {
@@ -262,6 +299,8 @@ export async function* parseConversationRuntimeStream(
     Extract<PilotAiStreamEvent, { type: "completed" }> | undefined;
   let suspensionEvent:
     Extract<PilotAiStreamEvent, { type: "suspended" }> | undefined;
+  let userInputEvent:
+    Extract<PilotAiStreamEvent, { type: "user_input_required" }> | undefined;
 
   const handleEvent = (event: string): PilotAiStreamEvent | undefined => {
     const data = event
@@ -288,6 +327,27 @@ export async function* parseConversationRuntimeStream(
         runId: suspension.data.pilot.run_id,
         toolCallId: suspension.data.pilot.tool_call_id,
         toolId: suspension.data.pilot.tool_id,
+      };
+    }
+    const userInput = z
+      .object({
+        object: z.literal("pilot.user_input.required"),
+        pilot: userInputRequiredResponseSchema
+          .omit({ object: true, run_id: true, tool_call_id: true })
+          .extend({
+            run_id: z.string().min(1),
+            tool_call_id: z.string().min(1),
+          }),
+      })
+      .safeParse(rawChunk);
+    if (userInput.success) {
+      return {
+        type: "user_input_required",
+        runId: userInput.data.pilot.run_id,
+        toolCallId: userInput.data.pilot.tool_call_id,
+        question: userInput.data.pilot.question,
+        options: userInput.data.pilot.options,
+        selectionMode: userInput.data.pilot.selection_mode,
       };
     }
     const chunk = runtimeStreamChunkSchema.parse(rawChunk);
@@ -322,6 +382,7 @@ export async function* parseConversationRuntimeStream(
         if (!parsed) continue;
         if (parsed.type === "completed") finalEvent = parsed;
         else if (parsed.type === "suspended") suspensionEvent = parsed;
+        else if (parsed.type === "user_input_required") userInputEvent = parsed;
         else yield parsed;
       }
     }
@@ -334,10 +395,15 @@ export async function* parseConversationRuntimeStream(
     const parsed = handleEvent(buffer);
     if (parsed?.type === "completed") finalEvent = parsed;
     else if (parsed?.type === "suspended") suspensionEvent = parsed;
+    else if (parsed?.type === "user_input_required") userInputEvent = parsed;
     else if (parsed) yield parsed;
   }
   if (suspensionEvent) {
     yield suspensionEvent;
+    return;
+  }
+  if (userInputEvent) {
+    yield userInputEvent;
     return;
   }
   if (!finalEvent) {

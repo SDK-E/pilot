@@ -67,3 +67,23 @@ test("Pilot recognizes a runtime approval suspension without accepting a partial
     ],
   );
 });
+
+test("Pilot recognizes a bounded Ask User suspension", async () => {
+  const events = [
+    'data: {"id":"chatcmpl_run-2","object":"pilot.user_input.required","model":"kilo/kilo-auto/free","pilot":{"run_id":"run-2","tool_call_id":"call-2","question":"Which audience should I prioritize?","options":[{"label":"Developers"},{"label":"Buyers"}],"selection_mode":"single_select"}}\n\n',
+    "data: [DONE]\n\n",
+  ];
+  assert.deepEqual(
+    await Array.fromAsync(parseConversationRuntimeStream(streamOf(...events))),
+    [
+      {
+        type: "user_input_required",
+        runId: "run-2",
+        toolCallId: "call-2",
+        question: "Which audience should I prioritize?",
+        options: [{ label: "Developers" }, { label: "Buyers" }],
+        selectionMode: "single_select",
+      },
+    ],
+  );
+});

@@ -231,6 +231,8 @@ type ConversationMessageInput = {
   createdByWorkosUserId: string;
   role: "user" | "worker";
   content: string;
+  userQuestionOptions?: Array<{ label: string; description?: string }>;
+  userQuestionSelectionMode?: "single_select" | "multi_select";
   modelId?: string;
   runtimeRunId?: string;
   latencyMs?: number;
@@ -257,6 +259,8 @@ export async function createConversationMessage(
       conversationId: input.conversationId,
       role: input.role,
       content: input.content,
+      userQuestionOptions: input.userQuestionOptions,
+      userQuestionSelectionMode: input.userQuestionSelectionMode,
       modelId: input.modelId,
       runtimeRunId: input.runtimeRunId,
       latencyMs: input.latencyMs,
@@ -298,6 +302,8 @@ export async function listConversationMessages(
       id: conversationMessages.id,
       role: conversationMessages.role,
       content: conversationMessages.content,
+      userQuestionOptions: conversationMessages.userQuestionOptions,
+      userQuestionSelectionMode: conversationMessages.userQuestionSelectionMode,
       modelId: conversationMessages.modelId,
       runtimeRunId: conversationMessages.runtimeRunId,
       latencyMs: conversationMessages.latencyMs,

@@ -48,6 +48,7 @@ test("only cataloged production capabilities are offered to a base agent", () =>
   );
   assert.equal(isToolAvailableToBaseAgent("web-search", "research"), true);
   assert.equal(isToolAvailableToBaseAgent("scratchpad", "research"), true);
+  assert.equal(isToolAvailableToBaseAgent("ask-user", "research"), true);
   assert.equal(isToolAvailableToBaseAgent("browser", "research"), false);
 });
 
@@ -55,10 +56,14 @@ test("production tools require both an enabled capability and allow or ask", () 
   assert.deepEqual(
     allowedProductionToolIds({
       baseAgentId: "conversational",
-      enabledToolIds: ["web-search", "scratchpad"],
-      approvalRules: { "web-search": "allow", scratchpad: "ask" },
+      enabledToolIds: ["web-search", "scratchpad", "ask-user"],
+      approvalRules: {
+        "web-search": "allow",
+        scratchpad: "ask",
+        "ask-user": "ask",
+      },
     }),
-    ["web-search", "scratchpad"],
+    ["web-search", "scratchpad", "ask-user"],
   );
   assert.deepEqual(
     allowedProductionToolIds({
@@ -71,7 +76,11 @@ test("production tools require both an enabled capability and allow or ask", () 
 });
 
 test("new personas start with the production tool baseline selected", () => {
-  assert.deepEqual(defaultEnabledToolIds, ["web-search", "scratchpad"]);
+  assert.deepEqual(defaultEnabledToolIds, [
+    "web-search",
+    "scratchpad",
+    "ask-user",
+  ]);
 });
 
 test("the persona tool catalog has no duplicate capabilities", () => {

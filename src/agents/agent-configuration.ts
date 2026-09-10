@@ -46,6 +46,13 @@ export const toolCapabilities = [
     availableFor: ["conversational", "research"],
   },
   {
+    id: "ask-user",
+    name: "Ask user",
+    description:
+      "Ask a focused follow-up question in the chat when an answer would materially change the result.",
+    availableFor: ["conversational", "research"],
+  },
+  {
     id: "langsearch",
     name: "LangSearch",
     description:
@@ -72,12 +79,6 @@ export const toolCapabilities = [
       "Requires a user-authorized MCP connection and scoped access controls.",
     availableFor: [],
   },
-  {
-    id: "ask-user",
-    name: "Ask user",
-    description: "Requires a durable in-chat question and resume contract.",
-    availableFor: [],
-  },
 ] as const satisfies ReadonlyArray<{
   id: ConfigurableToolId;
   name: string;
@@ -94,6 +95,7 @@ export const toolCapabilities = [
 export const defaultEnabledToolIds: readonly ConfigurableToolId[] = [
   "web-search",
   "scratchpad",
+  "ask-user",
 ];
 
 export function isToolAvailableToBaseAgent(

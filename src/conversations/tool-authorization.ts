@@ -5,7 +5,7 @@ import {
   type ConfigurableToolId,
 } from "@/agents/agent-configuration";
 
-const productionToolIds = ["web-search", "scratchpad"] as const;
+const productionToolIds = ["web-search", "scratchpad", "ask-user"] as const;
 export type ProductionToolId = (typeof productionToolIds)[number];
 
 function isProductionToolId(value: string): value is ProductionToolId {

@@ -113,6 +113,41 @@ export async function sendConversationMessage(
       });
     throw error;
   }
+  if (reply.type === "user_input_required") {
+    if (typeof reply.question !== "string" || typeof reply.runId !== "string") {
+      await finishExecution({
+        organizationId: input.organizationId,
+        executionId: execution.id,
+        errorMessage: "Runtime returned an invalid Ask User request",
+      });
+      throw new Error("Pilot could not safely request user input.");
+    }
+    const workerMessage = await createConversationMessage({
+      organizationId: input.organizationId,
+      workerId: input.worker.id,
+      conversationId: input.conversationId,
+      createdByWorkosUserId: input.userId,
+      role: "worker",
+      content: reply.question,
+      userQuestionOptions: reply.options,
+      userQuestionSelectionMode: reply.selectionMode,
+      modelId: input.worker.modelId,
+      runtimeRunId: reply.runId,
+      latencyMs: toStoredCount(Math.round(performance.now() - startedAt)),
+      inputTokens: toStoredCount(reply.usage.inputTokens),
+      outputTokens: toStoredCount(reply.usage.outputTokens),
+      totalTokens: toStoredCount(reply.usage.totalTokens),
+    });
+    if (!workerMessage)
+      throw new Error("Pilot Conversation no longer belongs to this Worker.");
+    await finishExecution({
+      organizationId: input.organizationId,
+      executionId: execution.id,
+      conversationMessageId: workerMessage.id,
+      runtimeRunId: reply.runId,
+    });
+    return { userMessage, workerMessage };
+  }
   if (
     reply.type !== "completed" ||
     typeof reply.text !== "string" ||
