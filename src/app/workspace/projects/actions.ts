@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { del } from "@vercel/blob";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -16,6 +17,7 @@ import {
   removeProjectConversation,
   updateProject,
 } from "@/projects/project-repository";
+import { listProjectFilePaths } from "@/projects/project-file-repository";
 
 const projectSchema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -106,6 +108,13 @@ export async function deleteProjectAction(
           projectId: project.id,
         });
       }
+    }
+    const files = await listProjectFilePaths({
+      ...activeOwner,
+      projectId: project.id,
+    });
+    for (const file of files) {
+      await del(file.pathname);
     }
     const deleted = await deleteProject({
       ...activeOwner,

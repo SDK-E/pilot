@@ -2,17 +2,16 @@ import { randomUUID } from "node:crypto";
 import { del, put } from "@vercel/blob";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
-import { createConversationAttachment } from "@/conversations/attachment-repository";
-import { getConversation } from "@/conversations/conversation-repository";
-import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import {
   isAcceptedPrivateFile,
   safePrivateFilename,
 } from "@/files/private-file-policy";
+import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { getProject } from "@/projects/project-repository";
+import { createProjectFile } from "@/projects/project-file-repository";
 
 export const runtime = "nodejs";
-
-type RouteContext = { params: Promise<{ conversationId: string }> };
+type RouteContext = { params: Promise<{ projectId: string }> };
 
 function response(message: string, status: number) {
   return Response.json({ error: message }, { status });
@@ -24,44 +23,40 @@ export async function POST(request: Request, { params }: RouteContext) {
     return response("Choose an organization first.", 403);
   if (!(await getActiveOrganizationMembership(user.id, organizationId)))
     return response("Your organization access is no longer active.", 403);
-  const conversationId = z.uuid().safeParse((await params).conversationId);
-  if (!conversationId.success) return response("Conversation not found.", 404);
+  const projectId = z.uuid().safeParse((await params).projectId);
+  if (!projectId.success) return response("Project not found.", 404);
+  const project = await getProject({
+    organizationId,
+    userId: user.id,
+    projectId: projectId.data,
+  });
+  if (!project) return response("Project not found.", 404);
   const formData = await request.formData().catch(() => undefined);
-  const workerId = z.uuid().safeParse(formData?.get("workerId"));
   const file = formData?.get("file");
-  if (!workerId.success || !(file instanceof File))
-    return response("Choose a file to attach.", 400);
+  if (!(file instanceof File)) return response("Choose a file to upload.", 400);
   if (!isAcceptedPrivateFile(file))
     return response("This file type or size is not supported.", 400);
-  const conversation = await getConversation(
-    organizationId,
-    workerId.data,
-    conversationId.data,
-    user.id,
-  );
-  if (!conversation) return response("Conversation not found.", 404);
 
-  const pathname = `organizations/${organizationId}/conversations/${conversation.id}/${randomUUID()}-${safePrivateFilename(file.name)}`;
+  const pathname = `organizations/${organizationId}/projects/${project.id}/${randomUUID()}-${safePrivateFilename(file.name)}`;
   const blob = await put(pathname, file, {
     access: "private",
     addRandomSuffix: false,
     contentType: file.type,
   });
   try {
-    const attachment = await createConversationAttachment({
+    const saved = await createProjectFile({
       organizationId,
-      workerId: workerId.data,
-      conversationId: conversation.id,
       userId: user.id,
+      projectId: project.id,
       pathname: blob.pathname,
       filename: file.name.slice(0, 255),
       contentType: file.type,
       byteSize: file.size,
     });
-    if (!attachment) throw new Error("Attachment metadata could not be saved.");
-    return Response.json({ id: attachment.id }, { status: 201 });
+    if (!saved) throw new Error("Project file metadata could not be saved.");
+    return Response.json({ id: saved.id }, { status: 201 });
   } catch {
     await del(blob.url).catch(() => undefined);
-    return response("Pilot could not attach this file.", 500);
+    return response("Pilot could not save this project file.", 500);
   }
 }

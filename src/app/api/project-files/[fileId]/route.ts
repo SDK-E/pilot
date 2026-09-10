@@ -1,38 +1,38 @@
 import { del, get } from "@vercel/blob";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
-import {
-  deleteConversationAttachment,
-  getConversationAttachment,
-} from "@/conversations/attachment-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import {
+  deleteProjectFile,
+  getProjectFile,
+} from "@/projects/project-file-repository";
 
 export const runtime = "nodejs";
-type RouteContext = { params: Promise<{ attachmentId: string }> };
+type RouteContext = { params: Promise<{ fileId: string }> };
 
-async function authorizedAttachment(params: RouteContext["params"]) {
+async function authorizedFile(params: RouteContext["params"]) {
   const { user, organizationId } = await withAuth({ ensureSignedIn: true });
-  const attachmentId = z.uuid().safeParse((await params).attachmentId);
-  if (!organizationId || !attachmentId.success) return undefined;
+  const fileId = z.uuid().safeParse((await params).fileId);
+  if (!organizationId || !fileId.success) return undefined;
   if (!(await getActiveOrganizationMembership(user.id, organizationId)))
     return undefined;
-  const attachment = await getConversationAttachment({
+  const file = await getProjectFile({
     organizationId,
-    attachmentId: attachmentId.data,
     userId: user.id,
+    fileId: fileId.data,
   });
-  return attachment ? { attachment, organizationId, user } : undefined;
+  return file ? { file, organizationId, user } : undefined;
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
-  const authorized = await authorizedAttachment(params);
+  const authorized = await authorizedFile(params);
   if (!authorized) return new Response("Not found", { status: 404 });
-  const blob = await get(authorized.attachment.pathname, { access: "private" });
+  const blob = await get(authorized.file.pathname, { access: "private" });
   if (!blob) return new Response("Not found", { status: 404 });
   return new Response(blob.stream, {
     headers: {
-      "content-type": authorized.attachment.contentType,
-      "content-disposition": `inline; filename*=UTF-8''${encodeURIComponent(authorized.attachment.filename)}`,
+      "content-type": authorized.file.contentType,
+      "content-disposition": `inline; filename*=UTF-8''${encodeURIComponent(authorized.file.filename)}`,
       "cache-control": "private, no-store",
       "x-content-type-options": "nosniff",
     },
@@ -40,19 +40,19 @@ export async function GET(_request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
-  const authorized = await authorizedAttachment(params);
+  const authorized = await authorizedFile(params);
   if (!authorized) return new Response("Not found", { status: 404 });
   try {
-    await del(authorized.attachment.pathname);
-    await deleteConversationAttachment({
+    await del(authorized.file.pathname);
+    await deleteProjectFile({
       organizationId: authorized.organizationId,
-      attachmentId: authorized.attachment.id,
       userId: authorized.user.id,
+      fileId: authorized.file.id,
     });
     return new Response(null, { status: 204 });
   } catch {
     return Response.json(
-      { error: "Pilot could not delete this file." },
+      { error: "Pilot could not delete this project file." },
       { status: 500 },
     );
   }

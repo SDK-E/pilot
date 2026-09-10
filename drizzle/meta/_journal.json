@@ -134,6 +134,13 @@
       "when": 1789063608333,
       "tag": "0018_plain_silver_samurai",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789065956924,
+      "tag": "0019_chunky_catseye",
+      "breakpoints": true
     }
   ]
 }

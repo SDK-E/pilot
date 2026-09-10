@@ -1,7 +1,7 @@
 # Private chat attachments
 
-Status: bounded text extraction is implemented for private conversations.
-Image analysis, spreadsheet extraction, project knowledge, and semantic
+Status: bounded text extraction is implemented for private conversations and
+private Projects. Image analysis, spreadsheet extraction, and semantic
 retrieval remain pending.
 
 Attachments belong to the creator-scoped Pilot conversation that received them.
@@ -29,6 +29,15 @@ output is rendered as HTML. Blob URLs and browser-supplied file metadata never
 reach Pilot AI. The agent is told not to follow instructions from attachment
 text. Spreadsheet and image attachments remain storage and delivery features
 until their extraction contracts exist.
+
+Project files use the same private Blob boundary, but keep distinct
+creator-scoped Project metadata in Neon. Pilot checks that the current private
+chat is still associated with that same owned Project immediately before it
+reads a file. Their excerpts share the existing five-file and character limits
+with chat attachments, and remain explicitly untrusted. Deleting a Project
+removes each private Blob before its database metadata can cascade; a Blob
+failure preserves the Project and metadata so cleanup can be retried. This is
+bounded direct file context, not semantic knowledge or retrieval.
 
 ## Sources checked on 2026-09-10
 

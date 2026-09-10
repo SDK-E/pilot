@@ -11,7 +11,9 @@ instructions are available to the agent. Shared project memory is disabled by
 default; when its owner enables it, Pilot AI uses a project-scoped Mastra
 resource and resource-scoped Observational Memory, while each conversation
 keeps its separate thread. The existing allowlisted Kilo Gateway model runs
-the observer. Files, knowledge, shared projects, and cross-user context are
+the observer. Project files are private Blob objects with creator-scoped
+metadata and bounded, untrusted direct-file context for chats still in the
+same Project. Semantic knowledge, shared projects, and cross-user context are
 still unavailable.
 Moving or removing a conversation first clears the former shared-memory
 resource before the database association can change. A cleanup failure leaves
@@ -78,8 +80,10 @@ private authenticated delivery, and deletion. Text, Markdown, CSV, PDF, and
 DOCX files also enter the next owned chat request as bounded, explicitly
 untrusted context; they never reach activity records or browser-to-runtime
 traffic. PDFs use `unpdf` and DOCX uses Mammoth raw-text extraction.
-Spreadsheets and image analysis plus project knowledge remain pending. See [private chat
-attachments](decisions/0011-private-chat-attachments.md).
+Spreadsheets and image analysis remain pending. Projects can now store the same
+private file formats under their own owner-scoped metadata; text, Markdown,
+CSV, PDF, and DOCX Project files enter chats in that Project as bounded,
+untrusted context. See [private chat attachments](decisions/0011-private-chat-attachments.md).
 
 The Personas index can duplicate a configured persona. Pilot reloads the source
 from the active organization after rechecking WorkOS membership, generates a

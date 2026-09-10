@@ -4,12 +4,14 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { DeleteProjectButton } from "@/components/projects/delete-project-button";
+import { ProjectFiles } from "@/components/projects/project-files";
 import { listOrganizationConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import {
   getProject,
   listProjectConversations,
 } from "@/projects/project-repository";
+import { listProjectFiles } from "@/projects/project-file-repository";
 import {
   addProjectConversationAction,
   removeProjectConversationAction,
@@ -28,10 +30,11 @@ export default async function ProjectPage({
   if (!(await getActiveOrganizationMembership(user.id, organizationId)))
     redirect("/workspace");
   const owner = { organizationId, userId: user.id, projectId };
-  const [project, projectChats, chats] = await Promise.all([
+  const [project, projectChats, chats, files] = await Promise.all([
     getProject(owner),
     listProjectConversations(owner),
     listOrganizationConversations(organizationId, user.id),
+    listProjectFiles(owner),
   ]);
   if (!project) notFound();
   const contained = new Set(projectChats.map((chat) => chat.id));
@@ -94,6 +97,7 @@ export default async function ProjectPage({
           </Button>
         </form>
       </section>
+      <ProjectFiles files={files} projectId={project.id} />
       <section className="rounded-2xl border border-border bg-card/50 p-5">
         <h2 className="font-medium">Conversations</h2>
         <p className="mt-1 text-sm text-muted-foreground">

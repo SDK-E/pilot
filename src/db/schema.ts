@@ -207,6 +207,35 @@ export const projectConversations = pgTable(
   ],
 );
 
+export const projectFiles = pgTable(
+  "project_files",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
+    pathname: text("pathname").notNull(),
+    filename: text("filename").notNull(),
+    contentType: text("content_type").notNull(),
+    byteSize: integer("byte_size").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    unique("project_files_pathname_unique").on(table.pathname),
+    index("project_files_project_creator_created_at_index").on(
+      table.projectId,
+      table.createdByWorkosUserId,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const conversationMessages = pgTable(
   "conversation_messages",
   {

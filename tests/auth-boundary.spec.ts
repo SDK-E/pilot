@@ -130,6 +130,30 @@ test("anonymous and forged sessions cannot access private attachments", async ({
   }
 });
 
+test("anonymous and forged sessions cannot access private Project files", async ({
+  request,
+}) => {
+  const projectId = "00000000-0000-4000-8000-000000000000";
+  const fileId = "00000000-0000-4000-8000-000000000000";
+  for (const cookie of ["", "wos-session=forged-session"]) {
+    for (const [method, path] of [
+      ["post", `/api/projects/${projectId}/files`],
+      ["get", `/api/project-files/${fileId}`],
+      ["delete", `/api/project-files/${fileId}`],
+    ] as const) {
+      const response = await request[method](path, {
+        maxRedirects: 0,
+        headers: { cookie },
+      });
+      expect(response.status()).toBeGreaterThanOrEqual(300);
+      expect(response.status()).toBeLessThan(400);
+      expect(new URL(response.headers().location).hostname).toBe(
+        "api.workos.com",
+      );
+    }
+  }
+});
+
 test("browser requests cannot use the private runtime scratchpad callback", async ({
   request,
 }) => {

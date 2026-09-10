@@ -10,5 +10,7 @@ export const config = {
     "/workspace/:path*",
     "/api/conversations/:path*",
     "/api/attachments/:path*",
+    "/api/projects/:path*",
+    "/api/project-files/:path*",
   ],
 };
