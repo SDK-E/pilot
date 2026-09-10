@@ -64,8 +64,8 @@ feature flags are enabled. It has one tenant-scoped, read-only capability:
 the hardened `web-search` adapter.
 
 This is an interface and routing improvement over the durable-execution
-foundation below. It does not add message streaming, attachments, runtime tool
-events, browser/scratchpad panes, reasoning content, or tool approvals.
+foundation below. It does not add attachment ingestion, runtime tool events,
+browser/scratchpad panes, reasoning content, or tool approvals.
 Research tool lifecycle is the sole production tool activity the UI can
 truthfully render today. See
 [chat workspace interface](decisions/0008-chat-workspace-interface.md).
@@ -295,7 +295,9 @@ active memberships (including organization display names), rechecks membership
 inside the existing organization-switch Server Action, exposes the read-only
 profile and Settings, and signs out through the existing POST action. Settings
 now contains the Agent fleet and Persona management links. Project sharing,
-attachments, and shared context are not implemented.
+attachment ingestion, and shared context are not implemented. Private chat
+attachments themselves are available through the separate owner-scoped Blob
+boundary described above.
 
 ## Durable Research web-search approval
 
