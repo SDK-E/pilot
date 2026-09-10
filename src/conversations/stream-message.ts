@@ -7,6 +7,7 @@ import {
 import { createConversationMessage } from "@/conversations/conversation-repository";
 import { isResearchAvailable } from "@/conversations/research-availability";
 import { canUsePublicWebSearch } from "@/conversations/public-web-search-authorization";
+import { buildAttachmentContext } from "@/conversations/attachment-context";
 import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 import {
   finishExecution,
@@ -90,10 +91,21 @@ export async function streamConversationMessage(
     async start(controller) {
       let text = "";
       try {
+        const attachmentContext = await buildAttachmentContext({
+          organizationId: input.organizationId,
+          conversationId: input.conversationId,
+          userId: input.userId,
+          maximumCharacters: 20_000 - input.worker.instructions.length - 2,
+        });
         for await (const event of streamConversationReply(
           {
             organizationId: input.organizationId,
-            worker: input.worker,
+            worker: {
+              ...input.worker,
+              instructions: attachmentContext
+                ? `${input.worker.instructions}\n\n${attachmentContext}`
+                : input.worker.instructions,
+            },
             conversationId: input.conversationId,
             message: input.message,
             executionId: execution.id,

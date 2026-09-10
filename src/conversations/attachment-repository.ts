@@ -33,6 +33,34 @@ export async function listConversationAttachments(input: {
     .orderBy(asc(conversationAttachments.createdAt));
 }
 
+export async function listTextConversationAttachments(input: {
+  organizationId: string;
+  conversationId: string;
+  userId: string;
+}) {
+  return db
+    .select({
+      pathname: conversationAttachments.pathname,
+      filename: conversationAttachments.filename,
+      contentType: conversationAttachments.contentType,
+      byteSize: conversationAttachments.byteSize,
+    })
+    .from(conversationAttachments)
+    .innerJoin(
+      conversations,
+      eq(conversationAttachments.conversationId, conversations.id),
+    )
+    .where(
+      and(
+        eq(conversationAttachments.organizationId, input.organizationId),
+        eq(conversationAttachments.conversationId, input.conversationId),
+        eq(conversationAttachments.createdByWorkosUserId, input.userId),
+        eq(conversations.createdByWorkosUserId, input.userId),
+      ),
+    )
+    .orderBy(asc(conversationAttachments.createdAt));
+}
+
 export async function createConversationAttachment(input: {
   organizationId: string;
   workerId: string;
