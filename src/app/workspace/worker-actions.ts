@@ -28,8 +28,26 @@ const workerInputSchema = z.object({
   tone: z.string().trim().max(200).optional(),
   outputFormat: z.string().trim().max(1_000).optional(),
   enabledToolIds: z.array(z.enum(configurableToolIds)).default([]),
-  approvalMode: z.enum(approvalModes),
+  approvalRules: z.record(z.string(), z.enum(approvalModes)),
 });
+
+function approvalRulesFrom(formData: FormData) {
+  return Object.fromEntries(
+    configurableToolIds.flatMap((toolId) => {
+      const value = formData.get(`approvalRule.${toolId}`);
+      return typeof value === "string" && value ? [[toolId, value]] : [];
+    }),
+  );
+}
+
+function enabledApprovalRules(input: z.infer<typeof workerInputSchema>) {
+  return Object.fromEntries(
+    input.enabledToolIds.map((toolId) => [
+      toolId,
+      input.approvalRules[toolId] ?? "ask",
+    ]),
+  );
+}
 
 export async function createWorkerAction(
   _previousState: WorkerCreationState,
@@ -44,7 +62,7 @@ export async function createWorkerAction(
     tone: formData.get("tone") || undefined,
     outputFormat: formData.get("outputFormat") || undefined,
     enabledToolIds: formData.getAll("enabledToolIds"),
-    approvalMode: formData.get("approvalMode"),
+    approvalRules: approvalRulesFrom(formData),
   });
   if (!parsed.success) {
     return { message: parsed.error.issues[0]?.message, status: "error" };
@@ -79,12 +97,7 @@ export async function createWorkerAction(
       user: { id: user.id, email: user.email },
       worker: {
         ...parsed.data,
-        approvalRules: Object.fromEntries(
-          parsed.data.enabledToolIds.map((toolId) => [
-            toolId,
-            parsed.data.approvalMode,
-          ]),
-        ),
+        approvalRules: enabledApprovalRules(parsed.data),
         knowledgeSourceIds: [],
       },
     });
@@ -123,7 +136,7 @@ export async function updateWorkerAction(
     tone: formData.get("tone") || undefined,
     outputFormat: formData.get("outputFormat") || undefined,
     enabledToolIds: formData.getAll("enabledToolIds"),
-    approvalMode: formData.get("approvalMode"),
+    approvalRules: approvalRulesFrom(formData),
   });
   if (!workerId.success || !parsed.success)
     return {
@@ -146,12 +159,7 @@ export async function updateWorkerAction(
   try {
     const worker = await updateWorker(organizationId, workerId.data, {
       ...parsed.data,
-      approvalRules: Object.fromEntries(
-        parsed.data.enabledToolIds.map((toolId) => [
-          toolId,
-          parsed.data.approvalMode,
-        ]),
-      ),
+      approvalRules: enabledApprovalRules(parsed.data),
       knowledgeSourceIds: [],
     });
     if (!worker)

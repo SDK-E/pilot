@@ -110,33 +110,15 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
           rows={3}
         />
       </div>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="agent-tone">Tone</Label>
-          <Input
-            id="agent-tone"
-            name="tone"
-            maxLength={200}
-            placeholder="Clear and pragmatic"
-            defaultValue={persona?.tone ?? undefined}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="agent-approval">Tool approvals</Label>
-          <select
-            id="agent-approval"
-            name="approvalMode"
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            defaultValue={
-              Object.values(persona?.approvalRules ?? {})[0] ?? "ask"
-            }
-          >
-            <option value="ask">Ask before each tool</option>
-            <option value="allow">Allow automatically</option>
-            <option value="deny">Deny all tools</option>
-            <option value="auto-classifier">Auto-classifier</option>
-          </select>
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="agent-tone">Tone</Label>
+        <Input
+          id="agent-tone"
+          name="tone"
+          maxLength={200}
+          placeholder="Clear and pragmatic"
+          defaultValue={persona?.tone ?? undefined}
+        />
       </div>
       <div className="space-y-3">
         <Label>Enabled tools</Label>
@@ -156,7 +138,7 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
               persona?.enabledToolIds.includes(tool.id) ??
               defaultEnabledToolIds.includes(tool.id);
             return (
-              <label
+              <div
                 key={tool.id}
                 className="flex items-start gap-2 rounded-md border border-border p-2 text-sm"
               >
@@ -181,8 +163,21 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
                   <span className="block text-xs text-muted-foreground">
                     {tool.description}
                   </span>
+                  {available ? (
+                    <select
+                      aria-label={`${tool.name} approval rule`}
+                      className="mt-2 h-8 rounded-md border border-input bg-background px-2 text-xs"
+                      defaultValue={persona?.approvalRules[tool.id] ?? "ask"}
+                      name={`approvalRule.${tool.id}`}
+                    >
+                      <option value="ask">Ask before use</option>
+                      <option value="allow">Allow automatically</option>
+                      <option value="deny">Deny</option>
+                      <option value="auto-classifier">Auto-classifier</option>
+                    </select>
+                  ) : null}
                 </span>
-              </label>
+              </div>
             );
           })}
         </div>
