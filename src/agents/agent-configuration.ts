@@ -33,9 +33,9 @@ export type ConfigurableToolId = (typeof configurableToolIds)[number];
 export const toolCapabilities = [
   {
     id: "web-search",
-    name: "Public web search",
+    name: "Public web research",
     description:
-      "Search and read public web sources through Pilot's protected runtime.",
+      "Search and read public sources with LangSearch through Pilot's protected runtime.",
     availableFor: ["conversational", "research"],
   },
   {
@@ -83,6 +83,16 @@ export const toolCapabilities = [
   description: string;
   availableFor: readonly BaseAgentId[];
 }>;
+
+/**
+ * A new persona begins with the only production tool that both bases can
+ * invoke. The UI keeps this as an ordinary checkbox, so a creator can remove
+ * it before saving. Other capabilities remain unavailable until Pilot has a
+ * complete authorization, approval, activity, and storage boundary for them.
+ */
+export const defaultEnabledToolIds: readonly ConfigurableToolId[] = [
+  "web-search",
+];
 
 export function isToolAvailableToBaseAgent(
   toolId: ConfigurableToolId,

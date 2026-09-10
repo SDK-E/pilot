@@ -36,7 +36,8 @@ boundary, Turso-backed Mastra suspension, and creator-scoped approval decision.
 All other saved tool preferences remain non-capabilities until their own
 authorization, storage, activity, and approval contracts are implemented.
 The persona form reads the same capability catalog as runtime authorization:
-public web search is marked available, while future browser, file, GitHub,
+public web research is selected by default for new Conversational and Research
+personas with an `ask` rule, while future browser, file, GitHub,
 scratchpad, and user-input capabilities are visibly planned and cannot be
 enabled by a form submission.
 

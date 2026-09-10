@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import {
   baseAgents,
+  defaultEnabledToolIds,
   isToolAvailableToBaseAgent,
   toolCapabilities,
 } from "@/agents/agent-configuration";
@@ -80,9 +81,10 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
           ))}
         </select>
         <p className="text-xs text-muted-foreground">
-          Conversational and Research agents can use public-web search only when
-          it is enabled and explicitly allowed. Other tools stay unavailable
-          until their protected runtime boundary is complete.
+          Both bases start with protected public-web research, powered by
+          LangSearch, in Ask mode. You can change its approval rule or turn it
+          off before saving. Other tools become selectable only when their
+          protected runtime boundary is complete.
         </p>
       </div>
       <div className="space-y-2">
@@ -150,7 +152,9 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
               (persona?.baseAgentId ?? "conversational") as
                 "conversational" | "research",
             );
-            const selected = persona?.enabledToolIds.includes(tool.id) ?? false;
+            const selected =
+              persona?.enabledToolIds.includes(tool.id) ??
+              defaultEnabledToolIds.includes(tool.id);
             return (
               <label
                 key={tool.id}
