@@ -134,9 +134,6 @@ export async function sendConversationMessage(
       modelId: input.worker.modelId,
       runtimeRunId: reply.runId,
       latencyMs: toStoredCount(Math.round(performance.now() - startedAt)),
-      inputTokens: toStoredCount(reply.usage.inputTokens),
-      outputTokens: toStoredCount(reply.usage.outputTokens),
-      totalTokens: toStoredCount(reply.usage.totalTokens),
     });
     if (!workerMessage)
       throw new Error("Pilot Conversation no longer belongs to this Worker.");

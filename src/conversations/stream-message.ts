@@ -141,9 +141,6 @@ export async function streamConversationMessage(
               latencyMs: toStoredCount(
                 Math.round(performance.now() - startedAt),
               ),
-              inputTokens: toStoredCount(event.usage.inputTokens),
-              outputTokens: toStoredCount(event.usage.outputTokens),
-              totalTokens: toStoredCount(event.usage.totalTokens),
             });
             if (!workerMessage) {
               throw new Error(
