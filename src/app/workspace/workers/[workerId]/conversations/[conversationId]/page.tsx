@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
 import { ConversationShell } from "@/components/conversations/conversation-shell";
+import { listConversationAttachments } from "@/conversations/attachment-repository";
 import {
   getConversation,
   listConversationMessages,
@@ -57,6 +58,7 @@ export default async function ConversationPage({
     approvals,
     project,
     projects,
+    attachments,
   ] = await Promise.all([
     getWorker(organizationId, workerId),
     getConversation(organizationId, workerId, conversationId, user.id),
@@ -78,6 +80,11 @@ export default async function ConversationPage({
       conversationId,
     }),
     listProjects({ organizationId, userId: user.id }),
+    listConversationAttachments({
+      organizationId,
+      conversationId,
+      userId: user.id,
+    }),
   ]);
   if (!worker || !conversation || !messages) notFound();
 
@@ -97,6 +104,7 @@ export default async function ConversationPage({
       agentName={worker.name}
       project={project}
       projects={projects}
+      attachments={attachments}
     />
   );
 }

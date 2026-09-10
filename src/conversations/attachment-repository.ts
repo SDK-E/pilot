@@ -58,3 +58,50 @@ export async function createConversationAttachment(input: {
     .returning({ id: conversationAttachments.id });
   return attachment;
 }
+
+export async function getConversationAttachment(input: {
+  organizationId: string;
+  attachmentId: string;
+  userId: string;
+}) {
+  const [attachment] = await db
+    .select({
+      id: conversationAttachments.id,
+      pathname: conversationAttachments.pathname,
+      filename: conversationAttachments.filename,
+      contentType: conversationAttachments.contentType,
+    })
+    .from(conversationAttachments)
+    .innerJoin(
+      conversations,
+      eq(conversationAttachments.conversationId, conversations.id),
+    )
+    .where(
+      and(
+        eq(conversationAttachments.organizationId, input.organizationId),
+        eq(conversationAttachments.id, input.attachmentId),
+        eq(conversationAttachments.createdByWorkosUserId, input.userId),
+        eq(conversations.createdByWorkosUserId, input.userId),
+      ),
+    )
+    .limit(1);
+  return attachment;
+}
+
+export async function deleteConversationAttachment(input: {
+  organizationId: string;
+  attachmentId: string;
+  userId: string;
+}) {
+  const [attachment] = await db
+    .delete(conversationAttachments)
+    .where(
+      and(
+        eq(conversationAttachments.organizationId, input.organizationId),
+        eq(conversationAttachments.id, input.attachmentId),
+        eq(conversationAttachments.createdByWorkosUserId, input.userId),
+      ),
+    )
+    .returning({ pathname: conversationAttachments.pathname });
+  return attachment;
+}

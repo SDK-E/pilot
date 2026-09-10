@@ -105,3 +105,27 @@ test("anonymous and forged sessions cannot read conversation activity", async ({
     );
   }
 });
+
+test("anonymous and forged sessions cannot access private attachments", async ({
+  request,
+}) => {
+  const conversationId = "00000000-0000-4000-8000-000000000000";
+  const attachmentId = "00000000-0000-4000-8000-000000000000";
+  for (const cookie of ["", "wos-session=forged-session"]) {
+    for (const [method, path] of [
+      ["post", `/api/conversations/${conversationId}/attachments`],
+      ["get", `/api/attachments/${attachmentId}`],
+      ["delete", `/api/attachments/${attachmentId}`],
+    ] as const) {
+      const response = await request[method](path, {
+        maxRedirects: 0,
+        headers: { cookie },
+      });
+      expect(response.status()).toBeGreaterThanOrEqual(300);
+      expect(response.status()).toBeLessThan(400);
+      expect(new URL(response.headers().location).hostname).toBe(
+        "api.workos.com",
+      );
+    }
+  }
+});

@@ -41,10 +41,10 @@ scratchpad, and user-input capabilities are visibly planned and cannot be
 enabled by a form submission.
 
 Pilot now has a production-only private Vercel Blob store,
-`pilot-private-files-production`, reserved for the upcoming creator-scoped chat
-attachment slice. No application upload, delivery, or runtime ingestion path is
-enabled until its private metadata, authorization, cleanup, and typed ingestion
-contracts are implemented. See [private chat attachments](decisions/0011-private-chat-attachments.md).
+`pilot-private-files-production`. Owned chat attachments support server-validated
+uploads of PDF, text, CSV, Office documents, and common images up to 10 MB,
+private authenticated delivery, and deletion. Files do not enter Pilot AI or
+project knowledge yet. See [private chat attachments](decisions/0011-private-chat-attachments.md).
 
 The Personas index can duplicate a configured persona. Pilot reloads the source
 from the active organization after rechecking WorkOS membership, generates a
