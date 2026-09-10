@@ -98,6 +98,17 @@ export const defaultEnabledToolIds: readonly ConfigurableToolId[] = [
   "ask-user",
 ];
 
+/**
+ * Built-in Pilot personas begin with every production-ready shared capability
+ * enabled. External-state tools still require a durable, user-visible
+ * approval by default; Ask User remains an in-chat suspension.
+ */
+export function defaultToolApprovalRules(): ApprovalRules {
+  return Object.fromEntries(
+    defaultEnabledToolIds.map((toolId) => [toolId, "ask"]),
+  ) as ApprovalRules;
+}
+
 export function isToolAvailableToBaseAgent(
   toolId: ConfigurableToolId,
   baseAgentId: BaseAgentId,

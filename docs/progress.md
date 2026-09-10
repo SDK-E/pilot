@@ -49,6 +49,11 @@ They are an all-or-nothing runtime boundary: if either flag is not exactly
 The persona capability catalog has one authoritative entry for every tool, so
 new Conversational and Research personas expose the same implemented tools:
 Public web research, the private scratchpad, and Ask User.
+The automatically created built-in `Pilot` persona uses this same full baseline
+rather than starting with an empty tool list. Its external tools default to
+`ask`, so the user sees and decides on each protected action; Ask User remains
+an in-chat Mastra suspension. Pilot's product-to-runtime contract accepts all
+three shared capabilities in one request.
 
 Conversational and Research personas can also enable Mastra's built-in Ask User
 tool. It suspends the agent on the private Turso-backed conversation thread,

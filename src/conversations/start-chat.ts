@@ -1,6 +1,10 @@
 import "server-only";
 
 import { buildPersonaInstructions } from "@/agents/persona-instructions";
+import {
+  defaultEnabledToolIds,
+  defaultToolApprovalRules,
+} from "@/agents/agent-configuration";
 import { createConversation } from "@/conversations/conversation-repository";
 import { deriveConversationTitle } from "@/conversations/conversation-title";
 import {
@@ -80,9 +84,9 @@ export async function prepareConversation(
             "You are Pilot, a clear and practical conversational assistant. Ask concise follow-up questions when needed and state useful next steps.",
           modelId: "kilo/kilo-auto/free",
           baseAgentId: "conversational",
-          enabledToolIds: [],
+          enabledToolIds: [...defaultEnabledToolIds],
           knowledgeSourceIds: [],
-          approvalRules: {},
+          approvalRules: defaultToolApprovalRules(),
         },
       });
     } catch (error) {

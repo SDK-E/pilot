@@ -3,6 +3,7 @@ import test from "node:test";
 import { canUsePublicWebSearch } from "@/conversations/public-web-search-authorization";
 import {
   defaultEnabledToolIds,
+  defaultToolApprovalRules,
   isToolAvailableToBaseAgent,
   toolCapabilities,
 } from "@/agents/agent-configuration";
@@ -81,6 +82,14 @@ test("new personas start with the production tool baseline selected", () => {
     "scratchpad",
     "ask-user",
   ]);
+});
+
+test("the built-in Pilot baseline asks before external shared tools run", () => {
+  assert.deepEqual(defaultToolApprovalRules(), {
+    "web-search": "ask",
+    scratchpad: "ask",
+    "ask-user": "ask",
+  });
 });
 
 test("the persona tool catalog has no duplicate capabilities", () => {

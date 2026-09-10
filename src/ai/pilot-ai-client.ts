@@ -84,7 +84,7 @@ const generateConversationRequestSchema = z.object({
   conversationId: z.uuid(),
   message: z.string().min(1).max(10_000),
   executionId: z.uuid(),
-  allowedToolIds: z.array(productionToolIdSchema).max(2),
+  allowedToolIds: z.array(productionToolIdSchema).max(3),
   project: z
     .object({
       id: z.uuid(),
