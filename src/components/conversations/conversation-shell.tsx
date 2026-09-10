@@ -93,6 +93,9 @@ export function ConversationShell({
   const router = useRouter();
   const sendMessageShortcut = useSendMessageShortcut();
   const [pendingUserMessage, setPendingUserMessage] = useState<string>();
+  const [selectedQuestionOptions, setSelectedQuestionOptions] = useState<
+    Record<string, string[]>
+  >({});
   const [liveActivities, setLiveActivities] = useState(activities);
   const [attachmentError, setAttachmentError] = useState<string>();
   const [uploading, setUploading] = useState(false);
@@ -137,6 +140,20 @@ export function ConversationShell({
     if (!message || isLoading) return;
     submitText(message);
   }, [input, isLoading, submitText]);
+  const toggleQuestionOption = useCallback(
+    (messageId: string, option: string) => {
+      setSelectedQuestionOptions((current) => {
+        const selected = current[messageId] ?? [];
+        return {
+          ...current,
+          [messageId]: selected.includes(option)
+            ? selected.filter((value) => value !== option)
+            : [...selected, option],
+        };
+      });
+    },
+    [],
+  );
   const uploadAttachment = useCallback(
     async (file: File) => {
       setUploading(true);
@@ -252,29 +269,82 @@ export function ConversationShell({
                         <>
                           <MessageResponse>{message.content}</MessageResponse>
                           {message.userQuestionOptions?.length ? (
-                            <div
-                              aria-label={
-                                message.userQuestionSelectionMode ===
-                                "multi_select"
-                                  ? "Select one or more answers, or write a reply"
-                                  : "Select an answer, or write a reply"
-                              }
-                              className="mt-3 flex flex-wrap gap-2"
-                            >
-                              {message.userQuestionOptions.map((option) => (
+                            message.userQuestionSelectionMode ===
+                            "multi_select" ? (
+                              <fieldset
+                                className="mt-3 space-y-2"
+                                disabled={isLoading}
+                              >
+                                <legend className="text-xs text-muted-foreground">
+                                  Select one or more answers, or write a reply.
+                                </legend>
+                                <div className="flex flex-wrap gap-2">
+                                  {message.userQuestionOptions.map((option) => {
+                                    const selected = (
+                                      selectedQuestionOptions[message.id] ?? []
+                                    ).includes(option.label);
+                                    return (
+                                      <label
+                                        className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                                        key={option.label}
+                                        title={option.description}
+                                      >
+                                        <input
+                                          checked={selected}
+                                          className="size-4 accent-primary"
+                                          onChange={() =>
+                                            toggleQuestionOption(
+                                              message.id,
+                                              option.label,
+                                            )
+                                          }
+                                          type="checkbox"
+                                        />
+                                        {option.label}
+                                      </label>
+                                    );
+                                  })}
+                                </div>
                                 <Button
-                                  key={option.label}
-                                  disabled={isLoading}
-                                  onClick={() => submitText(option.label)}
+                                  disabled={
+                                    isLoading ||
+                                    !(selectedQuestionOptions[message.id] ?? [])
+                                      .length
+                                  }
+                                  onClick={() =>
+                                    submitText(
+                                      (
+                                        selectedQuestionOptions[message.id] ??
+                                        []
+                                      ).join("\n"),
+                                    )
+                                  }
                                   size="sm"
-                                  title={option.description}
                                   type="button"
-                                  variant="outline"
                                 >
-                                  {option.label}
+                                  Submit selected answers
                                 </Button>
-                              ))}
-                            </div>
+                              </fieldset>
+                            ) : (
+                              <div
+                                aria-label="Select an answer, or write a reply"
+                                className="mt-3 flex flex-wrap gap-2"
+                              >
+                                {message.userQuestionOptions.map((option) => (
+                                  <Button
+                                    key={option.label}
+                                    disabled={isLoading}
+                                    onClick={() => submitText(option.label)}
+                                    size="sm"
+                                    title={option.description}
+                                    type="button"
+                                    variant="outline"
+                                  >
+                                    {option.label}
+                                  </Button>
+                                ))}
+                              </div>
+                            )
                           ) : null}
                         </>
                       ) : (

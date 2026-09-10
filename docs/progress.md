@@ -57,6 +57,14 @@ authenticated runtime response, and resumes when the chat owner answers in the
 same chat. Questions are persisted as ordinary visible Worker messages so the
 chat remains usable after a refresh. The activity timeline records only the
 fixed `ask-user` capability and never the question, choices, or answer.
+Single-choice questions render as answer buttons. Multi-choice questions render
+checkboxes and submit the selected labels together, while the normal composer
+remains available for a custom answer.
+
+XLSX uploads remain private attachments but are not yet passed to the runtime.
+The current common Node parser package has unresolved dependency and streaming
+issues, so Pilot does not claim spreadsheet extraction until a maintained,
+production-suitable parser is selected and tested.
 
 Pilot now has a production-only private Vercel Blob store,
 `pilot-private-files-production`. Owned chat attachments support server-validated
