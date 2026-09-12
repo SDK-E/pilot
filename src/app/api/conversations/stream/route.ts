@@ -61,6 +61,7 @@ export async function POST(request: Request) {
     headers: {
       "cache-control": "no-cache, no-transform",
       "content-type": "text/plain; charset=utf-8",
+      location: `/workspace/workers/${prepared.worker.id}/conversations/${prepared.conversation.id}`,
       "x-pilot-conversation-href": `/workspace/workers/${prepared.worker.id}/conversations/${prepared.conversation.id}`,
     },
   });

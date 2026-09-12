@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCompletion } from "@ai-sdk/react";
 import {
@@ -99,6 +99,11 @@ export function ConversationShell({
   const [liveActivities, setLiveActivities] = useState(activities);
   const [attachmentError, setAttachmentError] = useState<string>();
   const [uploading, setUploading] = useState(false);
+  const [streamError, setStreamError] = useState<string>();
+  const [timeoutError, setTimeoutError] = useState<string>();
+  const [validationError, setValidationError] = useState<string>();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const timedOutRef = useRef(false);
   const displayedActivities = useMemo(() => {
     const byId = new Map(activities.map((activity) => [activity.id, activity]));
     for (const activity of liveActivities) byId.set(activity.id, activity);
@@ -118,13 +123,20 @@ export function ConversationShell({
     body: { workerId: agentId },
     experimental_throttle: 50,
     streamProtocol: "text",
-    onError: () => {
+    onError: (cause) => {
       setPendingUserMessage(undefined);
+      setStreamError(
+        cause instanceof Error
+          ? cause.message
+          : "Pilot could not complete this message.",
+      );
+      setTimeoutError(undefined);
       router.refresh();
     },
     onFinish: () => {
       setCompletion("");
       setPendingUserMessage(undefined);
+      setTimeoutError(undefined);
       router.refresh();
     },
   });
@@ -136,15 +148,34 @@ export function ConversationShell({
       setPendingUserMessage(message);
       setCompletion("");
       setInput("");
+      setStreamError(undefined);
+      setTimeoutError(undefined);
       void complete(message);
     },
     [complete, isLoading, setCompletion, setInput],
   );
   const submitMessage = useCallback(() => {
-    const message = input.trim();
-    if (!message || isLoading) return;
+    const raw = input;
+    if (!raw.trim()) {
+      setValidationError("Message cannot be blank.");
+      textareaRef.current?.focus();
+      return;
+    }
+    const message = raw.trim();
+    if (isLoading) return;
+    setValidationError(undefined);
     submitText(message);
   }, [input, isLoading, submitText]);
+  const retry = useCallback(() => {
+    setTimeoutError(undefined);
+    setStreamError(undefined);
+  }, []);
+  const cancel = useCallback(() => {
+    setTimeoutError(undefined);
+    setPendingUserMessage(undefined);
+    setCompletion("");
+    setInput("");
+  }, [setCompletion, setInput]);
   const toggleQuestionOption = useCallback(
     (messageId: string, option: string) => {
       setSelectedQuestionOptions((current) => {
@@ -212,11 +243,19 @@ export function ConversationShell({
 
     void refreshActivities();
     const interval = window.setInterval(() => void refreshActivities(), 1_000);
+    const timeoutHandle = window.setTimeout(() => {
+      timedOutRef.current = true;
+      setTimeoutError(
+        "Generation timed out. The request took longer than expected.",
+      );
+      stop();
+    }, 60_000);
     return () => {
       cancelled = true;
       window.clearInterval(interval);
+      window.clearTimeout(timeoutHandle);
     };
-  }, [conversationId, isLoading]);
+  }, [conversationId, isLoading, stop]);
 
   return (
     <main className="flex h-svh overflow-hidden bg-background">
@@ -453,10 +492,14 @@ export function ConversationShell({
                 ) : null}
               </div>
               <Textarea
+                aria-invalid={validationError ? true : undefined}
                 aria-label="Message"
                 className="min-h-28 resize-y rounded-2xl border-border bg-card px-4 py-3 shadow-lg shadow-black/10 focus-visible:ring-2"
                 maxLength={10_000}
-                onChange={(event) => setInput(event.target.value)}
+                onChange={(event) => {
+                  setInput(event.target.value);
+                  if (validationError) setValidationError(undefined);
+                }}
                 onKeyDown={(event) => {
                   if (shouldSubmitMessage(event, sendMessageShortcut)) {
                     event.preventDefault();
@@ -464,11 +507,50 @@ export function ConversationShell({
                   }
                 }}
                 placeholder="Message Pilot…"
+                ref={textareaRef}
                 required
                 rows={3}
                 value={input}
               />
-              {error ? (
+              {validationError ? (
+                <p
+                  aria-live="assertive"
+                  role="alert"
+                  className="text-sm text-destructive"
+                >
+                  {validationError}
+                </p>
+              ) : null}
+              {timeoutError ? (
+                <div className="space-y-2">
+                  <p
+                    aria-live="assertive"
+                    role="alert"
+                    className="text-sm text-destructive"
+                  >
+                    {timeoutError}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button onClick={retry} size="sm" type="button">
+                      Retry
+                    </Button>
+                    <Button
+                      onClick={cancel}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+              {streamError && !timeoutError ? (
+                <p aria-live="polite" className="text-sm text-destructive">
+                  {streamError}
+                </p>
+              ) : null}
+              {error && !timeoutError ? (
                 <p aria-live="polite" className="text-sm text-destructive">
                   {error.message || "Pilot could not complete this message."}
                 </p>

@@ -24,9 +24,11 @@ type Activity = { id: string; summary: string; type: ActivityEventType };
 export function NewChatForm({
   agents,
   defaultAgentId,
+  mode,
 }: {
   agents: AgentOption[];
   defaultAgentId: string | null;
+  mode?: string;
 }) {
   const router = useRouter();
   const sendMessageShortcut = useSendMessageShortcut();
@@ -40,16 +42,24 @@ export function NewChatForm({
     string | undefined
   >();
   const [liveActivities, setLiveActivities] = useState<Activity[]>([]);
+  const [validationError, setValidationError] = useState<string>();
+  const [timeoutError, setTimeoutError] = useState<string>();
   const conversationHref = useRef<string | undefined>(undefined);
+  const wasLoadingRef = useRef(false);
+  const submissionInProgressRef = useRef(false);
+  const timedOutRef = useRef(false);
+  const generationStartTimeRef = useRef<number | null>(null);
+  const lastPromptRef = useRef<string>("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const {
     complete,
     completion,
     error,
     input,
-    isLoading,
     setCompletion,
     setInput,
     stop,
+    isLoading,
   } = useCompletion<{ workerId: string }>({
     api: "/api/conversations/stream",
     body: { workerId: selectedAgentId ?? "" },
@@ -66,17 +76,69 @@ export function NewChatForm({
       return response;
     },
     onError: () => {
+      submissionInProgressRef.current = false;
       setPendingPrompt(undefined);
-      if (conversationHref.current) router.push(conversationHref.current);
+      setCompletion("");
     },
     onFinish: () => {
-      if (conversationHref.current) router.push(conversationHref.current);
+      submissionInProgressRef.current = false;
+      setPendingPrompt(undefined);
+      setCompletion("");
     },
   });
+
+  useEffect(() => {
+    if (isLoading) {
+      generationStartTimeRef.current = Date.now();
+      timedOutRef.current = false;
+      const handle = setTimeout(() => {
+        timedOutRef.current = true;
+        setTimeoutError(
+          "Generation timed out. The request took longer than expected.",
+        );
+        stop();
+      }, 60_000);
+      return () => clearTimeout(handle);
+    }
+
+    if (!wasLoadingRef.current) return;
+    wasLoadingRef.current = false;
+
+    if (timedOutRef.current) return;
+
+    if (conversationHref.current) {
+      router.push(conversationHref.current);
+      router.refresh();
+    }
+  }, [isLoading, router, stop]);
+
+  useEffect(() => {
+    if (!mode || typeof window === "undefined") return;
+    const templates: Record<string, string> = {
+      plan: "Help me plan: ",
+      draft: "Help me draft: ",
+      research: "Research: ",
+    };
+    const template = templates[mode];
+    if (template) {
+      setInput(template);
+    }
+  }, [mode, setInput]);
+
   const selectedAgent = agents.find((agent) => agent.id === selectedAgentId);
-  const submitMessage = () => {
-    const prompt = input.trim();
-    if (!prompt || isLoading) return;
+  const submitMessage = (overridePrompt?: string) => {
+    const raw = overridePrompt ?? input;
+    if (!raw.trim()) {
+      setValidationError("Message cannot be blank.");
+      textareaRef.current?.focus();
+      return;
+    }
+    const prompt = raw.trim();
+    if (isLoading || submissionInProgressRef.current) return;
+    submissionInProgressRef.current = true;
+    lastPromptRef.current = prompt;
+    setValidationError(undefined);
+    setTimeoutError(undefined);
     conversationHref.current = undefined;
     setActivityConversationId(undefined);
     setLiveActivities([]);
@@ -84,6 +146,19 @@ export function NewChatForm({
     setCompletion("");
     setInput("");
     void complete(prompt);
+  };
+
+  const retry = () => {
+    setTimeoutError(undefined);
+    if (lastPromptRef.current) {
+      submitMessage(lastPromptRef.current);
+    }
+  };
+
+  const cancel = () => {
+    setTimeoutError(undefined);
+    setPendingPrompt(undefined);
+    setCompletion("");
   };
 
   useEffect(() => {
@@ -183,11 +258,15 @@ export function NewChatForm({
         }}
       >
         <Textarea
+          aria-invalid={validationError ? true : undefined}
           aria-label="Message Pilot"
           className="min-h-32 resize-y rounded-2xl border-border bg-card px-4 py-4 text-base shadow-lg shadow-black/10 focus-visible:ring-2"
           disabled={isLoading}
           maxLength={10_000}
-          onChange={(event) => setInput(event.target.value)}
+          onChange={(event) => {
+            setInput(event.target.value);
+            if (validationError) setValidationError(undefined);
+          }}
           onKeyDown={(event) => {
             if (shouldSubmitMessage(event, sendMessageShortcut)) {
               event.preventDefault();
@@ -195,11 +274,45 @@ export function NewChatForm({
             }
           }}
           placeholder="Message Pilot…"
+          ref={textareaRef}
           required
           rows={3}
           value={input}
         />
-        {error ? (
+        {validationError ? (
+          <p
+            aria-live="assertive"
+            role="alert"
+            className="text-sm text-destructive"
+          >
+            {validationError}
+          </p>
+        ) : null}
+        {timeoutError ? (
+          <div className="space-y-2">
+            <p
+              aria-live="assertive"
+              role="alert"
+              className="text-sm text-destructive"
+            >
+              {timeoutError}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button onClick={retry} size="sm" type="button">
+                Retry
+              </Button>
+              <Button
+                onClick={cancel}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : null}
+        {error && !timeoutError ? (
           <p className="text-sm text-destructive">
             {error.message || "Pilot could not complete this message."}
           </p>

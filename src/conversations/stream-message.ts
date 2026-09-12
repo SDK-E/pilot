@@ -89,6 +89,7 @@ export async function streamConversationMessage(
   const abortController = new AbortController();
   const abort = () => abortController.abort();
   input.signal.addEventListener("abort", abort, { once: true });
+  const serverTimeoutHandle = setTimeout(() => abortController.abort(), 90_000);
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -123,6 +124,7 @@ export async function streamConversationMessage(
             continue;
           }
           if (event.type === "suspended") {
+            clearTimeout(serverTimeoutHandle);
             controller.close();
             return;
           }
@@ -153,6 +155,7 @@ export async function streamConversationMessage(
               conversationMessageId: workerMessage.id,
               runtimeRunId: event.runId,
             });
+            clearTimeout(serverTimeoutHandle);
             controller.close();
             return;
           }
@@ -185,8 +188,10 @@ export async function streamConversationMessage(
             });
           }
         }
+        clearTimeout(serverTimeoutHandle);
         controller.close();
       } catch (error) {
+        clearTimeout(serverTimeoutHandle);
         if (execution) {
           await finishExecution({
             organizationId: input.organizationId,
