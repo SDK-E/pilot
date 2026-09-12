@@ -75,7 +75,7 @@ export function ConversationDetailsPanel({
   return (
     <aside
       aria-label="Conversation details"
-      className="order-last w-full shrink-0 border-t border-border bg-muted/20 lg:order-none lg:w-80 lg:border-t-0 lg:border-l"
+      className="order-last min-h-0 w-full shrink-0 border-t border-border bg-muted/20 lg:order-none lg:w-80 lg:border-t-0 lg:border-l"
     >
       <div className="h-full space-y-5 overflow-y-auto p-4">
         <section>
