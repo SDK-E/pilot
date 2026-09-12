@@ -44,6 +44,8 @@ export async function listTasks(input: {
       title: tasks.title,
       status: tasks.status,
       updatedAt: tasks.updatedAt,
+      workerId: tasks.workerId,
+      conversationId: tasks.conversationId,
     })
     .from(tasks)
     .leftJoin(conversations, eq(tasks.conversationId, conversations.id))

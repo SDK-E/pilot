@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, like, or, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { conversationMessages, conversations, workers } from "@/db/schema";
 
@@ -55,7 +55,22 @@ export async function listConversations(
 export async function listOrganizationConversations(
   organizationId: string,
   userId: string,
+  query?: string,
 ) {
+  const conditions = [
+    eq(conversations.organizationId, organizationId),
+    eq(conversations.createdByWorkosUserId, userId),
+    eq(workers.organizationId, organizationId),
+  ];
+  if (query?.trim()) {
+    const searchFilter = or(
+      like(conversations.title, `%${query.trim()}%`),
+      like(workers.name, `%${query.trim()}%`),
+    );
+    if (searchFilter) {
+      conditions.push(searchFilter);
+    }
+  }
   return db
     .select({
       id: conversations.id,
@@ -67,13 +82,7 @@ export async function listOrganizationConversations(
     })
     .from(conversations)
     .innerJoin(workers, eq(conversations.workerId, workers.id))
-    .where(
-      and(
-        eq(conversations.organizationId, organizationId),
-        eq(conversations.createdByWorkosUserId, userId),
-        eq(workers.organizationId, organizationId),
-      ),
-    )
+    .where(and(...conditions))
     .orderBy(desc(conversations.updatedAt));
 }
 

@@ -52,6 +52,7 @@ export const userPreferences = pgTable("user_preferences", {
     .$type<"enter" | "mod_enter">()
     .notNull()
     .default("mod_enter"),
+  uiLocale: text("ui_locale").$type<string | null>(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -93,6 +94,7 @@ export const workers = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    archived: boolean("archived").notNull().default(false),
   },
   (table) => [
     unique("workers_organization_name_unique").on(
@@ -139,6 +141,10 @@ export const conversations = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    status: text("status")
+      .$type<"active" | "deleting">()
+      .notNull()
+      .default("active"),
   },
   (table) => [
     index("conversations_organization_worker_created_at_index").on(
@@ -168,6 +174,10 @@ export const projects = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    status: text("status")
+      .$type<"active" | "deleting">()
+      .notNull()
+      .default("active"),
   },
   (table) => [
     unique("projects_organization_creator_name_unique").on(
@@ -538,3 +548,84 @@ export const approvals = pgTable(
     ),
   ],
 );
+
+export const actionProposals = pgTable("action_proposals", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  proposalId: text("proposal_id").notNull(),
+  proposalHash: text("proposal_hash").notNull(),
+  type: text("type").notNull(),
+  version: text("version").notNull(),
+  targetRef: text("target_ref").notNull(),
+  artifactRevision: text("artifact_revision"),
+  canonicalArgsHash: text("canonical_args_hash").notNull(),
+  permissionSnapshot: jsonb("permission_snapshot").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  riskSummary: text("risk_summary").notNull(),
+  status: text("status")
+    .$type<"pending" | "stale" | "consumed">()
+    .notNull()
+    .default("pending"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const effectIntents = pgTable("effect_intents", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  proposalId: text("proposal_id").references(() => actionProposals.id, {
+    onDelete: "set null",
+  }),
+  approvalId: uuid("approval_id"),
+  effectKey: text("effect_key").notNull(),
+  externalRef: text("external_ref"),
+  status: text("status")
+    .$type<"prepared" | "dispatched" | "confirmed" | "failed" | "unknown">()
+    .notNull()
+    .default("prepared"),
+  result: jsonb("result"),
+  dispatchedAt: timestamp("dispatched_at", { withTimezone: true }),
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  failedAt: timestamp("failed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const lifecycleOperations = pgTable("lifecycle_operations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").notNull(),
+  resourceType: text("resource_type").notNull(),
+  resourceId: uuid("resource_id").notNull(),
+  phase: text("phase")
+    .$type<"pending" | "in_progress" | "completed" | "failed" | "cancelled">()
+    .notNull()
+    .default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }),
+  status: text("status")
+    .$type<"pending" | "in_progress" | "completed" | "failed" | "cancelled">()
+    .notNull()
+    .default("pending"),
+  errorCode: text("error_code"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});

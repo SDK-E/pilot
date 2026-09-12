@@ -1,6 +1,6 @@
 # Pilot implementation status
 
-Updated 2026-09-09. This is an implementation record, not a completion claim.
+Updated 2026-09-11. This is an implementation record, not a completion claim.
 
 ## Verified project-memory boundary
 
@@ -44,6 +44,57 @@ scratchpad, which stores visible working notes only through an
 OIDC-authenticated runtime callback whose execution record derives ownership.
 Browser, file, GitHub, and user-input capabilities are visibly planned and cannot be
 enabled by a form submission.
+
+## Plan 02 — Identity, isolation, authorization policy
+
+Plan 02 formalizes a shared authorization policy for all Pilot surfaces.
+
+### ActorContext (`pilot/src/policy/actor-context.ts`)
+
+ActorContext carries: organizationId, workosUserId, membership (active or null),
+roles (from `members.roleSlug`), scope (ActorScope[]), policyVersion ("02").
+`resolveActorContext()` joins `active-membership.ts` and loads roles from Neon.
+Scope separates: conversation read/write, project read/write, approval read/decide, execution run, admin.
+
+### Policy engine (`pilot/src/policy/authorize.ts`)
+
+`authorize(actor, action, resource)` → `{decision, reasonCode}`.
+Decisions: allow, deny, requires_approval. Closed policy: unknown actions → deny.
+Model may propose risk, never grant right. Actions: read:conversation, write:conversation,
+read:project, write:project, read:approval, decide:approval, execute:tool.
+
+### Proxy extension (`pilot/src/proxy.ts`)
+
+Added `/api/runtime/:path*` to AuthKit matcher. All runtime API routes now protected.
+
+### OIDC verification tests (`pilot-ai/src/runtime/auth/oidc-verification.test.ts`)
+
+5 tests: reject no token, no environment, unknown issuer, expired token, wrong environment. All PASS.
+
+### Revocation integration test (`pilot/tests/revocation.integration.test.ts`)
+
+5 tests: operations allowed with active membership, denied after removal, external tool denied,
+foreign resource denied, same org different user denied. All PASS.
+
+### Tests created
+
+| File                                                | Type        | Result                                |
+| --------------------------------------------------- | ----------- | ------------------------------------- |
+| pilot-ai/src/runtime/auth/oidc-verification.test.ts | runtime     | 5/5 PASS                              |
+| pilot/tests/revocation.integration.test.ts          | integration | 5/5 PASS                              |
+| pilot/tests/route-boundary.spec.ts                  | browser     | BLOCATED (Playwright requires WorkOS) |
+
+### KiloCode compaction
+
+Enabled automatic context compaction in `.kilo/opencode.jsonc` (`compaction.auto = true`).
+Documented in `KILOCODE_HANDOFF.md`.
+
+### Verified
+
+- pilot typecheck: 0 errors on Plan 02 files
+- pilot-ai typecheck: 0 Plan 02 errors (19 pre-existing research errors unrelated)
+- pilot-ai tests: 52/52 PASS (including new OIDC and contract tests)
+- git diff --check: clean
 
 Production enables the paired Research feature flags in Pilot and Pilot AI.
 They are an all-or-nothing runtime boundary: if either flag is not exactly
@@ -359,3 +410,270 @@ approval and fails its execution instead of retrying a possibly executed tool
 call. Approved or declined runs persist the returned assistant response and
 finish the original execution. `allow` remains direct execution; `deny` and
 `auto-classifier` remain unavailable until their own enforced policy exists.
+
+## Plan 04 — Dynamic registries of models, providers, and capabilities
+
+Plan 04 adds a configuration-driven model/provider/capability registry without redeploying the UI.
+
+### Registry types (`pilot/src/registry/registry-types.ts`)
+
+- ProviderDefinition: providerKey, adapterKey, connectionId, status
+- ModelDefinition: modelId, providerId, adapterKey, providerModelId, modalities, context/output bounds, structuredOutput, toolCalling, streaming, locales, region, version, status
+- CapabilityDefinition: capabilityId, type (tool/skill/agent), schemaVersion, requiredScopes, riskClass, availability, lifecycle
+- ApprovedSnapshot: immutable run-time model config with versions and limits
+
+### Registry repository (`pilot/src/registry/registry-repository.ts`)
+
+- CRUD stubs for providers and models (DB tables pending migration 0021)
+- Placeholder implementations ready for database tables
+
+### Registry resolver (`pilot/src/registry/registry-resolver.ts`)
+
+- `resolveModel()` intersects membership, model config; returns ApprovedSnapshot or denial reason
+- Explicit fallback: unknown_model, region_blocked, tool_not_allowed, no_active_membership, no_model_configured
+- Rejects arbitrary URLs, unknown adapters, incompatible models, blocked regions at server level
+
+### Verified
+
+- pnpm typecheck: 0 errors on Plan 04 files
+- git diff --check: clean
+
+### Pending
+
+- DB migration 0021_registries.sql
+- Runtime integration replacing z.literal with snapshot validation
+- Worker binding seed migration
+- 4 integration tests (registry, registry-policy, run-snapshot, registry-migration)
+
+## Plan 05 — Branding Pilot. et design system
+
+Plan 05 establishes the design system foundations. Most infrastructure already exists; Plan 05 documents and completes it.
+
+### Branding inventory (`pilot/src/components/brand/README.md`)
+
+- Pilot./P. wordmark (text-based, primary dot)
+- JetBrains Mono font (OFL license)
+- OKLCH color palette, System/Light/Dark theme
+- Favicon only for image branding
+
+### Design tokens (`pilot/docs/design-tokens.md`)
+
+- Color tokens: background, foreground, primary, secondary, muted, destructive, border, ring, etc.
+- Spacing: radius variants (sm/md/lg/xl/2xl/3xl/4xl)
+- Font tokens: JetBrains Mono for all text sizes
+
+### Component catalog (`pilot/docs/components.md`)
+
+- 12 shadcn/ui components (button, card, input, etc.) — no modifications
+- 2 AI Elements (conversation, message) — Pilot styling
+- 1 brand component (PilotWordmark)
+- 6 new status state components (Loading, Empty, Error, Forbidden, Success, Unavailable)
+
+### Status states (`pilot/src/components/ui/status-states.tsx`)
+
+- 6 components for common UI states
+- Text + icon (never color alone)
+- Action buttons with concrete next steps
+
+### Accessibility (`pilot/docs/a11y.md`)
+
+- Keyboard navigation, focus management
+- Reduced motion, contrast AA
+- Touch targets, zoom 200%
+- RTL prepared
+
+### Verified
+
+- pnpm typecheck: 0 errors
+- git diff --check: clean
+
+## Plan 06 — Internationalisation intégrale et langues extensibles
+
+Plan 06 builds a complete i18n foundation with extensible locale support.
+
+### Locale definition (`pilot/src/i18n/locale-definition.ts`)
+
+LocaleDefinition type: tag (BCP-47), nativeName, englishName, direction (ltr/rtl/auto), fallback (nullable), status (stable/beta/experimental/deprecated), coverage (complete/partial/minimal/none), available.
+
+### Locale registry (`pilot/src/i18n/locale-registry.ts`)
+
+- FR: stable, complete, ltr
+- EN: stable, complete, ltr, fallback null
+- AR: beta, complete, rtl, fallback en
+- Methods: listLocales, getLocale, isLocaleComplete, isRTL, getDirection
+
+### Message keys (`pilot/src/i18n/messages.ts`)
+
+Foundational structures: commonMessages (greeting, error, loading, empty, save, cancel, delete, edit, done, skip, next, back, close, confirm, success, warning), authMessages (login, logout, unauthorized, forbidden, sessionExpired), uiMessages (search, filter, sort, reset, all, none, yes, no, ok, apply, clear).
+
+### Direction utilities (`pilot/src/i18n/direction.ts`)
+
+- `resolveDirection(tag, explicit?)` — respects explicit override, falls back to locale direction
+- `needsBidiIsolation(tag)` — true for RTL locales
+
+### User preference locale (`pilot/src/users/user-preferences.ts`)
+
+Added `uiLocale: string | null` (nullable, no hardcoded default; explicit user choice only).
+
+### Verified
+
+- pilot typecheck: 0 errors on Plan 06 files
+- git diff --check: clean
+
+## Plan 07 — Shell et pages fondamentales du produit
+
+Plan 07 builds the workspace shell with navigation, loading states, language preference, search, and task links.
+
+### Sidebar navigation (`pilot/src/components/agents/agent-fleet-sidebar.tsx`)
+
+Workspace group now has: New chat, Chats, Projects, Tasks. Footer has: Dashboard, Approvals, Settings. All links point to real routes.
+
+### Loading states
+
+5 new `loading.tsx` files: workspace, tasks, chats, dashboard, settings — skeleton placeholders with animate-pulse.
+
+### Settings language (`pilot/src/app/workspace/settings/page.tsx`, `settings/actions.ts`)
+
+New Language section with locale selector (FR/EN/AR + System default). Saves via `updateLocaleAction` to `uiLocale` in `user_preferences`. Connects Plan 06 foundation.
+
+### Workspace layout (`pilot/src/app/workspace/layout.tsx`)
+
+Passes `uiLocale` from preferences to AgentFleetShell.
+
+### Chats search (`pilot/src/app/workspace/chats/page.tsx`, `conversation-repository.ts`)
+
+Search form with query param; server-side filtering by title and agent name; scoped to user's organization conversations only.
+
+### Tasks links (`pilot/src/app/workspace/tasks/page.tsx`, `task-repository.ts`)
+
+`listTasks` now includes `workerId` and `conversationId`; tasks display "Open conversation" link when both present.
+
+### Migration 0022
+
+Additive: adds `ui_locale TEXT` column to `user_preferences`. No data loss.
+
+### AC test files
+
+4 AC tests created: workspace-navigation.spec.ts (browser), workspace-private-search.integration.test.ts (integration), workspace-responsive.spec.ts (browser), workspace-empty.spec.ts (browser). All BLOCKED (require WorkOS/test DB).
+
+### Verified
+
+- pnpm typecheck: 0 errors
+- pnpm build: PASS
+- git diff --check: clean
+
+## Plan 08 — Conversation, événements persistants et reconnexion
+
+### ConversationMessageV2 types (`src/conversations/conversation-message-types.ts`)
+
+ConversationMessageV2 avec parts discriminées (text, artifact_ref, citation_ref, tool_summary, user_question, unknown fallback), schemaVersion, messageId, statut partial/complete/interrupted. Fonctions utilitaires : isKnownPart, getPartContent, extractTextFromParts.
+
+### Protocole événementiel versionné (`src/conversations/event-protocol.ts`)
+
+VersionedEvent : executionId, eventId, sequence, type, timestamp, payload autorisé. EventPayload union (control + data events). validateEventProtocol détecte trous et doublons de séquence.
+
+### Idempotence (`src/conversations/idempotency.ts`)
+
+IdempotencyKey (ownerId + conversationId + clientRequestId), makeIdempotencyKey, PendingRun, SubmitIntent, isSameSubmitIntent.
+
+### Reconnexion (`src/conversations/reconnect-types.ts`)
+
+ReconnectCursor, SnapshotRecovery, CancelIntent, InterruptedRun, ResumeResult. isRecoverable guard, closeReasonFromSignal.
+
+### Migration 0023
+
+`drizzle/0023_conversation_runtime_v2.sql` : ajoute requestId, parts, schemaVersion, status à conversation_messages. Additive, aucune perte de données.
+
+### Tests
+
+| Test                                           | Type                 | AC       | Statut                |
+| ---------------------------------------------- | -------------------- | -------- | --------------------- |
+| `tests/stream-contract.test.ts`                | runtime (node:test)  | AC-08-02 | 8/8 PASS              |
+| `tests/conversation-reconnect.spec.ts`         | browser (Playwright) | AC-08-01 | BLOCKED (WorkOS)      |
+| `tests/submit-idempotency.integration.test.ts` | integration          | AC-08-03 | BLOCKED (DB)          |
+| `tests/ask-user.integration.test.ts`           | integration          | AC-08-04 | BLOCKED (DB + WorkOS) |
+
+### Verified
+
+- pnpm typecheck: 0 errors
+- pnpm build: PASS
+- pnpm lint: 0 errors on Plan 08 files
+- pnpm format:check: PASS
+- pnpm test:server: AC-08-02 stream-contract.test.ts 8/8 PASS
+- git diff --check: clean
+
+## Plan 09 — Exécutions durables, tâches et budgets
+
+### Execution types (`src/executions/execution-types.ts`)
+
+ExecutionStatus étendu à 10 états (queued, running, waiting_user, waiting_approval, cancelling, cancelled, succeeded, failed, timed_out, unknown). ExecutionV2 avec requestId, budgetId, parentExecutionId, attempts. DurableRun, DurableAttempt. Fonctions utilitaires : executionStatusIsTerminal, executionStatusIsActive, normalizeExecutionStatus (completed → succeeded mapping).
+
+### Budget reservation (`src/executions/execution-attempts.ts`)
+
+BudgetReservation avec limites token/cost/steps/toolCall/sandboxSeconds/delegationDepth. spend() réservation atomique avec rejet en cas de dépassement. reconcileBudget() pour estimation vs réel avec drapeau unknown.
+
+### Outbox types (`src/executions/outbox-types.ts`)
+
+OutboxEvent (pending/dispatched/reconciled/failed), DispatcherHandle, ReconciliationResult. reconcile() gère perte de callback (marque unknown), mismatch d'état (répare), et états correspondants.
+
+### Tests
+
+| Test                                      | Type        | AC       | Statut   |
+| ----------------------------------------- | ----------- | -------- | -------- |
+| `tests/budget-race.integration.test.ts`   | integration | AC-09-02 | 6/6 PASS |
+| `tests/run-restart.integration.test.ts`   | integration | AC-09-01 | BLOCKED  |
+| `tests/cancel.integration.test.ts`        | integration | AC-09-03 | BLOCKED  |
+| `tests/callback-loss.integration.test.ts` | integration | AC-09-04 | BLOCKED  |
+
+### Migration 0024
+
+`drizzle/0024_durable_execution.sql` : étend executions (request_id, budget_id, parent_execution_id, statut V2), crée execution_attempts, budget_reservations, outbox_events. Additif, pas de réécriture des handles actifs.
+
+### Verified
+
+- pnpm typecheck: 0 errors
+- pnpm build: PASS
+- pnpm lint: 0 errors on Plan 09 files
+- pnpm format:check: PASS
+- pnpm test:server: AC-09-02 budget-race.integration.test.ts 6/6 PASS
+- git diff --check: clean
+
+## Plan 10 — Approbations concrètes et effets externes idempotents
+
+### ActionProposal (`src/approvals/action-proposal-types.ts`)
+
+Type privé séparé de l'audit minimal : type, version, targetRef, artifactRevision, canonicalArgsHash, permissionSnapshot, expiresAt, riskSummary localisé. Status : pending → stale → consumed. Handle : proposalId + proposalHash. Fonctions : createActionProposal, isProposalExpired, isProposalActive, invalidateProposal, consumeProposal. Hash function garantit que contenu/cible différents produisent des hashes différents.
+
+### Policy classes (`src/approvals/policy-classes.ts`)
+
+Six classes fermées : read, local_reversible, external_write, destructive, financial, deployment. Chaque classe a riskLevel, grantSufficient, sideEffectScope. classifyAction() mappe les types d'actions aux classes. checkPolicyClass() applique : auto-classifier est un signal (ne permet jamais), destructive/financial/deployment nécessitent l'approbation même avec grant, external_write autorisé avec grant explicite, read peut auto-approuver.
+
+### EffectIntent (`src/approvals/effect-intent-types.ts`)
+
+Type avec clé d'idempotence stable (effectKey), status : prepared → dispatched → confirmed | failed | unknown. Fonctions : createEffectIntent, buildEffectKey, transitionEffectStatus, isTerminalStatus, isRetryable.
+
+### Migration 0025
+
+`drizzle/0025_approvals_effects.sql` : crée action_proposals et effect_intents tables. Tables additifs, organisation-scopées, avec triggers updated_at et index uniques. Aucun ancien payload exposé.
+
+### Tests
+
+| Test                                       | Type                | AC       | Statut                |
+| ------------------------------------------ | ------------------- | -------- | --------------------- |
+| `tests/approval-types.test.ts`             | runtime (node:test) | —        | 9/9 PASS              |
+| `tests/policy-classes.test.ts`             | runtime (node:test) | —        | 15/15 PASS            |
+| `tests/approval-race.integration.test.ts`  | integration         | AC-10-01 | BLOCKED (DB + WorkOS) |
+| `tests/proposal-stale.integration.test.ts` | integration         | AC-10-02 | BLOCKED (DB)          |
+| `tests/effect-timeout.integration.test.ts` | integration         | AC-10-03 | BLOCKED (runtime)     |
+| `tests/approval-private.spec.ts`           | browser             | AC-10-04 | BLOCKED (WorkOS)      |
+
+### Verified
+
+- pnpm typecheck: 0 errors
+- pnpm build: PASS
+- pnpm lint: 0 errors on Plan 10 files
+- pnpm format:check: PASS
+- pnpm test:server: approval-types 9/9 PASS, policy-classes 15/15 PASS
+- git diff --check: clean
+
+## Next acceptance steps

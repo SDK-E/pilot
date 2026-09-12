@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
+import { MessageSquareMore } from "lucide-react";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { listTasks } from "@/tasks/task-repository";
 import { createTaskAction } from "./actions";
@@ -58,7 +59,18 @@ export default async function TasksPage() {
         <ul className="space-y-2">
           {tasks.map((task) => (
             <li className="rounded-lg border border-border p-4" key={task.id}>
-              <p className="font-medium">{task.title}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-medium">{task.title}</p>
+                {task.conversationId && task.workerId ? (
+                  <a
+                    href={`/workspace/workers/${task.workerId}/conversations/${task.conversationId}`}
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <MessageSquareMore className="size-3" aria-hidden="true" />
+                    Open conversation
+                  </a>
+                ) : null}
+              </div>
               <p className="text-sm text-muted-foreground">{task.status}</p>
             </li>
           ))}

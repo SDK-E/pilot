@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import {
+  CheckCircle2,
   Gauge,
   FolderKanban,
   MessageSquareMore,
   Plus,
   Settings,
+  ListTodo,
 } from "lucide-react";
 import { AccountMenu } from "@/components/agents/account-menu";
 import { PilotWordmark } from "@/components/brand/pilot-wordmark";
@@ -39,6 +41,7 @@ type AgentFleetShellProps = {
   organizations: Array<{ id: string; name: string }>;
   recentChats: RecentChat[];
   user?: { email: string; name?: string | null };
+  uiLocale?: string | null;
 };
 
 export function AgentFleetShell({
@@ -47,6 +50,10 @@ export function AgentFleetShell({
   organizations,
   recentChats,
   user,
+  // uiLocale is reserved for Plan 08 i18n runtime integration
+  uiLocale:
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _uiLocale,
 }: AgentFleetShellProps) {
   return (
     <SidebarProvider>
@@ -82,6 +89,22 @@ export function AgentFleetShell({
                     <Link href="/workspace/chats">
                       <MessageSquareMore aria-hidden="true" />
                       <span>Chats</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Projects">
+                    <Link href="/workspace/projects">
+                      <FolderKanban aria-hidden="true" />
+                      <span>Projects</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Tasks">
+                    <Link href="/workspace/tasks">
+                      <ListTodo aria-hidden="true" />
+                      <span>Tasks</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -128,10 +151,10 @@ export function AgentFleetShell({
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Projects">
-                <Link href="/workspace/projects">
-                  <FolderKanban aria-hidden="true" />
-                  <span>Projects</span>
+              <SidebarMenuButton asChild tooltip="Approvals">
+                <Link href="/workspace/approvals">
+                  <CheckCircle2 aria-hidden="true" />
+                  <span>Approvals</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

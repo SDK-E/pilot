@@ -3,6 +3,12 @@ import "server-only";
 import { getVercelOidcToken } from "@vercel/oidc";
 import { z } from "zod";
 
+// TODO(ADR-0013): Replace with:
+//   import { generateConversationReplySchema, type GenerateConversationReply }
+//   from "@pilot/conversation-contracts";
+// BLOCKED: @pilot/conversation-contracts not yet published.
+// generateConversationRequestSchema below is the in-repo DTO pending publication.
+
 const approvalRequiredResponseSchema = z.object({
   object: z.literal("pilot.approval.required"),
   run_id: z.string().min(1),

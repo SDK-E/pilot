@@ -53,7 +53,7 @@ test("anonymous and forged sessions cannot access workspace routes", async ({
 test("callback without OAuth state cannot establish a session", async ({
   request,
 }) => {
-  const response = await request.get("/auth/callback?code=invalid", {
+  const response = await request.get("/callback?code=invalid", {
     maxRedirects: 0,
   });
   expect(response.status()).toBeGreaterThanOrEqual(400);

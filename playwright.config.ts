@@ -18,7 +18,7 @@ export default defineConfig({
       WORKOS_CLIENT_ID: "client_pilot_boundary_tests",
       WORKOS_COOKIE_PASSWORD:
         "pilot-boundary-tests-only-do-not-use-in-deployments",
-      NEXT_PUBLIC_WORKOS_REDIRECT_URI: "http://localhost:3100/auth/callback",
+      NEXT_PUBLIC_WORKOS_REDIRECT_URI: "http://localhost:3100/callback",
     },
   },
 });

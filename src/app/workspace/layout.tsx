@@ -45,6 +45,7 @@ export default async function WorkspaceLayout({
         organizations={organizations}
         recentChats={recentChats}
         user={user ? { email: user.email, name: user.name } : undefined}
+        uiLocale={preferences?.uiLocale ?? null}
       >
         {children}
       </AgentFleetShell>

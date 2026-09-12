@@ -100,6 +100,7 @@ test("workers are persisted and isolated by organization", async (t) => {
 
   assert.deepEqual(await getUserPreferences(`user_${suffix}`), {
     sendMessageShortcut: "mod_enter",
+    uiLocale: null,
   });
   await updateUserPreferences({
     workosUserId: `user_${suffix}`,
@@ -107,6 +108,7 @@ test("workers are persisted and isolated by organization", async (t) => {
   });
   assert.deepEqual(await getUserPreferences(`user_${suffix}`), {
     sendMessageShortcut: "enter",
+    uiLocale: null,
   });
   assert.equal(await getWorker(otherOrganizationId, created.id), undefined);
   assert.deepEqual(await getOrganizationPreferences(organizationId), {

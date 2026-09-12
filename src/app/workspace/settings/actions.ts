@@ -27,6 +27,25 @@ export async function updateMessageShortcutAction(formData: FormData) {
   revalidatePath("/workspace", "layout");
 }
 
+const localeSchema = z.object({
+  uiLocale: z.string().nullable().optional(),
+});
+
+export async function updateLocaleAction(formData: FormData) {
+  const input = localeSchema.safeParse({
+    uiLocale: formData.get("uiLocale"),
+  });
+  if (!input.success) return;
+
+  const { user } = await withAuth({ ensureSignedIn: true });
+  await updateUserPreferences({
+    workosUserId: user.id,
+    sendMessageShortcut: "mod_enter",
+    uiLocale: input.data.uiLocale ?? null,
+  });
+  revalidatePath("/workspace/settings");
+}
+
 export async function updateDefaultAgentAction(formData: FormData) {
   const input = z
     .object({ defaultWorkerId: z.uuid() })

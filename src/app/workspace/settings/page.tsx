@@ -7,9 +7,11 @@ import { getUserPreferences } from "@/users/user-preference-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
 import { listWorkers } from "@/workers/worker-repository";
+import { locales } from "@/i18n/locale-registry";
 import {
   updateDefaultAgentAction,
   updateMessageShortcutAction,
+  updateLocaleAction,
 } from "./actions";
 
 export default async function SettingsPage() {
@@ -80,6 +82,30 @@ export default async function SettingsPage() {
             </span>
           </label>
           <Button type="submit">Save composer preference</Button>
+        </form>
+      </section>
+      <section className="rounded-2xl border border-border bg-card/50 p-5">
+        <h2 className="font-medium">Language</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Choose the language for the workspace interface. Your choice is
+          preserved across sessions.
+        </p>
+        <form action={updateLocaleAction} className="mt-5 space-y-3">
+          <select
+            className="h-9 min-w-52 rounded-xl border border-border bg-background px-3 text-sm"
+            defaultValue={preferences.uiLocale ?? ""}
+            name="uiLocale"
+          >
+            <option value="">System default</option>
+            {locales.map((locale) => (
+              <option key={locale.tag} value={locale.tag}>
+                {locale.nativeName}
+              </option>
+            ))}
+          </select>
+          <Button type="submit" variant="outline">
+            Save language
+          </Button>
         </form>
       </section>
       <section className="rounded-2xl border border-border bg-card/50 p-5">

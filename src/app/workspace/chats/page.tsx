@@ -1,14 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
-import { MessageSquareMore, Plus } from "lucide-react";
+import { MessageSquareMore, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { listOrganizationConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { DeleteConversationButton } from "@/components/conversations/delete-conversation-button";
 import { RenameConversationForm } from "@/components/conversations/rename-conversation-form";
 
-export default async function ChatsPage() {
+export default async function ChatsPage({
+  searchParams,
+}: {
+  searchParams?: { query?: string };
+}) {
   const { user, organizationId } = await withAuth();
   if (!user) redirect("/sign-in");
   if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId))
@@ -18,7 +23,11 @@ export default async function ChatsPage() {
     organizationId,
   );
   if (!membership) redirect("/workspace");
-  const chats = await listOrganizationConversations(organizationId, user.id);
+  const chats = await listOrganizationConversations(
+    organizationId,
+    user.id,
+    searchParams?.query,
+  );
 
   return (
     <main className="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 sm:py-10">
@@ -36,6 +45,18 @@ export default async function ChatsPage() {
           </Link>
         </Button>
       </header>
+      <form action="?" method="get" className="flex gap-2">
+        <Input
+          name="query"
+          placeholder="Search chats..."
+          defaultValue={searchParams?.query ?? ""}
+          aria-label="Search chats"
+        />
+        <Button type="submit" variant="outline">
+          <Search aria-hidden="true" className="size-4" />
+          Search
+        </Button>
+      </form>
       {chats.length === 0 ? (
         <section className="grid min-h-72 place-items-center rounded-2xl border border-dashed border-border bg-card/30 p-8 text-center">
           <div className="space-y-3">

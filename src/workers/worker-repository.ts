@@ -8,7 +8,6 @@ import type {
   BaseAgentId,
   ConfigurableToolId,
 } from "@/agents/agent-configuration";
-
 type WorkerMembership = {
   id: string;
   roleSlug: string;
@@ -78,7 +77,11 @@ export async function createWorker(input: CreateWorkerInput) {
         approvalRules: input.worker.approvalRules,
         createdByWorkosUserId: input.user.id,
       })
-      .returning({ id: workers.id, name: workers.name }),
+      .returning({
+        id: workers.id,
+        name: workers.name,
+        archived: workers.archived,
+      }),
   ]);
 
   return createdWorkers[0];
@@ -95,18 +98,23 @@ export async function updateWorker(
     .where(
       and(eq(workers.organizationId, organizationId), eq(workers.id, workerId)),
     )
-    .returning({ id: workers.id, name: workers.name });
+    .returning({
+      id: workers.id,
+      name: workers.name,
+      archived: workers.archived,
+    });
   return updated;
 }
 
 export async function deleteWorker(organizationId: string, workerId: string) {
-  const [deleted] = await db
-    .delete(workers)
+  const [archived] = await db
+    .update(workers)
+    .set({ archived: true, updatedAt: new Date() })
     .where(
       and(eq(workers.organizationId, organizationId), eq(workers.id, workerId)),
     )
-    .returning({ id: workers.id });
-  return deleted;
+    .returning({ id: workers.id, archived: workers.archived });
+  return archived;
 }
 
 export async function listWorkers(organizationId: string) {
@@ -123,6 +131,7 @@ export async function listWorkers(organizationId: string) {
       enabledToolIds: workers.enabledToolIds,
       knowledgeSourceIds: workers.knowledgeSourceIds,
       approvalRules: workers.approvalRules,
+      archived: workers.archived,
       createdAt: workers.createdAt,
     })
     .from(workers)
@@ -144,6 +153,7 @@ export async function getWorker(organizationId: string, workerId: string) {
       enabledToolIds: workers.enabledToolIds,
       knowledgeSourceIds: workers.knowledgeSourceIds,
       approvalRules: workers.approvalRules,
+      archived: workers.archived,
       createdAt: workers.createdAt,
       updatedAt: workers.updatedAt,
     })

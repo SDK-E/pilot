@@ -3,7 +3,6 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { deleteConversationMemory } from "@/ai/pilot-ai-client";
 import {
   approvalModes,
   baseAgentIds,
@@ -82,8 +81,11 @@ export async function duplicatePersonaAction(
   try {
     const duplicated = await createWorker({
       organization: { id: organizationId, name: membership.organizationName },
-      member: { id: membership.id, roleSlug: membership.role.slug },
-      user: { id: user.id, email: user.email },
+      member: {
+        id: membership.id,
+        roleSlug: membership.role?.slug ?? "member",
+      },
+      user: user,
       worker: {
         name,
         instructions: source.instructions,
@@ -138,31 +140,23 @@ export async function deletePersonaAction(
   }
 
   try {
-    const conversations = await listConversations(
-      organizationId,
-      id.data,
-      user.id,
-    );
-    for (const conversation of conversations) {
-      await deleteConversationMemory({
-        organizationId,
-        workerId: id.data,
-        conversationId: conversation.id,
-      });
+    const source = await getWorker(organizationId, id.data);
+    if (!source) {
+      return { status: "error", message: "This persona is unavailable." };
     }
-    const deleted = await deleteWorker(organizationId, id.data);
-    if (!deleted) {
+    const archived = await deleteWorker(organizationId, id.data);
+    if (!archived) {
       return { status: "error", message: "This persona is unavailable." };
     }
   } catch {
     return {
       status: "error",
-      message: "Pilot could not delete this persona. Try again.",
+      message: "Pilot could not archive this persona. Try again.",
     };
   }
 
   revalidatePath("/workspace");
   revalidatePath("/workspace/personas");
   revalidatePath("/workspace/fleet");
-  return { status: "success", message: "Persona deleted." };
+  return { status: "success", message: "Persona archived." };
 }
