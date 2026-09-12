@@ -253,7 +253,7 @@ export function ConversationShell({
         />
       </header>
 
-      <section className="flex min-h-0 flex-1 flex-col xl:flex-row">
+      <section className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <Conversation className="min-h-0 min-w-0 flex-1">
           <ConversationContent className="mx-auto w-full max-w-3xl gap-8 px-5 py-8 sm:px-8 sm:py-12">
             {messages.length === 0 ? (
