@@ -9,7 +9,6 @@ export function PilotWordmark({
 }) {
   return (
     <span
-      aria-label="Pilot"
       className={cn(
         "inline-flex items-baseline font-semibold tracking-tight",
         className,

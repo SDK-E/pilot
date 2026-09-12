@@ -19,7 +19,9 @@ export default async function Home() {
       </header>
       <div className="flex flex-1 items-center py-12 sm:py-16">
         <section className="max-w-2xl space-y-8">
-          <p className="text-sm font-medium text-primary">AI workspace</p>
+          <p className="text-sm font-medium text-primary dark:text-emerald-300">
+            AI workspace
+          </p>
           <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
             Give your team a place to think, research, and move work forward.
           </h1>
