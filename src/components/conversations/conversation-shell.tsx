@@ -10,7 +10,6 @@ import {
   Paperclip,
   SendHorizontal,
   Square,
-  X,
 } from "lucide-react";
 import { AgentAvatar } from "@/components/agents/agent-avatar";
 import {
@@ -25,6 +24,7 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message";
 import { ConversationDetailsPanel } from "@/components/conversations/conversation-details-panel";
+import { DeleteAttachmentButton } from "@/components/conversations/delete-attachment-button";
 import { ConversationProjectPicker } from "@/components/conversations/conversation-project-picker";
 import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
@@ -414,19 +414,10 @@ export function ConversationShell({
                   >
                     {attachment.filename}
                   </a>
-                  <button
-                    aria-label={`Delete ${attachment.filename}`}
-                    className="text-muted-foreground hover:text-destructive"
-                    type="button"
-                    onClick={async () => {
-                      await fetch(`/api/attachments/${attachment.id}`, {
-                        method: "DELETE",
-                      });
-                      router.refresh();
-                    }}
-                  >
-                    <X className="size-3" />
-                  </button>
+                  <DeleteAttachmentButton
+                    attachmentId={attachment.id}
+                    filename={attachment.filename}
+                  />
                 </li>
               ))}
             </ul>
