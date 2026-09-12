@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCompletion } from "@ai-sdk/react";
 import {
@@ -99,6 +99,11 @@ export function ConversationShell({
   const [liveActivities, setLiveActivities] = useState(activities);
   const [attachmentError, setAttachmentError] = useState<string>();
   const [uploading, setUploading] = useState(false);
+  const displayedActivities = useMemo(() => {
+    const byId = new Map(activities.map((activity) => [activity.id, activity]));
+    for (const activity of liveActivities) byId.set(activity.id, activity);
+    return [...byId.values()];
+  }, [activities, liveActivities]);
   const {
     complete,
     completion,
@@ -369,7 +374,7 @@ export function ConversationShell({
                     <MessageResponse>{completion}</MessageResponse>
                   ) : null}
                   {isLoading ? (
-                    <LiveConversationActivity events={liveActivities} />
+                    <LiveConversationActivity events={displayedActivities} />
                   ) : null}
                 </MessageContent>
               </Message>
@@ -379,7 +384,7 @@ export function ConversationShell({
         </Conversation>
 
         <ConversationDetailsPanel
-          activities={liveActivities}
+          activities={displayedActivities}
           agentId={agentId}
           approvals={approvals}
           conversationId={conversationId}
