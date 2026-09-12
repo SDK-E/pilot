@@ -163,14 +163,11 @@ function getRuntimeUrl(): URL {
   return url;
 }
 
-function toolApprovalMode(request: GenerateConversationRequest) {
-  if (!request.allowedToolIds.length) return undefined;
-  return request.allowedToolIds.some(
+export function approvalRequiredToolIds(request: GenerateConversationRequest) {
+  return request.allowedToolIds.filter(
     (toolId) =>
       toolId !== "ask-user" && request.worker.approvalRules[toolId] === "ask",
-  )
-    ? "ask"
-    : "allow";
+  );
 }
 
 function headersForRuntime(
@@ -187,11 +184,9 @@ function headersForRuntime(
     "x-pilot-execution-id": request.executionId,
     "x-pilot-base-agent-id": request.worker.baseAgentId,
     "x-pilot-allowed-tool-ids": JSON.stringify(request.allowedToolIds),
-    ...(toolApprovalMode(request)
-      ? {
-          "x-pilot-tool-approval-mode": toolApprovalMode(request),
-        }
-      : {}),
+    "x-pilot-approval-required-tool-ids": JSON.stringify(
+      approvalRequiredToolIds(request),
+    ),
     ...(request.project
       ? {
           "x-pilot-project-id": request.project.id,
