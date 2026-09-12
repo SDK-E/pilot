@@ -8,7 +8,6 @@ import {
   baseAgentIds,
   configurableToolIds,
 } from "@/agents/agent-configuration";
-import { listConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { nextDuplicatePersonaName } from "@/workers/duplicate-persona-name";
 import {

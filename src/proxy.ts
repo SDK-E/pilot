@@ -12,6 +12,5 @@ export const config = {
     "/api/attachments/:path*",
     "/api/projects/:path*",
     "/api/project-files/:path*",
-    "/api/runtime/:path*",
   ],
 };

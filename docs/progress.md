@@ -1,6 +1,22 @@
 # Pilot implementation status
 
-Updated 2026-09-11. This is an implementation record, not a completion claim.
+Updated 2026-09-12. This is an implementation record, not a completion claim.
+
+## Verification repairs
+
+Pilot AI's service-to-service activity and scratchpad callbacks intentionally
+bypass the human WorkOS proxy. Each callback route rejects browser requests
+with `401` unless it carries a valid Vercel OIDC token, which is verified before
+the request body is read. Routing those callbacks through the human-session
+proxy redirected the runtime to WorkOS and prevented safe tool activity from
+being persisted.
+
+Local ignored investigation scripts are excluded from the application
+TypeScript and ESLint scopes. A committed session helper that printed session
+material and the cookie secret has been removed. Browser checks now distinguish
+real public and anonymous-route coverage from authenticated WorkOS workflows:
+22 checks pass, while three authenticated scenarios remain explicitly blocked
+until a provisioned browser fixture and test membership are available.
 
 ## Verified project-memory boundary
 
@@ -65,7 +81,9 @@ read:project, write:project, read:approval, decide:approval, execute:tool.
 
 ### Proxy extension (`pilot/src/proxy.ts`)
 
-Added `/api/runtime/:path*` to AuthKit matcher. All runtime API routes now protected.
+The runtime callbacks are intentionally excluded from the AuthKit matcher
+because Pilot AI has no human browser session. Their handlers independently
+require a verified Vercel OIDC token and return `401` to browser requests.
 
 ### OIDC verification tests (`pilot-ai/src/runtime/auth/oidc-verification.test.ts`)
 
@@ -78,11 +96,11 @@ foreign resource denied, same org different user denied. All PASS.
 
 ### Tests created
 
-| File                                                | Type        | Result                                |
-| --------------------------------------------------- | ----------- | ------------------------------------- |
-| pilot-ai/src/runtime/auth/oidc-verification.test.ts | runtime     | 5/5 PASS                              |
-| pilot/tests/revocation.integration.test.ts          | integration | 5/5 PASS                              |
-| pilot/tests/route-boundary.spec.ts                  | browser     | BLOCATED (Playwright requires WorkOS) |
+| File                                                | Type        | Result                                           |
+| --------------------------------------------------- | ----------- | ------------------------------------------------ |
+| pilot-ai/src/runtime/auth/oidc-verification.test.ts | runtime     | 5/5 PASS                                         |
+| pilot/tests/revocation.integration.test.ts          | integration | 5/5 PASS                                         |
+| pilot/tests/route-boundary.spec.ts                  | browser     | PASS — anonymous runtime and resource boundaries |
 
 ### KiloCode compaction
 

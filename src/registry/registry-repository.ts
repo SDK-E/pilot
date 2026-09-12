@@ -1,7 +1,5 @@
 import "server-only";
 
-import { and, desc, eq } from "drizzle-orm";
-import { db } from "@/db/client";
 import type {
   CreateModelInput,
   CreateProviderInput,
@@ -27,25 +25,29 @@ export async function createProvider(
 }
 
 export async function getProvider(
-  providerId: string,
+  _providerId: string,
 ): Promise<ProviderDefinition | undefined> {
+  void _providerId;
   // Placeholder: requires registry_providers table in DB
   return undefined;
 }
 
-export async function listProviders(organizationId: string) {
+export async function listProviders(_organizationId: string) {
+  void _organizationId;
   // Placeholder: requires registry_providers table in DB
   return [];
 }
 
 export async function getModelDefinition(
-  modelId: string,
+  _modelId: string,
 ): Promise<ModelDefinition | undefined> {
+  void _modelId;
   // Placeholder: requires registry_models table in DB
   return undefined;
 }
 
-export async function listModelDefinitions(organizationId: string) {
+export async function listModelDefinitions(_organizationId: string) {
+  void _organizationId;
   // Placeholder: requires registry_models table in DB
   return [];
 }

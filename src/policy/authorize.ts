@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { ActorContext, ActorScope } from "./actor-context";
+import type { ActorContext } from "./actor-context";
 
 export type AuthorizationDecision = {
   decision: "allow" | "deny" | "requires_approval";
@@ -30,7 +30,7 @@ export function authorize(input: {
     return { decision: "deny", reasonCode: "foreign_resource" };
   }
 
-  const [actionDomain, actionVerb] = action.split(":") as [string, string];
+  const [, actionVerb] = action.split(":") as [string, string];
 
   switch (action) {
     case "read:conversation":
@@ -91,8 +91,9 @@ function authorizeWriteConversation(
 
 function authorizeReadProject(
   actor: ActorContext,
-  resource: Resource,
+  _resource: Resource,
 ): AuthorizationDecision {
+  void _resource;
   if (!actor.scope.includes("project:read")) {
     return { decision: "deny", reasonCode: "scope_missing" };
   }
@@ -101,8 +102,9 @@ function authorizeReadProject(
 
 function authorizeWriteProject(
   actor: ActorContext,
-  resource: Resource,
+  _resource: Resource,
 ): AuthorizationDecision {
+  void _resource;
   if (!actor.scope.includes("project:write")) {
     return { decision: "deny", reasonCode: "scope_missing" };
   }
@@ -111,8 +113,9 @@ function authorizeWriteProject(
 
 function authorizeReadApproval(
   actor: ActorContext,
-  resource: Resource,
+  _resource: Resource,
 ): AuthorizationDecision {
+  void _resource;
   if (!actor.scope.includes("approval:read")) {
     return { decision: "deny", reasonCode: "scope_missing" };
   }

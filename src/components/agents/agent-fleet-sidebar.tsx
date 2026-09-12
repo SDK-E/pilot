@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import {
-  CheckCircle2,
   Gauge,
   FolderKanban,
   MessageSquareMore,
   Plus,
   Settings,
-  ListTodo,
 } from "lucide-react";
 import { AccountMenu } from "@/components/agents/account-menu";
 import { PilotWordmark } from "@/components/brand/pilot-wordmark";
@@ -92,22 +90,6 @@ export function AgentFleetShell({
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Projects">
-                    <Link href="/workspace/projects">
-                      <FolderKanban aria-hidden="true" />
-                      <span>Projects</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Tasks">
-                    <Link href="/workspace/tasks">
-                      <ListTodo aria-hidden="true" />
-                      <span>Tasks</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -151,10 +133,10 @@ export function AgentFleetShell({
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Approvals">
-                <Link href="/workspace/approvals">
-                  <CheckCircle2 aria-hidden="true" />
-                  <span>Approvals</span>
+              <SidebarMenuButton asChild tooltip="Projects">
+                <Link href="/workspace/projects">
+                  <FolderKanban aria-hidden="true" />
+                  <span>Projects</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

@@ -1,11 +1,13 @@
 # Pilot by SDK Enterprises
 
-An open-source AI workforce platform in early development. The current slice
-implements WorkOS authentication, organization access, configurable
-organization-scoped personas, a protected Pilot conversation path, durable
-execution activity, and a responsive chat workspace. Streaming, attachments,
-production Research tools, tool approvals, and agent fleet execution remain
-unimplemented. See [implementation status](docs/progress.md) and [architecture
+An open-source AI workforce platform in active development. The current
+application includes WorkOS authentication, organization access, configurable
+organization-scoped personas, protected streaming conversations, durable
+execution activity, private attachments and project files, the safe shared
+web-search, scratchpad, and Ask User capabilities, and a responsive chat
+workspace. Browser automation, external-write integrations, shared projects,
+and semantic knowledge retrieval remain unavailable. See
+[implementation status](docs/progress.md) and [architecture
 decisions](docs/decisions/0001-platform-boundaries.md).
 
 ## Run locally
@@ -47,6 +49,12 @@ GitHub Actions runs `pnpm check`, production build, Playwright browser tests, an
 
 ## Deployment
 
-Vercel is the target platform. Use the Next.js framework preset, Node.js 24, and environment-scoped WorkOS secrets. Neon database credentials are separate for development, preview and production. The initial Worker schema is migrated in each environment; worker runtime integration remains pending. The app can run with `pnpm build && pnpm start` on another Node host, but authentication currently depends on WorkOS.
+Vercel is the target platform. Use the Next.js framework preset, Node.js 24,
+and environment-scoped WorkOS secrets. Neon database credentials are separate
+for development, preview and production. Pilot calls the separate Pilot AI
+runtime with a Vercel OIDC token; runtime callbacks are also service-to-service
+OIDC endpoints, rather than human-session routes. The app can run with
+`pnpm build && pnpm start` on another Node host, but authentication currently
+depends on WorkOS.
 
 Do not treat the current state as production-ready. Track remaining work and provisioning verification in [progress](docs/progress.md).
