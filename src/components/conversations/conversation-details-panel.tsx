@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   ChevronRight,
   CircleAlert,
+  LoaderCircle,
   ListTodo,
   Plus,
 } from "lucide-react";
@@ -21,6 +22,10 @@ import {
   type DecideConversationApprovalState,
 } from "@/app/workspace/conversation-actions";
 import type { ActivityEventType } from "@/executions/activity-event";
+import {
+  groupActivityTimeline,
+  type TimelineActivity,
+} from "@/executions/activity-timeline";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,7 +45,7 @@ const initialApprovalState: DecideConversationApprovalState = {
 };
 
 type ConversationDetailsPanelProps = {
-  activities: Array<{ id: string; summary: string; type: ActivityEventType }>;
+  activities: TimelineActivity[];
   agentId: string;
   conversationId: string;
   tasks: Array<{ id: string; title: string; status: string }>;
@@ -50,6 +55,14 @@ type ConversationDetailsPanelProps = {
 };
 
 function activityIcon(type: ActivityEventType) {
+  if (type === "execution.started" || type === "tool.started") {
+    return (
+      <LoaderCircle
+        aria-hidden="true"
+        className="mt-0.5 size-3.5 animate-spin text-primary"
+      />
+    );
+  }
   if (type === "execution.failed" || type === "tool.failed") {
     return (
       <CircleAlert
@@ -82,6 +95,7 @@ export function ConversationDetailsPanel({
     decideConversationApprovalAction,
     initialApprovalState,
   );
+  const activityRuns = groupActivityTimeline(activities);
 
   useEffect(() => {
     if (taskState.status === "success") {
@@ -122,8 +136,8 @@ export function ConversationDetailsPanel({
             <details className="group mt-3 rounded-xl border border-border bg-card/60 px-3 py-2 text-sm">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-medium [&::-webkit-details-marker]:hidden">
                 <span>
-                  {activities.length
-                    ? `${activities.length} events`
+                  {activityRuns.length
+                    ? `${activityRuns.length} response runs`
                     : "No activity yet"}
                 </span>
                 <ChevronRight
@@ -131,15 +145,41 @@ export function ConversationDetailsPanel({
                   className="size-4 text-muted-foreground transition-transform group-open:rotate-90"
                 />
               </summary>
-              {activities.length ? (
-                <ol className="mt-3 space-y-3 border-l border-border pl-3">
-                  {activities.map((activity) => (
-                    <li
-                      className="flex gap-2 text-xs text-muted-foreground"
-                      key={activity.id}
-                    >
-                      {activityIcon(activity.type)}
-                      <span>{activity.summary}</span>
+              {activityRuns.length ? (
+                <ol className="mt-3 space-y-3">
+                  {activityRuns.map((run, index) => (
+                    <li key={run.id}>
+                      <details
+                        className="group rounded-lg border border-border/80 bg-background/45 px-2.5 py-2"
+                        open={index === activityRuns.length - 1}
+                      >
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-xs font-medium [&::-webkit-details-marker]:hidden">
+                          <span>
+                            {run.isFailed
+                              ? "Response failed"
+                              : run.isWaitingForApproval
+                                ? "Waiting for approval"
+                                : run.isComplete
+                                  ? "Response completed"
+                                  : "Pilot is working"}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {run.events.length}{" "}
+                            {run.events.length === 1 ? "step" : "steps"}
+                          </span>
+                        </summary>
+                        <ol className="mt-3 space-y-3 border-l border-border pl-3">
+                          {run.events.map((activity) => (
+                            <li
+                              className="flex gap-2 text-xs text-muted-foreground"
+                              key={activity.id}
+                            >
+                              {activityIcon(activity.type)}
+                              <span>{activity.summary}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </details>
                     </li>
                   ))}
                 </ol>

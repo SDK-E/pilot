@@ -35,7 +35,7 @@ import { RenameConversationForm } from "@/components/conversations/rename-conver
 import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
 import { ResearchExportLinks } from "@/components/conversations/research-export-links";
-import type { ActivityEventType } from "@/executions/activity-event";
+import type { TimelineActivity } from "@/executions/activity-timeline";
 import {
   Attachment,
   AttachmentInfo,
@@ -88,12 +88,8 @@ type TransientTurn = {
   completion: string;
 };
 
-type PersistedActivity = {
-  id: string;
+type PersistedActivity = TimelineActivity & {
   conversationMessageId: string | null;
-  summary: string;
-  type: ActivityEventType;
-  createdAt?: string | Date;
 };
 
 function ComposerAttachmentPreviews() {

@@ -5,6 +5,7 @@ import {
   ChainOfThoughtStep,
 } from "@/components/ai-elements/chain-of-thought";
 import type { ActivityEventType } from "@/executions/activity-event";
+import type { TimelineActivity } from "@/executions/activity-timeline";
 import {
   CheckCircle2,
   CircleAlert,
@@ -14,7 +15,7 @@ import {
   Wrench,
 } from "lucide-react";
 
-type Activity = { id: string; summary: string; type: ActivityEventType };
+type Activity = TimelineActivity;
 
 function stepStatus(type: ActivityEventType): "active" | "complete" {
   return type === "execution.started" || type === "tool.started"
@@ -23,7 +24,12 @@ function stepStatus(type: ActivityEventType): "active" | "complete" {
 }
 
 function stepIcon(type: ActivityEventType) {
-  if (type === "tool.started" || type === "tool.completed") return Search;
+  if (
+    type === "tool.started" ||
+    type === "tool.completed" ||
+    type === "tool.awaiting_approval"
+  )
+    return Search;
   if (type === "tool.failed" || type === "execution.failed") return CircleAlert;
   if (type === "execution.completed") return CheckCircle2;
   return Wrench;
@@ -34,6 +40,9 @@ function stepDescription(type: ActivityEventType) {
   if (type === "tool.started") return "Using an enabled capability";
   if (type === "tool.completed") return "Capability result received";
   if (type === "tool.failed") return "Capability did not complete";
+  if (type === "tool.awaiting_approval") return "Waiting for your approval";
+  if (type === "execution.completed") return "Response completed";
+  if (type === "execution.failed") return "Response failed";
   return "Response execution";
 }
 
@@ -52,7 +61,10 @@ export function LiveConversationActivity({
       event.type === "execution.started" ||
       event.type === "tool.started" ||
       event.type === "tool.completed" ||
-      event.type === "tool.failed",
+      event.type === "tool.failed" ||
+      event.type === "tool.awaiting_approval" ||
+      event.type === "execution.completed" ||
+      event.type === "execution.failed",
   );
   const latest = currentEvents.at(-1);
   const summary = latest?.summary ?? "Pilot is responding…";
