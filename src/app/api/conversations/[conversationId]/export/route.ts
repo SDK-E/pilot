@@ -6,15 +6,9 @@ import {
 } from "@/conversations/conversation-repository";
 import { listMessageSources } from "@/conversations/research-evidence";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
-
-const escapeHtml = (value: string) =>
-  value.replace(
-    /[&<>"']/g,
-    (character) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        character
-      ] ?? character,
-  );
+import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
+import { createElement, type ReactElement } from "react";
+import { ResearchExportDocument } from "@/components/conversations/research-export-document";
 
 export async function GET(
   request: Request,
@@ -75,8 +69,21 @@ export async function GET(
         "content-disposition": `attachment; filename="pilot-research-${conversationId}.md"`,
       },
     });
-  return new Response(
-    `<!doctype html><html><head><title>Pilot research export</title><style>body{font:16px/1.5 ui-monospace,monospace;max-width:760px;margin:3rem auto;padding:0 1rem}pre{white-space:pre-wrap}</style></head><body><pre>${escapeHtml(markdown)}</pre><script>print()</script></body></html>`,
-    { headers: { "content-type": "text/html; charset=utf-8" } },
+  if (format !== "pdf") {
+    return Response.json(
+      { error: "Choose Markdown or PDF export." },
+      { status: 400 },
+    );
+  }
+  const document = createElement(ResearchExportDocument, { messages, sources });
+  const pdf = await renderToBuffer(
+    document as unknown as ReactElement<DocumentProps>,
   );
+  return new Response(new Uint8Array(pdf), {
+    headers: {
+      "content-type": "application/pdf",
+      "content-disposition": `attachment; filename="pilot-conversation-${conversationId}.pdf"`,
+      "cache-control": "private, no-store",
+    },
+  });
 }

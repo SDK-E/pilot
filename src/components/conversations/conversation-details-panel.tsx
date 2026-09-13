@@ -98,9 +98,9 @@ export function ConversationDetailsPanel({
   return (
     <aside
       aria-label="Agent activity and chat controls"
-      className="order-last min-h-0 w-full shrink-0 border-t border-border bg-sidebar/40 lg:order-none lg:w-80 lg:border-t-0 lg:border-l"
+      className="h-full min-h-0 w-full overflow-hidden border-t border-border bg-sidebar/40 lg:border-t-0 lg:border-l"
     >
-      <details className="group lg:contents">
+      <details className="group">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium lg:hidden [&::-webkit-details-marker]:hidden">
           <span>Chat details</span>
           <span className="text-xs font-normal text-muted-foreground">

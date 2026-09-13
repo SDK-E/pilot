@@ -19,9 +19,9 @@ export function ResearchExportLinks({
       </Button>
       <Button asChild size="sm" type="button" variant="ghost">
         <a
-          href={`/api/conversations/${conversationId}/export?workerId=${workerId}&format=html`}
+          href={`/api/conversations/${conversationId}/export?workerId=${workerId}&format=pdf`}
         >
-          <FileText aria-hidden="true" className="size-3.5" /> Print / PDF
+          <FileText aria-hidden="true" className="size-3.5" /> PDF
         </a>
       </Button>
     </div>

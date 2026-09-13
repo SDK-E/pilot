@@ -59,6 +59,11 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Button } from "@/components/ui/button";
 import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import {
   shouldInsertComposerNewline,
   shouldSubmitMessage,
 } from "@/hooks/use-message-submit-shortcut";
@@ -181,6 +186,11 @@ export function ConversationShell({
   const [timeoutError, setTimeoutError] = useState<string>();
   const [validationError, setValidationError] = useState<string>();
   const [copiedMessageId, setCopiedMessageId] = useState<string>();
+  const [desktopLayout, setDesktopLayout] = useState(false);
+  const [panelLayout, setPanelLayout] = useState<{
+    conversation: number;
+    details: number;
+  }>({ conversation: 72, details: 28 });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastSubmittedMessageRef = useRef<string | undefined>(undefined);
   const fieldErrorId = useId();
@@ -199,6 +209,36 @@ export function ConversationShell({
       return Number.isFinite(timestamp) && timestamp >= streamStartedAt - 1_500;
     });
   }, [displayedActivities, streamStartedAt]);
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const update = () => setDesktopLayout(media.matches);
+    update();
+    media.addEventListener("change", update);
+    let frame: number | undefined;
+    try {
+      const saved = window.localStorage.getItem("pilot:conversation-panels:v1");
+      if (saved) {
+        const value: unknown = JSON.parse(saved);
+        if (
+          value &&
+          typeof value === "object" &&
+          typeof (value as { conversation?: unknown }).conversation ===
+            "number" &&
+          typeof (value as { details?: unknown }).details === "number"
+        ) {
+          frame = window.requestAnimationFrame(() =>
+            setPanelLayout(value as { conversation: number; details: number }),
+          );
+        }
+      }
+    } catch {
+      // Panel sizing is a local preference; an unavailable storage API is safe to ignore.
+    }
+    return () => {
+      media.removeEventListener("change", update);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
   const syncMessages = useCallback(async () => {
     try {
       const response = await fetch(
@@ -467,412 +507,485 @@ export function ConversationShell({
         </div>
       </header>
 
-      <section className="flex min-h-0 flex-1 overflow-hidden flex-col lg:flex-row">
-        <Conversation className="min-h-0 min-w-0 flex-1">
-          <ConversationContent className="mx-auto w-full max-w-3xl gap-8 px-5 py-8 sm:px-8 sm:py-12">
-            {displayedMessages.length === 0 &&
-            transientTurns.length === 0 &&
-            !pendingUserMessage ? (
-              <ConversationEmptyState
-                className="min-h-[min(52svh,34rem)]"
-                description={`Start with a clear objective, context, or question for ${agentName}.`}
-                icon={<Bot className="size-7" aria-hidden="true" />}
-                title={`How can ${agentName} help?`}
-              />
-            ) : (
-              displayedMessages.map((message) => {
-                const from = message.role === "user" ? "user" : "assistant";
-
-                return (
-                  <Message from={from} key={message.id}>
-                    <MessageContent>
-                      {from === "assistant" ? (
-                        <>
-                          <MessageResponse>{message.content}</MessageResponse>
-                          {message.sources?.length ? (
-                            <details className="mt-3 rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs">
-                              <summary className="cursor-pointer font-medium">
-                                Sources ({message.sources.length})
-                              </summary>
-                              <ul className="mt-2 space-y-2">
-                                {message.sources.map((source) => (
-                                  <li key={source.url}>
-                                    <a
-                                      className="text-primary underline"
-                                      href={source.url}
-                                      rel="noreferrer"
-                                      target="_blank"
-                                    >
-                                      {source.title}
-                                    </a>
-                                    <span className="ml-2 text-muted-foreground">
-                                      {source.domain}
-                                    </span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </details>
-                          ) : null}
-                          {message.userQuestionOptions?.length ? (
-                            message.userQuestionSelectionMode ===
-                            "multi_select" ? (
-                              <fieldset
-                                className="mt-3 space-y-2"
-                                disabled={isLoading}
-                              >
-                                <legend className="text-xs text-muted-foreground">
-                                  Select one or more answers, or write a reply.
-                                </legend>
-                                <div className="flex flex-wrap gap-2">
-                                  {message.userQuestionOptions.map((option) => {
-                                    const selected = (
-                                      selectedQuestionOptions[message.id] ?? []
-                                    ).includes(option.label);
-                                    return (
-                                      <label
-                                        className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
-                                        key={option.label}
-                                        title={option.description}
-                                      >
-                                        <input
-                                          checked={selected}
-                                          className="size-4 accent-primary"
-                                          onChange={() =>
-                                            toggleQuestionOption(
-                                              message.id,
-                                              option.label,
-                                            )
-                                          }
-                                          type="checkbox"
-                                        />
-                                        {option.label}
-                                      </label>
-                                    );
-                                  })}
-                                </div>
-                                <Button
-                                  disabled={
-                                    isLoading ||
-                                    !(selectedQuestionOptions[message.id] ?? [])
-                                      .length
-                                  }
-                                  onClick={() =>
-                                    submitText(
-                                      (
-                                        selectedQuestionOptions[message.id] ??
-                                        []
-                                      ).join("\n"),
-                                    )
-                                  }
-                                  size="sm"
-                                  type="button"
-                                >
-                                  Submit selected answers
-                                </Button>
-                              </fieldset>
-                            ) : (
-                              <div
-                                aria-label="Select an answer, or write a reply"
-                                className="mt-3 flex flex-wrap gap-2"
-                              >
-                                {message.userQuestionOptions.map((option) => (
-                                  <Button
-                                    key={option.label}
-                                    disabled={isLoading}
-                                    onClick={() => submitText(option.label)}
-                                    size="sm"
-                                    title={option.description}
-                                    type="button"
-                                    variant="outline"
-                                  >
-                                    {option.label}
-                                  </Button>
-                                ))}
-                              </div>
-                            )
-                          ) : null}
-                        </>
-                      ) : (
-                        <p className="whitespace-pre-wrap">{message.content}</p>
-                      )}
-                    </MessageContent>
-                    <MessageActions className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-                      <MessageAction
-                        aria-pressed={copiedMessageId === message.id}
-                        label={
-                          copiedMessageId === message.id
-                            ? "Copied"
-                            : "Copy message"
-                        }
-                        onClick={() =>
-                          void copyMessage(message.id, message.content)
-                        }
-                        tooltip={
-                          copiedMessageId === message.id ? "Copied" : "Copy"
-                        }
-                      >
-                        {copiedMessageId === message.id ? (
-                          <Check aria-hidden="true" className="size-3.5" />
-                        ) : (
-                          <Copy aria-hidden="true" className="size-3.5" />
-                        )}
-                      </MessageAction>
-                    </MessageActions>
-                  </Message>
-                );
-              })
-            )}
-            {transientTurns.map((turn) => (
-              <div key={turn.id}>
-                <Message from="user">
-                  <MessageContent>
-                    <p className="whitespace-pre-wrap">{turn.prompt}</p>
-                  </MessageContent>
-                </Message>
-                {turn.completion ? (
-                  <Message from="assistant">
-                    <MessageContent>
-                      <MessageResponse>{turn.completion}</MessageResponse>
-                    </MessageContent>
-                  </Message>
-                ) : null}
-              </div>
-            ))}
-            {pendingUserMessage ? (
-              <Message from="user">
-                <MessageContent>
-                  <p className="whitespace-pre-wrap">{pendingUserMessage}</p>
-                </MessageContent>
-              </Message>
-            ) : null}
-            {pendingUserMessage ? (
-              <Message from="assistant">
-                <MessageContent>
-                  {completion ? (
-                    <MessageResponse>{completion}</MessageResponse>
-                  ) : null}
-                  {isLoading ? (
-                    <LiveConversationActivity
-                      events={currentStreamActivities}
+      <section className="min-h-0 flex-1 overflow-hidden">
+        <ResizablePanelGroup
+          className="min-h-0"
+          defaultLayout={panelLayout}
+          id="pilot-conversation-panels"
+          onLayoutChanged={(layout) => {
+            const next = {
+              conversation: layout.conversation ?? 72,
+              details: layout.details ?? 28,
+            };
+            setPanelLayout(next);
+            try {
+              window.localStorage.setItem(
+                "pilot:conversation-panels:v1",
+                JSON.stringify(next),
+              );
+            } catch {
+              // Panel sizing is a local preference; an unavailable storage API is safe to ignore.
+            }
+          }}
+          orientation={desktopLayout ? "horizontal" : "vertical"}
+        >
+          <ResizablePanel
+            defaultSize={`${panelLayout.conversation}%`}
+            id="conversation"
+            minSize={desktopLayout ? "45%" : "50%"}
+          >
+            <div className="flex h-full min-h-0 min-w-0 flex-col">
+              <Conversation className="min-h-0 min-w-0 flex-1">
+                <ConversationContent className="mx-auto w-full max-w-3xl gap-8 px-5 py-8 sm:px-8 sm:py-12">
+                  {displayedMessages.length === 0 &&
+                  transientTurns.length === 0 &&
+                  !pendingUserMessage ? (
+                    <ConversationEmptyState
+                      className="min-h-[min(52svh,34rem)]"
+                      description={`Start with a clear objective, context, or question for ${agentName}.`}
+                      icon={<Bot className="size-7" aria-hidden="true" />}
+                      title={`How can ${agentName} help?`}
                     />
+                  ) : (
+                    displayedMessages.map((message) => {
+                      const from =
+                        message.role === "user" ? "user" : "assistant";
+
+                      return (
+                        <Message from={from} key={message.id}>
+                          <MessageContent>
+                            {from === "assistant" ? (
+                              <>
+                                <MessageResponse>
+                                  {message.content}
+                                </MessageResponse>
+                                {message.sources?.length ? (
+                                  <details className="mt-3 rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs">
+                                    <summary className="cursor-pointer font-medium">
+                                      Sources ({message.sources.length})
+                                    </summary>
+                                    <ul className="mt-2 space-y-2">
+                                      {message.sources.map((source) => (
+                                        <li key={source.url}>
+                                          <a
+                                            className="text-primary underline"
+                                            href={source.url}
+                                            rel="noreferrer"
+                                            target="_blank"
+                                          >
+                                            {source.title}
+                                          </a>
+                                          <span className="ml-2 text-muted-foreground">
+                                            {source.domain}
+                                          </span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </details>
+                                ) : null}
+                                {message.userQuestionOptions?.length ? (
+                                  message.userQuestionSelectionMode ===
+                                  "multi_select" ? (
+                                    <fieldset
+                                      className="mt-3 space-y-2"
+                                      disabled={isLoading}
+                                    >
+                                      <legend className="text-xs text-muted-foreground">
+                                        Select one or more answers, or write a
+                                        reply.
+                                      </legend>
+                                      <div className="flex flex-wrap gap-2">
+                                        {message.userQuestionOptions.map(
+                                          (option) => {
+                                            const selected = (
+                                              selectedQuestionOptions[
+                                                message.id
+                                              ] ?? []
+                                            ).includes(option.label);
+                                            return (
+                                              <label
+                                                className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                                                key={option.label}
+                                                title={option.description}
+                                              >
+                                                <input
+                                                  checked={selected}
+                                                  className="size-4 accent-primary"
+                                                  onChange={() =>
+                                                    toggleQuestionOption(
+                                                      message.id,
+                                                      option.label,
+                                                    )
+                                                  }
+                                                  type="checkbox"
+                                                />
+                                                {option.label}
+                                              </label>
+                                            );
+                                          },
+                                        )}
+                                      </div>
+                                      <Button
+                                        disabled={
+                                          isLoading ||
+                                          !(
+                                            selectedQuestionOptions[
+                                              message.id
+                                            ] ?? []
+                                          ).length
+                                        }
+                                        onClick={() =>
+                                          submitText(
+                                            (
+                                              selectedQuestionOptions[
+                                                message.id
+                                              ] ?? []
+                                            ).join("\n"),
+                                          )
+                                        }
+                                        size="sm"
+                                        type="button"
+                                      >
+                                        Submit selected answers
+                                      </Button>
+                                    </fieldset>
+                                  ) : (
+                                    <div
+                                      aria-label="Select an answer, or write a reply"
+                                      className="mt-3 flex flex-wrap gap-2"
+                                    >
+                                      {message.userQuestionOptions.map(
+                                        (option) => (
+                                          <Button
+                                            key={option.label}
+                                            disabled={isLoading}
+                                            onClick={() =>
+                                              submitText(option.label)
+                                            }
+                                            size="sm"
+                                            title={option.description}
+                                            type="button"
+                                            variant="outline"
+                                          >
+                                            {option.label}
+                                          </Button>
+                                        ),
+                                      )}
+                                    </div>
+                                  )
+                                ) : null}
+                              </>
+                            ) : (
+                              <p className="whitespace-pre-wrap">
+                                {message.content}
+                              </p>
+                            )}
+                          </MessageContent>
+                          <MessageActions className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                            <MessageAction
+                              aria-pressed={copiedMessageId === message.id}
+                              label={
+                                copiedMessageId === message.id
+                                  ? "Copied"
+                                  : "Copy message"
+                              }
+                              onClick={() =>
+                                void copyMessage(message.id, message.content)
+                              }
+                              tooltip={
+                                copiedMessageId === message.id
+                                  ? "Copied"
+                                  : "Copy"
+                              }
+                            >
+                              {copiedMessageId === message.id ? (
+                                <Check
+                                  aria-hidden="true"
+                                  className="size-3.5"
+                                />
+                              ) : (
+                                <Copy aria-hidden="true" className="size-3.5" />
+                              )}
+                            </MessageAction>
+                          </MessageActions>
+                        </Message>
+                      );
+                    })
+                  )}
+                  {transientTurns.map((turn) => (
+                    <div key={turn.id}>
+                      <Message from="user">
+                        <MessageContent>
+                          <p className="whitespace-pre-wrap">{turn.prompt}</p>
+                        </MessageContent>
+                      </Message>
+                      {turn.completion ? (
+                        <Message from="assistant">
+                          <MessageContent>
+                            <MessageResponse>{turn.completion}</MessageResponse>
+                          </MessageContent>
+                        </Message>
+                      ) : null}
+                    </div>
+                  ))}
+                  {pendingUserMessage ? (
+                    <Message from="user">
+                      <MessageContent>
+                        <p className="whitespace-pre-wrap">
+                          {pendingUserMessage}
+                        </p>
+                      </MessageContent>
+                    </Message>
                   ) : null}
-                </MessageContent>
-              </Message>
-            ) : null}
-          </ConversationContent>
-          <ConversationScrollButton />
-        </Conversation>
+                  {pendingUserMessage ? (
+                    <Message from="assistant">
+                      <MessageContent>
+                        {completion ? (
+                          <MessageResponse>{completion}</MessageResponse>
+                        ) : null}
+                        {isLoading ? (
+                          <LiveConversationActivity
+                            events={currentStreamActivities}
+                          />
+                        ) : null}
+                      </MessageContent>
+                    </Message>
+                  ) : null}
+                </ConversationContent>
+                <ConversationScrollButton />
+              </Conversation>
 
-        <ConversationDetailsPanel
-          activities={displayedActivities}
-          agentId={agentId}
-          approvals={approvals}
-          conversationId={conversationId}
-          onTaskCreated={handleTaskCreated}
-          tasks={tasks}
-          scratchpad={scratchpad}
-        />
-      </section>
-
-      <div className="shrink-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-xl sm:px-6 sm:pb-5 safe-bottom">
-        <div className="mx-auto w-full max-w-3xl">
-          {attachments.length ? (
-            <ul
-              className="mb-3 flex flex-wrap gap-2"
-              aria-label="Chat attachments"
-            >
-              {attachments.map((attachment) => (
-                <li
-                  key={attachment.id}
-                  className="flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 text-xs"
-                >
-                  <a
-                    className="max-w-48 truncate hover:underline"
-                    href={`/api/attachments/${attachment.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {attachment.filename}
-                  </a>
-                  <DeleteAttachmentButton
-                    attachmentId={attachment.id}
-                    filename={attachment.filename}
-                  />
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {runtimeConfigured ? (
-            <>
-              <PromptInput
-                accept=".pdf,.txt,.md,.csv,.docx,.xlsx,image/jpeg,image/png,image/webp"
-                className="rounded-3xl border border-border bg-card p-2 shadow-lg shadow-foreground/[0.04] transition-shadow focus-within:shadow-xl focus-within:shadow-primary/[0.06]"
-                maxFileSize={10 * 1024 * 1024}
-                multiple
-                onError={(event) => setAttachmentError(event.message)}
-                onSubmit={(message) => submitMessage(message)}
-              >
-                <ComposerAttachmentPreviews />
-                <PromptInputBody>
-                  <PromptInputTextarea
-                    aria-describedby={
-                      validationError ? fieldErrorId : undefined
-                    }
-                    aria-invalid={validationError ? true : undefined}
-                    aria-label="Message Pilot"
-                    className="min-h-20 px-3 pt-3 text-[15px] leading-6 sm:min-h-24"
-                    disabled={isLoading || uploading}
-                    id={fieldErrorId}
-                    maxLength={10_000}
-                    onChange={(event) => {
-                      setInput(event.currentTarget.value);
-                      if (validationError) setValidationError(undefined);
-                    }}
-                    onKeyDown={(event) => {
-                      if (
-                        event.key !== "Enter" ||
-                        event.nativeEvent.isComposing
-                      )
-                        return;
-                      if (shouldSubmitMessage(event, sendMessageShortcut)) {
-                        event.preventDefault();
-                        event.currentTarget.form?.requestSubmit();
-                        return;
-                      }
-                      if (
-                        shouldInsertComposerNewline(event, sendMessageShortcut)
-                      ) {
-                        event.preventDefault();
-                        const textarea = event.currentTarget;
-                        const selectionStart = textarea.selectionStart;
-                        const next = `${textarea.value.slice(0, selectionStart)}\n${textarea.value.slice(textarea.selectionEnd)}`;
-                        setInput(next);
-                        requestAnimationFrame(() => {
-                          textarea.setSelectionRange(
-                            selectionStart + 1,
-                            selectionStart + 1,
-                          );
-                        });
-                        return;
-                      }
-                      if (sendMessageShortcut === "mod_enter") {
-                        event.preventDefault();
-                        setInput("");
-                      }
-                    }}
-                    placeholder="Message Pilot…"
-                    ref={textareaRef}
-                    required
-                    rows={2}
-                    value={input}
-                  />
-                </PromptInputBody>
-                <PromptInputFooter className="px-1 pb-1">
-                  <PromptInputTools>
-                    <PromptInputActionMenu>
-                      <PromptInputActionMenuTrigger
-                        disabled={isLoading || uploading}
-                        tooltip="Add files"
-                      />
-                      <PromptInputActionMenuContent>
-                        <PromptInputActionAddAttachments label="Add files" />
-                      </PromptInputActionMenuContent>
-                    </PromptInputActionMenu>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-                      <Bot
-                        aria-hidden="true"
-                        className="size-3.5 text-primary"
-                      />
-                      {agentName}
-                    </span>
-                  </PromptInputTools>
-                  <PromptInputSubmit
-                    disabled={isLoading ? false : !input.trim() || uploading}
-                    onStop={cancel}
-                    status={isLoading ? "streaming" : "ready"}
-                  />
-                </PromptInputFooter>
-              </PromptInput>
-              {validationError ? (
-                <p
-                  aria-live="assertive"
-                  className="mt-2 px-2 text-sm text-destructive"
-                  id={fieldErrorId}
-                  role="alert"
-                >
-                  {validationError}
-                </p>
-              ) : null}
-              {attachmentError ? (
-                <p
-                  aria-live="polite"
-                  className="mt-2 px-2 text-sm text-destructive"
-                >
-                  {attachmentError}
-                </p>
-              ) : null}
-              {timeoutError ? (
-                <div className="mt-2 space-y-2 px-2">
-                  <p
-                    aria-live="assertive"
-                    className="text-sm text-destructive"
-                    role="alert"
-                  >
-                    {timeoutError}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={restoreLastMessage}
-                      size="sm"
-                      type="button"
+              <footer className="shrink-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-xl sm:px-6 sm:pb-5 safe-bottom">
+                <div className="mx-auto w-full max-w-3xl">
+                  {attachments.length ? (
+                    <ul
+                      className="mb-3 flex flex-wrap gap-2"
+                      aria-label="Chat attachments"
                     >
-                      Review message
-                    </Button>
-                    <Button
-                      onClick={cancel}
-                      size="sm"
-                      type="button"
-                      variant="outline"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
+                      {attachments.map((attachment) => (
+                        <li
+                          key={attachment.id}
+                          className="flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 text-xs"
+                        >
+                          <a
+                            className="max-w-48 truncate hover:underline"
+                            href={`/api/attachments/${attachment.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {attachment.filename}
+                          </a>
+                          <DeleteAttachmentButton
+                            attachmentId={attachment.id}
+                            filename={attachment.filename}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {runtimeConfigured ? (
+                    <>
+                      <PromptInput
+                        accept=".pdf,.txt,.md,.csv,.docx,.xlsx,image/jpeg,image/png,image/webp"
+                        className="rounded-3xl border border-border bg-card p-2 shadow-lg shadow-foreground/[0.04] transition-shadow focus-within:shadow-xl focus-within:shadow-primary/[0.06]"
+                        maxFileSize={10 * 1024 * 1024}
+                        multiple
+                        onError={(event) => setAttachmentError(event.message)}
+                        onSubmit={(message) => submitMessage(message)}
+                      >
+                        <ComposerAttachmentPreviews />
+                        <PromptInputBody>
+                          <PromptInputTextarea
+                            aria-describedby={
+                              validationError ? fieldErrorId : undefined
+                            }
+                            aria-invalid={validationError ? true : undefined}
+                            aria-label="Message Pilot"
+                            className="min-h-20 px-3 pt-3 text-[15px] leading-6 sm:min-h-24"
+                            disabled={isLoading || uploading}
+                            id={fieldErrorId}
+                            maxLength={10_000}
+                            onChange={(event) => {
+                              setInput(event.currentTarget.value);
+                              if (validationError)
+                                setValidationError(undefined);
+                            }}
+                            onKeyDown={(event) => {
+                              if (
+                                event.key !== "Enter" ||
+                                event.nativeEvent.isComposing
+                              )
+                                return;
+                              if (
+                                shouldSubmitMessage(event, sendMessageShortcut)
+                              ) {
+                                event.preventDefault();
+                                event.currentTarget.form?.requestSubmit();
+                                return;
+                              }
+                              if (
+                                shouldInsertComposerNewline(
+                                  event,
+                                  sendMessageShortcut,
+                                )
+                              ) {
+                                event.preventDefault();
+                                const textarea = event.currentTarget;
+                                const selectionStart = textarea.selectionStart;
+                                const next = `${textarea.value.slice(0, selectionStart)}\n${textarea.value.slice(textarea.selectionEnd)}`;
+                                setInput(next);
+                                requestAnimationFrame(() => {
+                                  textarea.setSelectionRange(
+                                    selectionStart + 1,
+                                    selectionStart + 1,
+                                  );
+                                });
+                                return;
+                              }
+                              if (sendMessageShortcut === "mod_enter") {
+                                event.preventDefault();
+                                setInput("");
+                              }
+                            }}
+                            placeholder="Message Pilot…"
+                            ref={textareaRef}
+                            required
+                            rows={2}
+                            value={input}
+                          />
+                        </PromptInputBody>
+                        <PromptInputFooter className="px-1 pb-1">
+                          <PromptInputTools>
+                            <PromptInputActionMenu>
+                              <PromptInputActionMenuTrigger
+                                disabled={isLoading || uploading}
+                                tooltip="Add files"
+                              />
+                              <PromptInputActionMenuContent>
+                                <PromptInputActionAddAttachments label="Add files" />
+                              </PromptInputActionMenuContent>
+                            </PromptInputActionMenu>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+                              <Bot
+                                aria-hidden="true"
+                                className="size-3.5 text-primary"
+                              />
+                              {agentName}
+                            </span>
+                          </PromptInputTools>
+                          <PromptInputSubmit
+                            disabled={
+                              isLoading ? false : !input.trim() || uploading
+                            }
+                            onStop={cancel}
+                            status={isLoading ? "streaming" : "ready"}
+                          />
+                        </PromptInputFooter>
+                      </PromptInput>
+                      {validationError ? (
+                        <p
+                          aria-live="assertive"
+                          className="mt-2 px-2 text-sm text-destructive"
+                          id={fieldErrorId}
+                          role="alert"
+                        >
+                          {validationError}
+                        </p>
+                      ) : null}
+                      {attachmentError ? (
+                        <p
+                          aria-live="polite"
+                          className="mt-2 px-2 text-sm text-destructive"
+                        >
+                          {attachmentError}
+                        </p>
+                      ) : null}
+                      {timeoutError ? (
+                        <div className="mt-2 space-y-2 px-2">
+                          <p
+                            aria-live="assertive"
+                            className="text-sm text-destructive"
+                            role="alert"
+                          >
+                            {timeoutError}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              onClick={restoreLastMessage}
+                              size="sm"
+                              type="button"
+                            >
+                              Review message
+                            </Button>
+                            <Button
+                              onClick={cancel}
+                              size="sm"
+                              type="button"
+                              variant="outline"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null}
+                      {streamError && !timeoutError ? (
+                        <p
+                          aria-live="polite"
+                          className="mt-2 px-2 text-sm text-destructive"
+                        >
+                          {streamError}
+                        </p>
+                      ) : null}
+                      {error && !timeoutError ? (
+                        <p
+                          aria-live="polite"
+                          className="mt-2 px-2 text-sm text-destructive"
+                        >
+                          {error.message ||
+                            "Pilot could not complete this message."}
+                        </p>
+                      ) : null}
+                      <p
+                        aria-live="polite"
+                        className="mt-2 inline-flex items-center gap-2 px-2 text-xs text-muted-foreground"
+                      >
+                        <Bot
+                          className="size-3.5 text-primary"
+                          aria-hidden="true"
+                        />
+                        {isLoading
+                          ? "Pilot is working…"
+                          : "Pilot can make mistakes. Check important work."}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-center text-sm text-muted-foreground">
+                      Messaging becomes available after this environment is
+                      connected to Pilot AI.
+                    </p>
+                  )}
                 </div>
-              ) : null}
-              {streamError && !timeoutError ? (
-                <p
-                  aria-live="polite"
-                  className="mt-2 px-2 text-sm text-destructive"
-                >
-                  {streamError}
-                </p>
-              ) : null}
-              {error && !timeoutError ? (
-                <p
-                  aria-live="polite"
-                  className="mt-2 px-2 text-sm text-destructive"
-                >
-                  {error.message || "Pilot could not complete this message."}
-                </p>
-              ) : null}
-              <p
-                aria-live="polite"
-                className="mt-2 inline-flex items-center gap-2 px-2 text-xs text-muted-foreground"
-              >
-                <Bot className="size-3.5 text-primary" aria-hidden="true" />
-                {isLoading
-                  ? "Pilot is working…"
-                  : "Pilot can make mistakes. Check important work."}
-              </p>
-            </>
-          ) : (
-            <p className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-center text-sm text-muted-foreground">
-              Messaging becomes available after this environment is connected to
-              Pilot AI.
-            </p>
-          )}
-        </div>
-      </div>
+              </footer>
+            </div>
+          </ResizablePanel>
+          <ResizableHandle className="bg-border/80" withHandle />
+          <ResizablePanel
+            defaultSize={`${panelLayout.details}%`}
+            id="details"
+            minSize={desktopLayout ? "18%" : "20%"}
+          >
+            <ConversationDetailsPanel
+              activities={displayedActivities}
+              agentId={agentId}
+              approvals={approvals}
+              conversationId={conversationId}
+              onTaskCreated={handleTaskCreated}
+              tasks={tasks}
+              scratchpad={scratchpad}
+            />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </section>
     </main>
   );
 }
