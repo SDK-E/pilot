@@ -54,19 +54,19 @@ export function ConversationProjectPicker({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            aria-label="Set project"
+            aria-label="Choose project"
             disabled={isPending}
             size="sm"
             variant="ghost"
           >
             <FolderKanban aria-hidden="true" className="size-3.5" />
             <span className="hidden sm:inline">
-              {currentProject?.name ?? "Add to project"}
+              {currentProject?.name ?? "Choose project"}
             </span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
-          <DropdownMenuLabel>Project</DropdownMenuLabel>
+          <DropdownMenuLabel>Choose a project</DropdownMenuLabel>
           <DropdownMenuRadioGroup
             onValueChange={(projectId) => setProject(projectId)}
             value={currentProject?.id}

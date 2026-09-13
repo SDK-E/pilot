@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   CheckCircle2,
   ChevronRight,
@@ -16,6 +22,15 @@ import {
 } from "@/app/workspace/conversation-actions";
 import type { ActivityEventType } from "@/executions/activity-event";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -57,6 +72,8 @@ export function ConversationDetailsPanel({
   scratchpad,
   onTaskCreated,
 }: ConversationDetailsPanelProps) {
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const taskFormRef = useRef<HTMLFormElement>(null);
   const [taskState, taskAction, pending] = useActionState(
     createConversationTaskAction,
     initialTaskState,
@@ -67,21 +84,27 @@ export function ConversationDetailsPanel({
   );
 
   useEffect(() => {
-    if (taskState.status === "success" || approvalState.status === "success") {
+    if (taskState.status === "success") {
+      taskFormRef.current?.reset();
+      startTransition(() => setTaskDialogOpen(false));
       onTaskCreated();
     }
-  }, [approvalState.status, onTaskCreated, taskState.status]);
+  }, [onTaskCreated, taskState.status]);
+
+  useEffect(() => {
+    if (approvalState.status === "success") onTaskCreated();
+  }, [approvalState.status, onTaskCreated]);
 
   return (
     <aside
-      aria-label="Conversation details"
-      className="order-last min-h-0 w-full shrink-0 border-t border-border bg-muted/20 lg:order-none lg:w-80 lg:border-t-0 lg:border-l"
+      aria-label="Agent activity and chat controls"
+      className="order-last min-h-0 w-full shrink-0 border-t border-border bg-sidebar/40 lg:order-none lg:w-80 lg:border-t-0 lg:border-l"
     >
       <div className="h-full space-y-5 overflow-y-auto p-4">
         <section>
-          <h2 className="text-sm font-medium">Activity</h2>
+          <h2 className="text-sm font-medium">Agent activity</h2>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Verified runtime events for this chat.
+            Verified events from Pilot while it works in this chat.
           </p>
           <details className="group mt-3 rounded-xl border border-border bg-card/60 px-3 py-2 text-sm">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-medium [&::-webkit-details-marker]:hidden">
@@ -109,24 +132,34 @@ export function ConversationDetailsPanel({
               </ol>
             ) : (
               <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                Tool activity will appear here when a supported capability runs.
+                Activity appears here while Pilot uses a supported capability.
+                Send a message to begin.
               </p>
             )}
           </details>
         </section>
 
         <section>
-          <h2 className="text-sm font-medium">Scratchpad</h2>
+          <h2 className="text-sm font-medium">Working notes</h2>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Private working notes the agent has saved for this chat.
+            Context the agent chooses to save for this chat.
           </p>
           {scratchpad ? (
-            <pre className="mt-3 max-h-60 overflow-auto whitespace-pre-wrap rounded-xl border border-border bg-card/60 p-3 text-xs leading-5 text-muted-foreground">
-              {scratchpad}
-            </pre>
+            <details className="group mt-3 rounded-xl border border-border bg-card/60 px-3 py-2 text-sm">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-medium [&::-webkit-details-marker]:hidden">
+                View saved notes
+                <ChevronRight
+                  aria-hidden="true"
+                  className="size-4 text-muted-foreground transition-transform group-open:rotate-90"
+                />
+              </summary>
+              <pre className="mt-3 max-h-60 overflow-auto whitespace-pre-wrap text-xs leading-5 text-muted-foreground">
+                {scratchpad}
+              </pre>
+            </details>
           ) : (
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              The agent has not saved any working notes yet.
+              Working notes appear when the agent saves durable context.
             </p>
           )}
         </section>
@@ -134,54 +167,78 @@ export function ConversationDetailsPanel({
         <section>
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-medium">Tasks</h2>
-            <details className="group">
-              <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-primary [&::-webkit-details-marker]:hidden">
-                <Plus aria-hidden="true" className="size-3.5" /> Add task
-              </summary>
-              <form
-                action={taskAction}
-                className="mt-3 space-y-2 rounded-xl border border-border bg-card/60 p-3"
-              >
-                <input name="workerId" type="hidden" value={agentId} />
-                <input
-                  name="conversationId"
-                  type="hidden"
-                  value={conversationId}
-                />
-                <Input
-                  aria-label="Task title"
-                  maxLength={200}
-                  name="title"
-                  placeholder="Task title"
-                  required
-                />
-                <Textarea
-                  aria-label="Task instructions"
-                  className="min-h-20"
-                  maxLength={10_000}
-                  name="instructions"
-                  placeholder="Expected outcome"
-                  required
-                  rows={3}
-                />
-                {taskState.status !== "idle" ? (
-                  <p
-                    aria-live="polite"
-                    className={
-                      taskState.status === "error"
-                        ? "text-xs text-destructive"
-                        : "text-xs text-muted-foreground"
-                    }
-                  >
-                    {taskState.message}
-                  </p>
-                ) : null}
-                <Button disabled={pending} size="sm" type="submit">
-                  <ListTodo aria-hidden="true" />{" "}
-                  {pending ? "Adding…" : "Add task"}
+            <Dialog onOpenChange={setTaskDialogOpen} open={taskDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="ghost">
+                  <Plus aria-hidden="true" className="size-3.5" /> Create task
                 </Button>
-              </form>
-            </details>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create task</DialogTitle>
+                  <DialogDescription>
+                    Add a task to this chat to keep its intended outcome and
+                    status visible. Creating it does not start an external
+                    action.
+                  </DialogDescription>
+                </DialogHeader>
+                <form
+                  action={taskAction}
+                  className="space-y-4"
+                  ref={taskFormRef}
+                >
+                  <input name="workerId" type="hidden" value={agentId} />
+                  <input
+                    name="conversationId"
+                    type="hidden"
+                    value={conversationId}
+                  />
+                  <div className="space-y-2">
+                    <label
+                      className="text-sm font-medium"
+                      htmlFor="conversation-task-title"
+                    >
+                      Task name
+                    </label>
+                    <Input
+                      id="conversation-task-title"
+                      maxLength={200}
+                      name="title"
+                      placeholder="For example, compare three approaches"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      className="text-sm font-medium"
+                      htmlFor="conversation-task-instructions"
+                    >
+                      What should this task produce?
+                    </label>
+                    <Textarea
+                      id="conversation-task-instructions"
+                      className="min-h-28"
+                      maxLength={10_000}
+                      name="instructions"
+                      placeholder="Describe the expected result and any useful constraints."
+                      required
+                      rows={4}
+                    />
+                  </div>
+                  {taskState.status === "error" ? (
+                    <p aria-live="polite" className="text-sm text-destructive">
+                      {taskState.message}
+                    </p>
+                  ) : null}
+                  <DialogFooter>
+                    <Button disabled={pending} type="submit">
+                      <ListTodo aria-hidden="true" />
+                      {pending ? "Creating…" : "Create task"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
           {tasks.length ? (
             <ul className="mt-3 space-y-2">
@@ -199,13 +256,17 @@ export function ConversationDetailsPanel({
             </ul>
           ) : (
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              No tasks have been added to this chat.
+              Create a task when you want its outcome and status to stay visible
+              in this chat.
             </p>
           )}
         </section>
 
         <section>
-          <h2 className="text-sm font-medium">Approvals</h2>
+          <h2 className="text-sm font-medium">Needs your approval</h2>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Pilot pauses here before an action that needs your decision.
+          </p>
           {approvals.length ? (
             <ul className="mt-3 space-y-2">
               {approvals.map((approval) => (
@@ -256,7 +317,7 @@ export function ConversationDetailsPanel({
             </ul>
           ) : (
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              No approvals are waiting in this chat.
+              Approval cards appear only when an action needs your decision.
             </p>
           )}
           {approvalState.status === "error" ? (

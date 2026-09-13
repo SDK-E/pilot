@@ -53,6 +53,7 @@ export function NewChatForm({
   const router = useRouter();
   const sendMessageShortcut = useSendMessageShortcut();
   const textareaId = useId();
+  const fieldErrorId = useId();
   const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(
     defaultAgentId && agents.some((agent) => agent.id === defaultAgentId)
       ? defaultAgentId
@@ -248,7 +249,7 @@ export function NewChatForm({
       >
         <PromptInputBody>
           <PromptInputTextarea
-            aria-describedby={validationError ? textareaId : undefined}
+            aria-describedby={validationError ? fieldErrorId : undefined}
             aria-invalid={validationError ? true : undefined}
             aria-label="Message Pilot"
             className="min-h-32 px-3 pt-3 text-[15px] leading-6"
@@ -331,7 +332,7 @@ export function NewChatForm({
         <p
           aria-live="assertive"
           className="px-2 text-sm text-destructive"
-          id={textareaId}
+          id={fieldErrorId}
           role="alert"
         >
           {validationError}

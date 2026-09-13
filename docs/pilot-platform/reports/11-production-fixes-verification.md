@@ -79,3 +79,17 @@ Please test the following flows on the production URL:
 - Research starter card behavior depends on `PILOT_RESEARCH_ENABLED=true` and an available research agent in the org. If those are not present, the card is intentionally disabled.
 - Runtime responsiveness depends on the live `PILOT_AI_RUNTIME_URL` environment. Timeout behavior is most reliably triggered by simulating network latency or runtime slowness.
 - All existing Playwright boundary tests (22 passed) remain green; the three skipped tests require hosted WorkOS membership fixtures and are unchanged.
+
+## 2026-09-13 workspace interaction correction
+
+This verified UI slice restores a conversational hierarchy in an existing chat:
+
+- the shell now stacks the conversation header, independently scrollable transcript, and persistent composer within the workspace viewport;
+- task creation opens a keyboard-accessible shadcn dialog instead of sharing the composer surface;
+- the side panel uses plain-language sections for Agent activity, Working notes, Tasks, and Needs your approval, with actionable empty states;
+- project assignment is labelled Choose project and communicates the no-project state in its menu;
+- a failed or timed-out existing-chat message can retry the actual last submission, and Stop now aborts the active client stream;
+- all persisted messages expose a keyboard-discoverable Copy action;
+- `mod_enter` consistently inserts a line break on plain Enter, while Ctrl/Command+Enter sends.
+
+Verification before deployment: `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm build`, and `pnpm test:server` (72 passing) pass. `pnpm test` reports 25 passing and 42 explicitly skipped authenticated-fixture scenarios. `pnpm knip` still reports the pre-existing Plan 11 unused-file/export backlog; this UI slice adds no new Knip findings.

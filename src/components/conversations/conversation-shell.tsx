@@ -14,6 +14,8 @@ import { useCompletion } from "@ai-sdk/react";
 import {
   ArrowLeft,
   Bot,
+  Check,
+  Copy,
   Paperclip,
   SendHorizontal,
   Square,
@@ -27,6 +29,8 @@ import {
 } from "@/components/ai-elements/conversation";
 import {
   Message,
+  MessageAction,
+  MessageActions,
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
@@ -109,7 +113,9 @@ export function ConversationShell({
   const [streamError, setStreamError] = useState<string>();
   const [timeoutError, setTimeoutError] = useState<string>();
   const [validationError, setValidationError] = useState<string>();
+  const [copiedMessageId, setCopiedMessageId] = useState<string>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastSubmittedMessageRef = useRef<string | undefined>(undefined);
   const fieldErrorId = useId();
   const timedOutRef = useRef(false);
   const displayedActivities = useMemo(() => {
@@ -153,6 +159,7 @@ export function ConversationShell({
     (rawMessage: string) => {
       const message = rawMessage.trim();
       if (!message || isLoading) return;
+      lastSubmittedMessageRef.current = message;
       setPendingUserMessage(message);
       setCompletion("");
       setInput("");
@@ -175,15 +182,34 @@ export function ConversationShell({
     submitText(message);
   }, [input, isLoading, submitText]);
   const retry = useCallback(() => {
+    const lastMessage = lastSubmittedMessageRef.current;
     setTimeoutError(undefined);
     setStreamError(undefined);
-  }, []);
+    if (lastMessage) submitText(lastMessage);
+  }, [submitText]);
   const cancel = useCallback(() => {
+    stop();
     setTimeoutError(undefined);
     setPendingUserMessage(undefined);
     setCompletion("");
     setInput("");
-  }, [setCompletion, setInput]);
+  }, [setCompletion, setInput, stop]);
+  const copyMessage = useCallback(
+    async (messageId: string, content: string) => {
+      try {
+        await navigator.clipboard.writeText(content);
+        setCopiedMessageId(messageId);
+        window.setTimeout(() => {
+          setCopiedMessageId((current) =>
+            current === messageId ? undefined : current,
+          );
+        }, 2_000);
+      } catch {
+        // Clipboard access can be unavailable in an embedded or insecure browser.
+      }
+    },
+    [],
+  );
   const toggleQuestionOption = useCallback(
     (messageId: string, option: string) => {
       setSelectedQuestionOptions((current) => {
@@ -403,6 +429,28 @@ export function ConversationShell({
                         <p className="whitespace-pre-wrap">{message.content}</p>
                       )}
                     </MessageContent>
+                    <MessageActions className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                      <MessageAction
+                        aria-pressed={copiedMessageId === message.id}
+                        label={
+                          copiedMessageId === message.id
+                            ? "Copied"
+                            : "Copy message"
+                        }
+                        onClick={() =>
+                          void copyMessage(message.id, message.content)
+                        }
+                        tooltip={
+                          copiedMessageId === message.id ? "Copied" : "Copy"
+                        }
+                      >
+                        {copiedMessageId === message.id ? (
+                          <Check aria-hidden="true" className="size-3.5" />
+                        ) : (
+                          <Copy aria-hidden="true" className="size-3.5" />
+                        )}
+                      </MessageAction>
+                    </MessageActions>
                   </Message>
                 );
               })
@@ -513,9 +561,22 @@ export function ConversationShell({
                   if (validationError) setValidationError(undefined);
                 }}
                 onKeyDown={(event) => {
+                  if (event.key !== "Enter" || event.nativeEvent.isComposing)
+                    return;
                   if (shouldSubmitMessage(event, sendMessageShortcut)) {
                     event.preventDefault();
                     submitMessage();
+                    return;
+                  }
+                  if (sendMessageShortcut === "mod_enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    const textarea = event.currentTarget;
+                    const next = `${textarea.value.slice(0, textarea.selectionStart)}\n${textarea.value.slice(textarea.selectionEnd)}`;
+                    setInput(next);
+                    requestAnimationFrame(() => {
+                      const position = textarea.selectionStart + 1;
+                      textarea.setSelectionRange(position, position);
+                    });
                   }
                 }}
                 placeholder="Message Pilot…"
