@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { nextDuplicatePersonaName } from "@/workers/duplicate-persona-name";
 
 test("persona duplication uses a readable available name", () => {

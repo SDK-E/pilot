@@ -1,5 +1,6 @@
 "use client";
 
+import { Pencil } from "lucide-react";
 import {
   startTransition,
   useActionState,
@@ -7,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Pencil } from "lucide-react";
+
 import {
   renameConversationAction,
   type RenameConversationState,
@@ -43,10 +44,14 @@ export function RenameConversationForm({
   );
 
   useEffect(() => {
-    if (state.status === "success") {
-      form.current?.reset();
-      startTransition(() => setOpen(false));
+    if (state.status !== "success") {
+      return;
     }
+
+    form.current?.reset();
+    startTransition(() => {
+      setOpen(false);
+    });
   }, [state.status]);
 
   return (

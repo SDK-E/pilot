@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+
 import { eq } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import { organizations } from "@/db/schema";
 import {
@@ -10,7 +12,7 @@ import {
   listOperations,
   updateOperationStatus,
 } from "@/lifecycle/lifecycle-repository";
-import { LifecyclePhase } from "@/lifecycle/lifecycle-types";
+import { type LifecyclePhase } from "@/lifecycle/lifecycle-types";
 
 const suffix = randomUUID().replaceAll("-", "");
 const orgTest = `org_test_${suffix}`;
@@ -127,7 +129,7 @@ test("list operations by org and status", async () => {
     actorId: "user_a",
     resourceType: "conversation",
     resourceId: randomUUID(),
-    phase: "completed" as LifecyclePhase,
+    phase: "completed",
   });
   await updateOperationStatus({
     operationId: completedOp.id,

@@ -1,13 +1,15 @@
-import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
 import { isResearchAvailable } from "@/conversations/research-availability";
-import { getUserPreferences } from "@/users/user-preference-repository";
+import { locales } from "@/i18n/locale-registry";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
+import { getUserPreferences } from "@/users/user-preference-repository";
 import { listWorkers } from "@/workers/worker-repository";
-import { locales } from "@/i18n/locale-registry";
+
 import {
   updateDefaultAgentAction,
   updateMessageShortcutAction,
@@ -119,7 +121,7 @@ export default async function SettingsPage() {
           New chats start with this agent selected. Each person can choose a
           different agent before sending their first message.
         </p>
-        {membership && availableAgents.length ? (
+        {membership && availableAgents.length > 0 ? (
           <form
             action={updateDefaultAgentAction}
             className="mt-4 flex flex-wrap gap-3"

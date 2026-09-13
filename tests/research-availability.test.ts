@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { isResearchAvailable } from "@/conversations/research-availability";
 
 test("Research requires the environment capability flag", () => {

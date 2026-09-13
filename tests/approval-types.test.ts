@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import test from "node:test";
+
 import {
   createActionProposal,
   invalidateProposal,
@@ -17,7 +18,7 @@ test("approval-types: createProposal generates stable hash", () => {
     targetRef: "repo:sdk-e/pilot",
     canonicalArgsHash: "args_abc",
     permissionSnapshot: { scopes: ["approval:decide"] },
-    expiresAt: new Date(Date.now() + 3600_000),
+    expiresAt: new Date(Date.now() + 3_600_000),
     riskSummary: "low risk summary",
   });
 
@@ -39,7 +40,7 @@ test("approval-types: same inputs produce same hash", () => {
     targetRef: "repo:sdk-e/pilot",
     canonicalArgsHash: "args_abc",
     permissionSnapshot: { scopes: ["approval:decide"] },
-    expiresAt: new Date(Date.now() + 3600_000),
+    expiresAt: new Date(Date.now() + 3_600_000),
     riskSummary: "summary",
   };
 
@@ -57,7 +58,7 @@ test("approval-types: different targetRef produces different hash", () => {
     targetRef: "repo:sdk-e/pilot",
     canonicalArgsHash: "args_abc",
     permissionSnapshot: {},
-    expiresAt: new Date(Date.now() + 3600_000),
+    expiresAt: new Date(Date.now() + 3_600_000),
     riskSummary: "summary",
   });
   const b = createActionProposal({
@@ -68,7 +69,7 @@ test("approval-types: different targetRef produces different hash", () => {
     targetRef: "repo:sdk-e/different",
     canonicalArgsHash: "args_abc",
     permissionSnapshot: {},
-    expiresAt: new Date(Date.now() + 3600_000),
+    expiresAt: new Date(Date.now() + 3_600_000),
     riskSummary: "summary",
   });
   assert.notStrictEqual(a.proposalHash, b.proposalHash);
@@ -83,7 +84,7 @@ test("approval-types: proposal becomes stale after expiration", () => {
     targetRef: "repo:x",
     canonicalArgsHash: "h",
     permissionSnapshot: {},
-    expiresAt: new Date(Date.now() - 1_000),
+    expiresAt: new Date(Date.now() - 1000),
     riskSummary: "summary",
   });
   assert.strictEqual(isProposalExpired(expired), true);

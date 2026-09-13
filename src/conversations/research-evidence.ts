@@ -1,15 +1,16 @@
 import "server-only";
 
 import { and, asc, eq } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import { conversationSources, conversations } from "@/db/schema";
 
-export type ResearchSource = {
+export interface ResearchSource {
   title: string;
   domain: string;
   url: string;
   summary: string;
-};
+}
 
 function safeSource(raw: string): ResearchSource | undefined {
   try {
@@ -26,23 +27,25 @@ function safeSource(raw: string): ResearchSource | undefined {
   }
 }
 
-/** Removes model-emitted execution syntax; real tool activity is server generated. */
+/**
+Removes model-emitted execution syntax; real tool activity is server generated.
+*/
 export function sanitizeResearchText(value: string): {
   text: string;
   invalidToolSyntax: boolean;
   sources: ResearchSource[];
 } {
-  const invalidToolSyntax =
+  const isInvalidToolSyntax =
     /(?:<\/?tool_call\b|\b(?:webSearch|fetch_url|tool_call)\s*>)/i.test(value);
   const text = value
-    .replace(/<\/?tool_call\b[^>]*>/gi, "")
-    .replace(/^\s*(?:webSearch|fetch_url|tool_call)\s*>.*$/gim, "")
+    .replaceAll(/<\/?tool_call\b[^>]*>/gi, "")
+    .replaceAll(/^\s*(?:webSearch|fetch_url|tool_call)\s*>.*$/gim, "")
     .trim();
-  const sources = [...new Set(text.match(/https?:\/\/[^\s)\]]+/g) ?? [])]
+  const sources = [...new Set(text.match(/https?:\/\/[^\s)\]]+/g))]
     .map(safeSource)
     .filter((source): source is ResearchSource => Boolean(source))
     .slice(0, 8);
-  return { text, invalidToolSyntax, sources };
+  return { text, invalidToolSyntax: isInvalidToolSyntax, sources };
 }
 
 export async function saveResearchSources(input: {
@@ -52,7 +55,7 @@ export async function saveResearchSources(input: {
   userId: string;
   sources: ResearchSource[];
 }) {
-  if (!input.sources.length) return;
+  if (input.sources.length === 0) return;
   await db.insert(conversationSources).values(
     input.sources.map((source) => ({
       organizationId: input.organizationId,

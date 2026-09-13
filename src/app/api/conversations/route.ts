@@ -1,5 +1,6 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
+
 import { prepareConversation } from "@/conversations/start-chat";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 
@@ -31,9 +32,7 @@ export async function POST(request: Request) {
       { status: 403 },
     );
   }
-  const input = inputSchema.safeParse(
-    await request.json().catch(() => undefined),
-  );
+  const input = inputSchema.safeParse(await request.json().catch(() => {}));
   if (!input.success)
     return Response.json({ error: "A message is required." }, { status: 400 });
   const prepared = await prepareConversation({

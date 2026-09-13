@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { verifyPilotRuntimeCallback } from "@/ai/pilot-runtime-oidc";
 
 export const runtime = "nodejs";
@@ -25,9 +26,7 @@ export async function POST(request: Request) {
   if (!(await verifyPilotRuntimeCallback(request))) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
-  const input = inputSchema.safeParse(
-    await request.json().catch(() => undefined),
-  );
+  const input = inputSchema.safeParse(await request.json().catch(() => {}));
   if (!input.success) {
     return Response.json(
       { error: "Invalid scratchpad command." },

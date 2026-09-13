@@ -1,8 +1,8 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { Bot } from "lucide-react";
-import { AgentCreationForm } from "@/components/workers/worker-creation-form";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+
 import {
   Card,
   CardContent,
@@ -10,10 +10,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getActiveOrganizationMembership } from "@/organizations/active-membership";
-import { listWorkers } from "@/workers/worker-repository";
 import { DeletePersonaButton } from "@/components/workers/delete-persona-button";
 import { DuplicatePersonaButton } from "@/components/workers/duplicate-persona-button";
+import { AgentCreationForm } from "@/components/workers/worker-creation-form";
+import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { listWorkers } from "@/workers/worker-repository";
 
 export default async function PersonasPage() {
   const { user, organizationId } = await withAuth();

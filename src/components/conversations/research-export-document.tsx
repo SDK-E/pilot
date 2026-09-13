@@ -6,22 +6,24 @@ import {
   Text,
   View,
 } from "@react-pdf/renderer";
-import type { ReactElement } from "react";
+
 import { researchExportBlocks } from "@/conversations/research-export-content";
 
-export type ExportMessage = {
+import type { ReactElement } from "react";
+
+export interface ExportMessage {
   id: string;
   role: "user" | "worker";
   content: string;
-};
+}
 
-export type ExportSource = {
+export interface ExportSource {
   messageId: string;
   title: string;
   domain: string;
   url: string;
   summary: string;
-};
+}
 
 const styles = StyleSheet.create({
   page: {

@@ -1,5 +1,6 @@
 import "server-only";
 import { and, asc, count, eq, inArray } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import { activityEvents, conversations, executions } from "@/db/schema";
 import {
@@ -100,7 +101,9 @@ export async function appendToolActivity(input: {
   });
 }
 
-/** Persists only a validated, server-derived skill label for the active run. */
+/**
+Persists only a validated, server-derived skill label for the active run.
+*/
 export async function appendSkillActivity(input: {
   organizationId: string;
   executionId: string;

@@ -1,8 +1,9 @@
-import { buildPersonaInstructions } from "@/agents/persona-instructions";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
-import { streamConversationMessage } from "@/conversations/stream-message";
+
+import { buildPersonaInstructions } from "@/agents/persona-instructions";
 import { getConversation } from "@/conversations/conversation-repository";
+import { streamConversationMessage } from "@/conversations/stream-message";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getWorker } from "@/workers/worker-repository";
 
@@ -13,7 +14,9 @@ const inputSchema = z.object({
   workerId: z.uuid(),
 });
 
-type RouteContext = { params: Promise<{ conversationId: string }> };
+interface RouteContext {
+  params: Promise<{ conversationId: string }>;
+}
 
 function error(message: string, status: number) {
   return Response.json({ error: message }, { status });

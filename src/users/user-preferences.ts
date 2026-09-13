@@ -1,9 +1,9 @@
 export type SendMessageShortcut = "enter" | "mod_enter";
 
-export type ConversationPanelLayout = {
+export interface ConversationPanelLayout {
   conversation: number;
   details: number;
-};
+}
 
 export const defaultUserPreferences = {
   sendMessageShortcut: "mod_enter",

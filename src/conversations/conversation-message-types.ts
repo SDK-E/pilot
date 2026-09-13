@@ -71,20 +71,26 @@ export function isKnownPart(part: MessagePart): boolean {
 
 export function getPartContent(part: MessagePart): string {
   switch (part.type) {
-    case "text":
+    case "text": {
       return part.content;
-    case "artifact_ref":
+    }
+    case "artifact_ref": {
       return part.artifactId;
-    case "citation_ref":
+    }
+    case "citation_ref": {
       return part.sourceId;
-    case "tool_summary":
+    }
+    case "tool_summary": {
       return part.summary;
-    case "user_question":
+    }
+    case "user_question": {
       return part.questionId;
-    case "unknown":
+    }
+    case "unknown": {
       return typeof part.content === "string"
         ? part.content
         : JSON.stringify(part.content);
+    }
   }
 }
 

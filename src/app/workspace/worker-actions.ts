@@ -3,17 +3,19 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { PilotAiRuntimeError } from "@/ai/pilot-ai-client";
-import { sendConversationMessage } from "@/conversations/send-message";
+
 import {
   approvalModes,
   baseAgentIds,
   configurableToolIds,
 } from "@/agents/agent-configuration";
-import { getActiveOrganizationMembership } from "@/organizations/active-membership";
-import type { WorkerCreationState } from "@/workers/worker-creation-state";
+import { PilotAiRuntimeError } from "@/ai/pilot-ai-client";
+import { sendConversationMessage } from "@/conversations/send-message";
 import { prepareConversation } from "@/conversations/start-chat";
+import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { createWorker, updateWorker } from "@/workers/worker-repository";
+
+import type { WorkerCreationState } from "@/workers/worker-creation-state";
 
 const workerInputSchema = z.object({
   name: z.string().trim().min(1, "Name is required.").max(100),
@@ -24,9 +26,9 @@ const workerInputSchema = z.object({
     .max(10_000),
   modelId: z.literal("kilo/kilo-auto/free"),
   baseAgentId: z.enum(baseAgentIds),
-  goals: z.string().trim().max(5_000).optional(),
+  goals: z.string().trim().max(5000).optional(),
   tone: z.string().trim().max(200).optional(),
-  outputFormat: z.string().trim().max(1_000).optional(),
+  outputFormat: z.string().trim().max(1000).optional(),
   enabledToolIds: z.array(z.enum(configurableToolIds)).default([]),
   approvalRules: z.record(z.string(), z.enum(approvalModes)),
 });

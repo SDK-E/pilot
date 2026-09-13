@@ -3,6 +3,7 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+
 import { deleteConversationMemory } from "@/ai/pilot-ai-client";
 import {
   deleteConversation,
@@ -11,10 +12,10 @@ import {
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 
-export type DeleteConversationState = {
+export interface DeleteConversationState {
   message?: string;
   status: "idle" | "error" | "success";
-};
+}
 
 export type RenameConversationState = DeleteConversationState;
 

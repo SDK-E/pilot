@@ -1,19 +1,21 @@
 import "server-only";
 
 import { and, desc, eq } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import { members, organizations, workers } from "@/db/schema";
+
 import type {
   ApprovalRules,
   BaseAgentId,
   ConfigurableToolId,
 } from "@/agents/agent-configuration";
-type WorkerMembership = {
+interface WorkerMembership {
   id: string;
   roleSlug: string;
-};
+}
 
-type CreateWorkerInput = {
+interface CreateWorkerInput {
   organization: { id: string; name: string };
   member: WorkerMembership;
   user: { id: string; email: string };
@@ -29,60 +31,62 @@ type CreateWorkerInput = {
     knowledgeSourceIds: string[];
     approvalRules: ApprovalRules;
   };
-};
+}
 
 type WorkerConfiguration = CreateWorkerInput["worker"];
 
 export async function createWorker(input: CreateWorkerInput) {
   const now = new Date();
-  const [, , createdWorkers] = await db.batch([
-    db
-      .insert(organizations)
-      .values({ id: input.organization.id, name: input.organization.name })
-      .onConflictDoUpdate({
-        target: organizations.id,
-        set: { name: input.organization.name, updatedAt: now },
-      }),
-    db
-      .insert(members)
-      .values({
-        organizationId: input.organization.id,
-        workosUserId: input.user.id,
-        workosMembershipId: input.member.id,
-        email: input.user.email,
-        roleSlug: input.member.roleSlug,
-      })
-      .onConflictDoUpdate({
-        target: [members.organizationId, members.workosUserId],
-        set: {
+  const createdWorkers = (
+    await db.batch([
+      db
+        .insert(organizations)
+        .values({ id: input.organization.id, name: input.organization.name })
+        .onConflictDoUpdate({
+          target: organizations.id,
+          set: { name: input.organization.name, updatedAt: now },
+        }),
+      db
+        .insert(members)
+        .values({
+          organizationId: input.organization.id,
+          workosUserId: input.user.id,
           workosMembershipId: input.member.id,
           email: input.user.email,
           roleSlug: input.member.roleSlug,
-          updatedAt: now,
-        },
-      }),
-    db
-      .insert(workers)
-      .values({
-        organizationId: input.organization.id,
-        name: input.worker.name,
-        instructions: input.worker.instructions,
-        modelId: input.worker.modelId,
-        baseAgentId: input.worker.baseAgentId,
-        goals: input.worker.goals,
-        tone: input.worker.tone,
-        outputFormat: input.worker.outputFormat,
-        enabledToolIds: input.worker.enabledToolIds,
-        knowledgeSourceIds: input.worker.knowledgeSourceIds,
-        approvalRules: input.worker.approvalRules,
-        createdByWorkosUserId: input.user.id,
-      })
-      .returning({
-        id: workers.id,
-        name: workers.name,
-        archived: workers.archived,
-      }),
-  ]);
+        })
+        .onConflictDoUpdate({
+          target: [members.organizationId, members.workosUserId],
+          set: {
+            workosMembershipId: input.member.id,
+            email: input.user.email,
+            roleSlug: input.member.roleSlug,
+            updatedAt: now,
+          },
+        }),
+      db
+        .insert(workers)
+        .values({
+          organizationId: input.organization.id,
+          name: input.worker.name,
+          instructions: input.worker.instructions,
+          modelId: input.worker.modelId,
+          baseAgentId: input.worker.baseAgentId,
+          goals: input.worker.goals,
+          tone: input.worker.tone,
+          outputFormat: input.worker.outputFormat,
+          enabledToolIds: input.worker.enabledToolIds,
+          knowledgeSourceIds: input.worker.knowledgeSourceIds,
+          approvalRules: input.worker.approvalRules,
+          createdByWorkosUserId: input.user.id,
+        })
+        .returning({
+          id: workers.id,
+          name: workers.name,
+          archived: workers.archived,
+        }),
+    ])
+  )[2];
 
   return createdWorkers[0];
 }

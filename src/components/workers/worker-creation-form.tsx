@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+
 import {
   baseAgents,
   defaultEnabledToolIds,
@@ -15,11 +16,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+
 import type { WorkerCreationState } from "@/workers/worker-creation-state";
 
 const initialAgentCreationState: WorkerCreationState = { status: "idle" };
 
-type Persona = {
+interface Persona {
   id: string;
   name: string;
   instructions: string;
@@ -30,7 +32,7 @@ type Persona = {
   outputFormat: string | null;
   enabledToolIds: string[];
   approvalRules: Record<string, string>;
-};
+}
 
 export function AgentCreationForm({ persona }: { persona?: Persona }) {
   const [state, action, pending] = useActionState(
@@ -104,7 +106,7 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
         <Textarea
           id="agent-goals"
           name="goals"
-          maxLength={5_000}
+          maxLength={5000}
           placeholder="Optional outcomes this persona should optimize for."
           defaultValue={persona?.goals ?? undefined}
           rows={3}
@@ -129,12 +131,12 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {toolCapabilities.map((tool) => {
-            const available = isToolAvailableToBaseAgent(
+            const isAvailable = isToolAvailableToBaseAgent(
               tool.id,
               (persona?.baseAgentId ?? "conversational") as
                 "conversational" | "research",
             );
-            const selected =
+            const isSelected =
               persona?.enabledToolIds.includes(tool.id) ??
               defaultEnabledToolIds.includes(tool.id);
             return (
@@ -142,28 +144,28 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
                 key={tool.id}
                 className="flex items-start gap-2 rounded-md border border-border p-2 text-sm"
               >
-                {!available && selected ? (
+                {!isAvailable && isSelected ? (
                   <input name="enabledToolIds" type="hidden" value={tool.id} />
                 ) : null}
                 <input
-                  name={available ? "enabledToolIds" : undefined}
+                  name={isAvailable ? "enabledToolIds" : undefined}
                   type="checkbox"
                   value={tool.id}
-                  defaultChecked={selected}
-                  disabled={!available}
+                  defaultChecked={isSelected}
+                  disabled={!isAvailable}
                   className="mt-0.5 size-4 accent-primary"
                 />
                 <span>
                   <span className="block font-medium text-foreground">
                     {tool.name}
                     <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      {available ? "Available" : "Planned"}
+                      {isAvailable ? "Available" : "Planned"}
                     </span>
                   </span>
                   <span className="block text-xs text-muted-foreground">
                     {tool.description}
                   </span>
-                  {available ? (
+                  {isAvailable ? (
                     <select
                       aria-label={`${tool.name} approval rule`}
                       className="mt-2 h-8 rounded-md border border-input bg-background px-2 text-xs"
@@ -187,7 +189,7 @@ export function AgentCreationForm({ persona }: { persona?: Persona }) {
         <Textarea
           id="agent-output-format"
           name="outputFormat"
-          maxLength={1_000}
+          maxLength={1000}
           placeholder="Optional format, such as concise markdown with sources."
           defaultValue={persona?.outputFormat ?? undefined}
           rows={3}

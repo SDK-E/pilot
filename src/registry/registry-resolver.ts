@@ -1,12 +1,12 @@
 import type { ApprovedSnapshot } from "./registry-types";
 import type { ActorContext } from "@/policy/actor-context";
 
-export type ResolveModelInput = {
+export interface ResolveModelInput {
   organizationId: string;
   actorContext: ActorContext;
   requestedModelId?: string;
   locale?: string;
-};
+}
 
 export type ResolveResult =
   | { ok: true; snapshot: ApprovedSnapshot; reason: "approved" }

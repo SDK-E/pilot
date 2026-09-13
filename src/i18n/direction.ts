@@ -1,4 +1,5 @@
 import { isRTL, getDirection } from "./locale-registry";
+
 import type { TextDirection } from "./locale-definition";
 
 export function resolveDirection(

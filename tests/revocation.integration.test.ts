@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { authorize } from "@/policy/authorize";
+
 import type { ActorContext } from "@/policy/actor-context";
 
-type RawMembership = {
+interface RawMembership {
   id: string;
   organizationId: string;
   workosUserId: string;
@@ -12,7 +14,7 @@ type RawMembership = {
   roleSlug: string;
   createdAt: Date;
   updatedAt: Date;
-};
+}
 
 async function mockContext(
   membership: RawMembership | undefined,

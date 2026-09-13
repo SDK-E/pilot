@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, eq, inArray } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import {
   conversations,
@@ -66,7 +67,7 @@ export async function readRuntimeConversationScratchpad(input: {
   executionId: string;
 }) {
   const execution = await getRuntimeConversation(input);
-  if (!execution) return undefined;
+  if (!execution) return;
   const content = await getConversationScratchpad({
     organizationId: input.organizationId,
     conversationId: execution.conversationId,
@@ -81,7 +82,7 @@ export async function writeRuntimeConversationScratchpad(input: {
   content: string;
 }) {
   const execution = await getRuntimeConversation(input);
-  if (!execution) return undefined;
+  if (!execution) return;
   const [scratchpad] = await db
     .insert(conversationScratchpads)
     .values({

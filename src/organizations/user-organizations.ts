@@ -2,10 +2,10 @@ import "server-only";
 
 import { getWorkOS } from "@workos-inc/authkit-nextjs";
 
-export type UserOrganization = {
+export interface UserOrganization {
   id: string;
   name: string;
-};
+}
 
 export async function listUserOrganizations(userId: string) {
   const organizations: UserOrganization[] = [];

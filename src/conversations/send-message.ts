@@ -1,20 +1,20 @@
 import "server-only";
 
 import { generateConversationReply } from "@/ai/pilot-ai-client";
+import { buildAttachmentContext } from "@/conversations/attachment-context";
 import { createConversationMessage } from "@/conversations/conversation-repository";
 import { isResearchAvailable } from "@/conversations/research-availability";
-import { buildAttachmentContext } from "@/conversations/attachment-context";
 import {
   allowedProductionToolIds,
   type ProductionToolId,
 } from "@/conversations/tool-authorization";
-import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 import {
   finishExecution,
   startExecution,
 } from "@/executions/execution-repository";
+import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 
-type SendConversationMessageInput = {
+interface SendConversationMessageInput {
   organizationId: string;
   worker: {
     id: string;
@@ -27,7 +27,7 @@ type SendConversationMessageInput = {
   conversationId: string;
   userId: string;
   message: string;
-};
+}
 
 function toStoredCount(value: number): number | undefined {
   if (!Number.isSafeInteger(value) || value < 0 || value > 2_147_483_647) {
@@ -49,7 +49,7 @@ async function projectContext(input: SendConversationMessageInput) {
     userId: input.userId,
     conversationId: input.conversationId,
   });
-  if (!project) return undefined;
+  if (!project) return;
   return {
     id: project.id,
     instructions: project.instructions || undefined,

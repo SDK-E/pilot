@@ -1,9 +1,11 @@
+import { withAuth } from "@workos-inc/authkit-nextjs";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { withAuth } from "@workos-inc/authkit-nextjs";
+
 import { Button } from "@/components/ui/button";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { listProjects } from "@/projects/project-repository";
+
 import { createProjectAction } from "./actions";
 
 export default async function ProjectsPage() {
@@ -58,7 +60,7 @@ export default async function ProjectsPage() {
           Create project
         </Button>
       </form>
-      {projects.length ? (
+      {projects.length > 0 ? (
         <ul className="grid gap-3 sm:grid-cols-2">
           {projects.map((project) => (
             <li key={project.id}>

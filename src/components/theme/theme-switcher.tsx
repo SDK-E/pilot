@@ -1,8 +1,9 @@
 "use client";
 
-import * as React from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import * as React from "react";
+
 import { Button } from "@/components/ui/button";
 
 const themes = [
@@ -14,7 +15,7 @@ const themes = [
 export function ThemeSwitcher() {
   const { setTheme, theme } = useTheme();
   const isHydrated = React.useSyncExternalStore(
-    () => () => undefined,
+    () => () => {},
     () => true,
     () => false,
   );
@@ -34,7 +35,9 @@ export function ThemeSwitcher() {
             aria-pressed={isSelected}
             className="rounded-xl"
             key={id}
-            onClick={() => setTheme(id)}
+            onClick={() => {
+              setTheme(id);
+            }}
             size="icon-xs"
             type="button"
             variant={isSelected ? "secondary" : "ghost"}

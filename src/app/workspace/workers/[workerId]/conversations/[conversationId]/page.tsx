@@ -1,34 +1,36 @@
-import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
+
+import { listConversationApprovals } from "@/approvals/approval-repository";
 import { ConversationShell } from "@/components/conversations/conversation-shell";
 import { listConversationAttachments } from "@/conversations/attachment-repository";
-import { getConversationScratchpad } from "@/conversations/scratchpad-repository";
-import { listMessageSources } from "@/conversations/research-evidence";
 import {
   getConversation,
   listConversationMessages,
 } from "@/conversations/conversation-repository";
-import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { listMessageSources } from "@/conversations/research-evidence";
+import { getConversationScratchpad } from "@/conversations/scratchpad-repository";
 import { listConversationActivity } from "@/executions/execution-repository";
-import { getWorker } from "@/workers/worker-repository";
-import { getUserPreferences } from "@/users/user-preference-repository";
-import { listConversationTasks } from "@/tasks/task-repository";
-import { listConversationApprovals } from "@/approvals/approval-repository";
+import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import {
   getProjectMemoryContextForConversation,
   listProjects,
 } from "@/projects/project-repository";
+import { listConversationTasks } from "@/tasks/task-repository";
+import { getUserPreferences } from "@/users/user-preference-repository";
+import { getWorker } from "@/workers/worker-repository";
+
+import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Conversation" };
 
 const conversationIdSchema = z.uuid();
 const workerIdSchema = z.uuid();
 
-type ConversationPageProps = {
+interface ConversationPageProps {
   params: Promise<{ conversationId: string; workerId: string }>;
-};
+}
 
 export default async function ConversationPage({
   params,

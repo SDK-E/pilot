@@ -1,6 +1,7 @@
+import { withAuth } from "@workos-inc/authkit-nextjs";
+
 import { AgentFleetShell } from "@/components/agents/agent-fleet-sidebar";
 import { ComposerPreferencesProvider } from "@/components/conversations/composer-preferences";
-import { withAuth } from "@workos-inc/authkit-nextjs";
 import { listRecentOrganizationConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { listUserOrganizations } from "@/organizations/user-organizations";

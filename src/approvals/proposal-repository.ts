@@ -1,8 +1,10 @@
 import "server-only";
 
 import { and, desc, eq } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import { actionProposals } from "@/db/schema";
+
 import type { ActionProposal } from "./action-proposal-types";
 
 export async function createProposal(input: {
@@ -131,7 +133,7 @@ function toActionProposal(
     permissionSnapshot: row.permissionSnapshot as Record<string, unknown>,
     expiresAt: row.expiresAt,
     riskSummary: row.riskSummary,
-    status: row.status as ActionProposal["status"],
+    status: row.status,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -155,7 +157,7 @@ function computeProposalHashFor(input: {
   for (let i = 0; i < payload.length; i++) {
     const char = payload.charCodeAt(i);
     hash = (hash << 5) - hash + char;
-    hash |= 0;
+    hash = Math.trunc(hash);
   }
   return `ph_${Math.abs(hash).toString(16).padStart(8, "0")}`;
 }

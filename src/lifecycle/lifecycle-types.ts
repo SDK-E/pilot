@@ -3,7 +3,7 @@ export type LifecyclePhase =
 
 export type LifecycleStatus = LifecyclePhase;
 
-export type LifecycleOperation = {
+export interface LifecycleOperation {
   id: string;
   organizationId: string;
   actorId: string;
@@ -16,27 +16,27 @@ export type LifecycleOperation = {
   errorCode: string | null;
   createdAt: Date;
   updatedAt: Date;
-};
+}
 
-export type CreateOperationInput = {
+export interface CreateOperationInput {
   organizationId: string;
   actorId: string;
   resourceType: string;
   resourceId: string;
   phase?: LifecyclePhase;
-};
+}
 
-export type UpdateOperationStatusInput = {
+export interface UpdateOperationStatusInput {
   operationId: string;
   organizationId: string;
   status: LifecycleStatus;
   errorCode?: string | null;
   attempts?: number;
   nextAttemptAt?: Date | null;
-};
+}
 
-export type ListOperationsInput = {
+export interface ListOperationsInput {
   organizationId: string;
   phase?: LifecyclePhase;
   status?: LifecycleStatus;
-};
+}

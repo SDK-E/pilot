@@ -1,8 +1,10 @@
-import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
 import { AuthKitProvider } from "@workos-inc/authkit-nextjs/components";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { JetBrains_Mono } from "next/font/google";
+
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
+
+import type { Metadata } from "next";
 import "./globals.css";
 
 const jetbrainsMono = JetBrains_Mono({

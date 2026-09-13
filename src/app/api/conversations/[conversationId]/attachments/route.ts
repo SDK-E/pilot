@@ -1,18 +1,22 @@
 import { randomUUID } from "node:crypto";
+
 import { del, put } from "@vercel/blob";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
+
 import { createConversationAttachment } from "@/conversations/attachment-repository";
 import { getConversation } from "@/conversations/conversation-repository";
-import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import {
   isAcceptedPrivateFile,
   safePrivateFilename,
 } from "@/files/private-file-policy";
+import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 
 export const runtime = "nodejs";
 
-type RouteContext = { params: Promise<{ conversationId: string }> };
+interface RouteContext {
+  params: Promise<{ conversationId: string }>;
+}
 
 function response(message: string, status: number) {
   return Response.json({ error: message }, { status });
@@ -26,7 +30,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     return response("Your organization access is no longer active.", 403);
   const conversationId = z.uuid().safeParse((await params).conversationId);
   if (!conversationId.success) return response("Conversation not found.", 404);
-  const formData = await request.formData().catch(() => undefined);
+  const formData = await request.formData().catch(() => {});
   const workerId = z.uuid().safeParse(formData?.get("workerId"));
   const file = formData?.get("file");
   if (!workerId.success || !(file instanceof File))
@@ -61,7 +65,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     if (!attachment) throw new Error("Attachment metadata could not be saved.");
     return Response.json({ id: attachment.id }, { status: 201 });
   } catch {
-    await del(blob.url).catch(() => undefined);
+    await del(blob.url).catch(() => {});
     return response("Pilot could not attach this file.", 500);
   }
 }

@@ -1,5 +1,6 @@
 import "server-only";
 import { and, desc, eq } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import { conversations, tasks } from "@/db/schema";
 
@@ -25,7 +26,7 @@ export async function createTask(input: {
       .from(conversations)
       .where(and(...conditions))
       .limit(1);
-    if (!conversation) return undefined;
+    if (!conversation) return;
   }
   const [task] = await db
     .insert(tasks)

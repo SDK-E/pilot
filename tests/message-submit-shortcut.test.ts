@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { KeyboardEvent } from "react";
+
 import {
   shouldInsertComposerNewline,
   shouldSubmitMessage,
 } from "@/hooks/use-message-submit-shortcut";
+
+import type { KeyboardEvent } from "react";
 
 function keyEvent(overrides: Record<string, unknown> = {}) {
   return {
@@ -49,7 +51,7 @@ test("mod-enter composer does not create blank invisible lines", () => {
   assert.equal(
     shouldInsertComposerNewline(
       {
-        currentTarget: { value: "   " },
+        currentTarget: { value: " ".repeat(3) },
         key: "Enter",
         metaKey: false,
         ctrlKey: false,

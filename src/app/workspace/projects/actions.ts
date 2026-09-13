@@ -1,12 +1,14 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { del } from "@vercel/blob";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
+
 import { deleteProjectMemory } from "@/ai/pilot-ai-client";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { listProjectFilePaths } from "@/projects/project-file-repository";
 import {
   addProjectConversation,
   createProject,
@@ -17,7 +19,6 @@ import {
   removeProjectConversation,
   updateProject,
 } from "@/projects/project-repository";
-import { listProjectFilePaths } from "@/projects/project-file-repository";
 
 const projectSchema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -36,20 +37,20 @@ async function owner() {
   return { organizationId, userId: user.id };
 }
 
-export type DeleteProjectState = {
+export interface DeleteProjectState {
   message?: string;
   status: "idle" | "error" | "success";
-};
+}
 
 const conversationProjectSchema = z.object({
   conversationId: z.uuid(),
   projectId: z.uuid().nullable(),
 });
 
-export type ConversationProjectState = {
+export interface ConversationProjectState {
   message?: string;
   status: "error" | "success";
-};
+}
 
 export async function createProjectAction(formData: FormData) {
   const input = projectSchema.parse({

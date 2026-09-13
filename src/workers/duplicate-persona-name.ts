@@ -14,5 +14,5 @@ export function nextDuplicatePersonaName(
     if (!existingNames.has(candidate)) return candidate;
   }
 
-  return undefined;
+  return;
 }

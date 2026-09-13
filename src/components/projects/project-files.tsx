@@ -1,15 +1,16 @@
 "use client";
 
-import { useRef, useState } from "react";
 import { FileText, Paperclip, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 
-type ProjectFile = {
+interface ProjectFile {
   id: string;
   filename: string;
   contentType: string;
   byteSize: number;
-};
+}
 
 export function ProjectFiles({
   projectId,
@@ -35,11 +36,11 @@ export function ProjectFiles({
       });
       if (!response.ok)
         throw new Error("Pilot could not upload this project file.");
-      window.location.reload();
-    } catch (caught) {
+      location.reload();
+    } catch (error_) {
       setError(
-        caught instanceof Error
-          ? caught.message
+        error_ instanceof Error
+          ? error_.message
           : "Pilot could not upload this project file.",
       );
     } finally {
@@ -56,11 +57,11 @@ export function ProjectFiles({
       });
       if (!response.ok)
         throw new Error("Pilot could not delete this project file.");
-      window.location.reload();
-    } catch (caught) {
+      location.reload();
+    } catch (error_) {
       setError(
-        caught instanceof Error
-          ? caught.message
+        error_ instanceof Error
+          ? error_.message
           : "Pilot could not delete this project file.",
       );
     } finally {
@@ -106,7 +107,7 @@ export function ProjectFiles({
           {error}
         </p>
       ) : null}
-      {files.length ? (
+      {files.length > 0 ? (
         <ul className="mt-4 divide-y divide-border rounded-xl border border-border">
           {files.map((file) => (
             <li className="flex items-center gap-3 px-3 py-2" key={file.id}>

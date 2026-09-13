@@ -1,6 +1,6 @@
 export type RegistryStatus = "active" | "inactive" | "degraded" | "deleted";
 
-export type ProviderDefinition = {
+export interface ProviderDefinition {
   id: string;
   organizationId: string;
   providerKey: string;
@@ -9,9 +9,9 @@ export type ProviderDefinition = {
   connectionId: string | null;
   createdAt: Date;
   updatedAt: Date;
-};
+}
 
-export type ModelDefinition = {
+export interface ModelDefinition {
   id: string;
   organizationId: string;
   modelId: string;
@@ -33,11 +33,11 @@ export type ModelDefinition = {
   version: number;
   createdAt: Date;
   updatedAt: Date;
-};
+}
 
 export type CapabilityType = "tool" | "skill" | "agent";
 
-export type CapabilityDefinition = {
+export interface CapabilityDefinition {
   id: string;
   organizationId: string;
   capabilityId: string;
@@ -51,9 +51,9 @@ export type CapabilityDefinition = {
   labelText: string | null;
   createdAt: Date;
   updatedAt: Date;
-};
+}
 
-export type ApprovedSnapshot = {
+export interface ApprovedSnapshot {
   id: string;
   organizationId: string;
   actorId: string;
@@ -67,16 +67,16 @@ export type ApprovedSnapshot = {
   version: number;
   approvedAt: Date;
   expiresAt: Date | null;
-};
+}
 
-export type CreateProviderInput = {
+export interface CreateProviderInput {
   organizationId: string;
   providerKey: string;
   adapterKey: string;
   connectionId: string | null;
-};
+}
 
-export type CreateModelInput = {
+export interface CreateModelInput {
   organizationId: string;
   modelId: string;
   providerId: string;
@@ -90,9 +90,9 @@ export type CreateModelInput = {
   locales: string[];
   region: string | null;
   version: number;
-};
+}
 
-export type CreateCapabilityInput = {
+export interface CreateCapabilityInput {
   organizationId: string;
   capabilityId: string;
   type: CapabilityType;
@@ -103,4 +103,4 @@ export type CreateCapabilityInput = {
   lifecycle: CapabilityDefinition["lifecycle"];
   labelKey: string | null;
   labelText: string | null;
-};
+}

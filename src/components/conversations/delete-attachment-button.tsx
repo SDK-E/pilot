@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 export function DeleteAttachmentButton({
   attachmentId,
@@ -35,7 +36,7 @@ export function DeleteAttachmentButton({
         method: "DELETE",
       });
       if (!response.ok) {
-        const payload = (await response.json().catch(() => undefined)) as
+        const payload = (await response.json().catch(() => {})) as
           { error?: unknown } | undefined;
         throw new Error(
           typeof payload?.error === "string"
@@ -45,10 +46,10 @@ export function DeleteAttachmentButton({
       }
       setOpen(false);
       router.refresh();
-    } catch (cause) {
+    } catch (error_) {
       setError(
-        cause instanceof Error
-          ? cause.message
+        error_ instanceof Error
+          ? error_.message
           : "Pilot could not delete this file.",
       );
     } finally {

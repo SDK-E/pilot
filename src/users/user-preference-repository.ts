@@ -1,6 +1,7 @@
 import "server-only";
 
 import { eq } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import { userPreferences } from "@/db/schema";
 import {

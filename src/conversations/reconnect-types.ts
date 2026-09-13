@@ -10,11 +10,11 @@ export interface ReconnectCursor {
 
 export interface SnapshotRecovery {
   executionId: string;
-  messages: Array<{
+  messages: {
     messageId: string;
     role: "user" | "worker";
     parts: unknown[];
-  }>;
+  }[];
   lastSequence: number;
   lastEventId: string;
 }

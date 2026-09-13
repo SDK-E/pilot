@@ -1,12 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
 import { Trash2 } from "lucide-react";
+import { useActionState } from "react";
+
 import {
   deletePersonaAction,
   type DeletePersonaState,
 } from "@/app/workspace/personas/actions";
-import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 const initialState: DeletePersonaState = { status: "idle" };
 

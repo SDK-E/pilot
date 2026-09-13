@@ -7,7 +7,7 @@ export function isResearchAvailable(baseAgentId: string) {
 export type ResearchAvailability = "available" | "disabled" | "no-agent";
 
 export function getResearchState(
-  agents: Array<{ baseAgentId: string }>,
+  agents: { baseAgentId: string }[],
 ): ResearchAvailability {
   const hasResearchAgent = agents.some(
     (agent) => agent.baseAgentId === "research",

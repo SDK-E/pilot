@@ -1,22 +1,24 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { ArrowLeft, Bot } from "lucide-react";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getWorker } from "@/workers/worker-repository";
 
+import type { Metadata } from "next";
+
 export const metadata: Metadata = { title: "Agent" };
 
 const workerIdSchema = z.uuid();
 
-type WorkerPageProps = {
+interface WorkerPageProps {
   params: Promise<{ workerId: string }>;
-};
+}
 
 export default async function WorkerPage({ params }: WorkerPageProps) {
   const { workerId } = await params;

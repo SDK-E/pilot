@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { FolderKanban, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+
 import { setConversationProjectAction } from "@/app/workspace/projects/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,13 +17,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type Project = { id: string; name: string };
+interface Project {
+  id: string;
+  name: string;
+}
 
-type ConversationProjectPickerProps = {
+interface ConversationProjectPickerProps {
   conversationId: string;
   currentProject?: Project;
   projects: Project[];
-};
+}
 
 export function ConversationProjectPicker({
   conversationId,
@@ -68,7 +72,9 @@ export function ConversationProjectPicker({
         <DropdownMenuContent align="end" className="w-64">
           <DropdownMenuLabel>Choose a project</DropdownMenuLabel>
           <DropdownMenuRadioGroup
-            onValueChange={(projectId) => setProject(projectId)}
+            onValueChange={(projectId) => {
+              setProject(projectId);
+            }}
             value={currentProject?.id}
           >
             {projects.map((project) => (
@@ -81,7 +87,9 @@ export function ConversationProjectPicker({
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onSelect={() => setProject(null)}
+                onSelect={() => {
+                  setProject(null);
+                }}
                 variant="destructive"
               >
                 <X aria-hidden="true" /> Remove from project

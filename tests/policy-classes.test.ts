@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import test from "node:test";
+
 import {
   classifyAction,
   checkPolicyClass,
@@ -98,11 +99,11 @@ test("policy-classes: destructive always requires approval and grant", () => {
 });
 
 test("policy-classes: all policy classes defined", () => {
-  const classes = Object.keys(POLICY_CLASSES) as Array<
-    keyof typeof POLICY_CLASSES
-  >;
+  const classes = Object.keys(
+    POLICY_CLASSES,
+  ) as (keyof typeof POLICY_CLASSES)[];
   assert.strictEqual(classes.length, 6);
-  const expectedClasses: Array<keyof typeof POLICY_CLASSES> = [
+  const expectedClasses: (keyof typeof POLICY_CLASSES)[] = [
     "read",
     "local_reversible",
     "external_write",
@@ -116,7 +117,7 @@ test("policy-classes: all policy classes defined", () => {
 });
 
 test("policy-classes: each class has risk level and scope", () => {
-  for (const [, def] of Object.entries(POLICY_CLASSES)) {
+  for (const def of Object.values(POLICY_CLASSES)) {
     assert.ok(
       ["low", "medium", "high", "critical"].includes(def.riskLevel),
       `${def.class} has invalid riskLevel: ${def.riskLevel}`,

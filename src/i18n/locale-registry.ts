@@ -39,7 +39,7 @@ export function getLocale(tag: string): LocaleDefinition | undefined {
 
 export function isLocaleComplete(tag: string): boolean {
   const locale = getLocale(tag);
-  return locale?.coverage === "complete" && locale.available === true;
+  return locale?.coverage === "complete" && locale.available;
 }
 
 export function isRTL(tag: string): boolean {

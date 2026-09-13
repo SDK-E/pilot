@@ -1,19 +1,24 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
+
 import {
   getConversation,
   listConversationMessages,
 } from "@/conversations/conversation-repository";
-import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { listMessageSources } from "@/conversations/research-evidence";
+import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 
 export const runtime = "nodejs";
 
 const workerIdSchema = z.uuid();
 
-type RouteContext = { params: Promise<{ conversationId: string }> };
+interface RouteContext {
+  params: Promise<{ conversationId: string }>;
+}
 
-/** Returns the current owner's rendered chat records after a stream completes. */
+/**
+Returns the current owner's rendered chat records after a stream completes.
+*/
 export async function GET(request: Request, { params }: RouteContext) {
   const { user, organizationId } = await withAuth({ ensureSignedIn: true });
   if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId)) {

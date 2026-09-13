@@ -1,17 +1,19 @@
+import { withAuth } from "@workos-inc/authkit-nextjs";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
+
 import { DeleteProjectButton } from "@/components/projects/delete-project-button";
 import { ProjectFiles } from "@/components/projects/project-files";
+import { Button } from "@/components/ui/button";
 import { listOrganizationConversations } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { listProjectFiles } from "@/projects/project-file-repository";
 import {
   getProject,
   listProjectConversations,
 } from "@/projects/project-repository";
-import { listProjectFiles } from "@/projects/project-file-repository";
+
 import {
   addProjectConversationAction,
   removeProjectConversationAction,
@@ -127,7 +129,7 @@ export default async function ProjectPage({
             </Button>
           </form>
         ) : null}
-        {projectChats.length ? (
+        {projectChats.length > 0 ? (
           <ul className="mt-4 space-y-2">
             {projectChats.map((chat) => (
               <li

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, desc, eq } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import {
   conversations,
@@ -9,7 +10,10 @@ import {
   workers,
 } from "@/db/schema";
 
-type ProjectOwner = { organizationId: string; userId: string };
+interface ProjectOwner {
+  organizationId: string;
+  userId: string;
+}
 
 export async function createProject(
   input: ProjectOwner & {
@@ -118,7 +122,7 @@ export async function addProjectConversation(
   input: ProjectOwner & { projectId: string; conversationId: string },
 ) {
   const project = await getProject(input);
-  if (!project) return undefined;
+  if (!project) return;
   const [conversation] = await db
     .select({ id: conversations.id })
     .from(conversations)
@@ -130,7 +134,7 @@ export async function addProjectConversation(
       ),
     )
     .limit(1);
-  if (!conversation) return undefined;
+  if (!conversation) return;
   await db
     .insert(projectConversations)
     .values({
@@ -148,7 +152,7 @@ export async function removeProjectConversation(
   input: ProjectOwner & { projectId: string; conversationId: string },
 ) {
   const project = await getProject(input);
-  if (!project) return undefined;
+  if (!project) return;
 
   const [removed] = await db
     .delete(projectConversations)

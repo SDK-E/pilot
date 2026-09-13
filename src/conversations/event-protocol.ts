@@ -39,7 +39,7 @@ export type EventPayload =
       kind: "user_input_required";
       questionId: string;
       question: string;
-      options?: Array<{ label: string; description?: string }>;
+      options?: { label: string; description?: string }[];
       selectionMode?: "single_select" | "multi_select";
     }
   | { kind: "user_input_resumed"; questionId: string; answer: string }
@@ -65,30 +65,42 @@ export function isDataEvent(event: VersionedEvent): boolean {
 
 export function eventTypeFromPayload(payload: EventPayload): EventType {
   switch (payload.kind) {
-    case "text_checkpoint":
+    case "text_checkpoint": {
       return "text.checkpoint";
-    case "execution_started":
+    }
+    case "execution_started": {
       return "execution.started";
-    case "execution_completed":
+    }
+    case "execution_completed": {
       return "execution.completed";
-    case "execution_failed":
+    }
+    case "execution_failed": {
       return "execution.failed";
-    case "execution_cancelled":
+    }
+    case "execution_cancelled": {
       return "execution.cancelled";
-    case "user_input_required":
+    }
+    case "user_input_required": {
       return "user_input_required";
-    case "user_input_resumed":
+    }
+    case "user_input_resumed": {
       return "user_input.resumed";
-    case "suspended":
+    }
+    case "suspended": {
       return "suspended";
-    case "artifact_ref":
+    }
+    case "artifact_ref": {
       return "artifact.ref";
-    case "citation_ref":
+    }
+    case "citation_ref": {
       return "citation.ref";
-    case "tool_summary":
+    }
+    case "tool_summary": {
       return "tool.summary";
-    case "system":
+    }
+    case "system": {
       return "system";
+    }
   }
 }
 
@@ -98,8 +110,8 @@ export function validateEventSequence(events: VersionedEvent[]): {
   duplicateIndex?: number;
 } {
   let expected = 0;
-  for (let i = 0; i < events.length; i++) {
-    const seq = events[i].sequence;
+  for (const [i, event_] of events.entries()) {
+    const seq = event_.sequence;
     if (seq < expected) {
       return { valid: false, duplicateIndex: i };
     }

@@ -1,10 +1,10 @@
 import "server-only";
 
-import { buildPersonaInstructions } from "@/agents/persona-instructions";
 import {
   defaultEnabledToolIds,
   defaultToolApprovalRules,
 } from "@/agents/agent-configuration";
+import { buildPersonaInstructions } from "@/agents/persona-instructions";
 import { createConversation } from "@/conversations/conversation-repository";
 import { deriveConversationTitle } from "@/conversations/conversation-title";
 import {
@@ -13,19 +13,19 @@ import {
   getWorkerByBaseAgentId,
 } from "@/workers/worker-repository";
 
-type ActiveMembership = {
+interface ActiveMembership {
   id: string;
   organizationName: string;
   role: { slug: string };
-};
+}
 
-type StartChatInput = {
+interface StartChatInput {
   organizationId: string;
   membership: ActiveMembership;
   user: { id: string; email: string };
   message: string;
   workerId?: string;
-};
+}
 
 export type PreparedConversation =
   | { ok: false; message: string }

@@ -1,7 +1,7 @@
 "use client";
 
-import type { KeyboardEvent } from "react";
 import type { SendMessageShortcut } from "@/users/user-preferences";
+import type { KeyboardEvent } from "react";
 
 export function shouldSubmitMessage(
   event: KeyboardEvent<HTMLTextAreaElement>,

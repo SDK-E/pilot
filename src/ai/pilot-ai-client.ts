@@ -20,7 +20,7 @@ const userInputRequiredResponseSchema = z.object({
   object: z.literal("pilot.user_input.required"),
   run_id: z.string().min(1),
   tool_call_id: z.string().min(1),
-  question: z.string().trim().min(1).max(1_000),
+  question: z.string().trim().min(1).max(1000),
   options: z
     .array(
       z.object({
@@ -127,7 +127,7 @@ export type PilotAiStreamEvent =
       runId: string;
       toolCallId: string;
       question: string;
-      options?: Array<{ label: string; description?: string }>;
+      options?: { label: string; description?: string }[];
       selectionMode?: "single_select" | "multi_select";
     }
   | {
@@ -190,15 +190,13 @@ function headersForRuntime(
     "x-pilot-approval-required-tool-ids": JSON.stringify(
       approvalRequiredToolIds(request),
     ),
-    ...(request.project
-      ? {
-          "x-pilot-project-id": request.project.id,
-          "x-pilot-project-instructions": request.project.instructions ?? "",
-          "x-pilot-project-shared-memory-enabled": String(
-            request.project.sharedMemoryEnabled,
-          ),
-        }
-      : {}),
+    ...(request.project && {
+      "x-pilot-project-id": request.project.id,
+      "x-pilot-project-instructions": request.project.instructions ?? "",
+      "x-pilot-project-shared-memory-enabled": String(
+        request.project.sharedMemoryEnabled,
+      ),
+    }),
   };
 }
 
@@ -384,10 +382,23 @@ export async function* parseConversationRuntimeStream(
       for (const event of events) {
         const parsed = handleEvent(event);
         if (!parsed) continue;
-        if (parsed.type === "completed") finalEvent = parsed;
-        else if (parsed.type === "suspended") suspensionEvent = parsed;
-        else if (parsed.type === "user_input_required") userInputEvent = parsed;
-        else yield parsed;
+        switch (parsed.type) {
+          case "completed": {
+            finalEvent = parsed;
+            break;
+          }
+          case "suspended": {
+            suspensionEvent = parsed;
+            break;
+          }
+          case "user_input_required": {
+            userInputEvent = parsed;
+            break;
+          }
+          default: {
+            yield parsed;
+          }
+        }
       }
     }
   } finally {
@@ -397,10 +408,23 @@ export async function* parseConversationRuntimeStream(
   buffer += decoder.decode();
   if (buffer) {
     const parsed = handleEvent(buffer);
-    if (parsed?.type === "completed") finalEvent = parsed;
-    else if (parsed?.type === "suspended") suspensionEvent = parsed;
-    else if (parsed?.type === "user_input_required") userInputEvent = parsed;
-    else if (parsed) yield parsed;
+    switch (parsed?.type) {
+      case "completed": {
+        finalEvent = parsed;
+        break;
+      }
+      case "suspended": {
+        suspensionEvent = parsed;
+        break;
+      }
+      case "user_input_required": {
+        userInputEvent = parsed;
+        break;
+      }
+      default: {
+        if (parsed) yield parsed;
+      }
+    }
   }
   if (suspensionEvent) {
     yield suspensionEvent;

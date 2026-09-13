@@ -1,8 +1,9 @@
-import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { Sparkles } from "lucide-react";
-import { isResearchAvailable } from "@/conversations/research-availability";
+import { redirect } from "next/navigation";
+
 import { NewChatForm } from "@/components/conversations/new-chat-form";
+import { isResearchAvailable } from "@/conversations/research-availability";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
 import { listWorkers } from "@/workers/worker-repository";

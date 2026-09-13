@@ -1,14 +1,15 @@
+import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
 import { withAuth } from "@workos-inc/authkit-nextjs";
+import { createElement, type ReactElement } from "react";
 import { z } from "zod";
+
+import { ResearchExportDocument } from "@/components/conversations/research-export-document";
 import {
   getConversation,
   listConversationMessages,
 } from "@/conversations/conversation-repository";
 import { listMessageSources } from "@/conversations/research-evidence";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
-import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
-import { createElement, type ReactElement } from "react";
-import { ResearchExportDocument } from "@/components/conversations/research-export-document";
 
 export async function GET(
   request: Request,

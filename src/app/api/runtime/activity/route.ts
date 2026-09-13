@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { verifyPilotRuntimeCallback } from "@/ai/pilot-runtime-oidc";
 import {
   isSafeSkillId,
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => undefined);
+  const body = await request.json().catch(() => {});
   const input = inputSchema.safeParse(body);
   if (!input.success) {
     return Response.json({ error: "Invalid activity event." }, { status: 400 });

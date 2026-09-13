@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   Gauge,
   FolderKanban,
@@ -9,10 +8,12 @@ import {
   Settings,
   Workflow,
 } from "lucide-react";
+import Link from "next/link";
+
 import { AccountMenu } from "@/components/agents/account-menu";
 import { PilotWordmark } from "@/components/brand/pilot-wordmark";
-import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { ChatCommandPalette } from "@/components/conversations/chat-command-palette";
+import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -29,23 +30,23 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 
-type RecentChat = {
+interface RecentChat {
   id: string;
   workerId: string;
   agentName: string;
   title: string | null;
   updatedLabel: string;
   latestMessagePreview: string | null;
-};
+}
 
-type AgentFleetShellProps = {
+interface AgentFleetShellProps {
   activeOrganizationId?: string;
   children: React.ReactNode;
-  organizations: Array<{ id: string; name: string }>;
+  organizations: { id: string; name: string }[];
   recentChats: RecentChat[];
   user?: { email: string; name?: string | null };
   uiLocale?: string | null;
-};
+}
 
 export function AgentFleetShell({
   activeOrganizationId,
@@ -56,7 +57,7 @@ export function AgentFleetShell({
   // uiLocale is reserved for Plan 08 i18n runtime integration.
   uiLocale: _uiLocale,
 }: AgentFleetShellProps) {
-  void _uiLocale;
+  _uiLocale;
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -102,7 +103,7 @@ export function AgentFleetShell({
               Recent conversations
             </SidebarGroupLabel>
             <SidebarGroupContent className="min-h-0 flex-1 overflow-y-auto scrollbar-thin">
-              {recentChats.length ? (
+              {recentChats.length > 0 ? (
                 <SidebarMenu className="gap-0.5 px-0.5">
                   {recentChats.map((chat) => (
                     <SidebarMenuItem key={chat.id}>

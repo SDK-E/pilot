@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
+import { redirect } from "next/navigation";
+
 import { WorkQueue } from "@/components/work/work-queue";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { listTasks } from "@/tasks/task-repository";

@@ -2,18 +2,18 @@ import "server-only";
 
 import type { ActorContext } from "./actor-context";
 
-export type AuthorizationDecision = {
+export interface AuthorizationDecision {
   decision: "allow" | "deny" | "requires_approval";
   reasonCode: string;
-};
+}
 
-type Resource = {
+interface Resource {
   type: string;
   id?: string;
   organizationId: string;
   createdByWorkosUserId?: string;
   decidedByWorkosUserId?: string;
-};
+}
 
 export function authorize(input: {
   actor: ActorContext;
@@ -33,27 +33,36 @@ export function authorize(input: {
   const [, actionVerb] = action.split(":") as [string, string];
 
   switch (action) {
-    case "read:conversation":
+    case "read:conversation": {
       return authorizeReadConversation(actor, resource);
-    case "write:conversation":
+    }
+    case "write:conversation": {
       return authorizeWriteConversation(actor, resource);
-    case "read:project":
+    }
+    case "read:project": {
       return authorizeReadProject(actor, resource);
-    case "write:project":
+    }
+    case "write:project": {
       return authorizeWriteProject(actor, resource);
-    case "read:approval":
+    }
+    case "read:approval": {
       return authorizeReadApproval(actor, resource);
-    case "decide:approval":
+    }
+    case "decide:approval": {
       return authorizeDecideApproval(actor, resource);
-    case "execute:tool":
+    }
+    case "execute:tool": {
       return authorizeExecuteTool(actor, resource);
-    case "execution:run":
+    }
+    case "execution:run": {
       return authorizeExecutionRun(actor, resource);
-    default:
+    }
+    default: {
       if (actionVerb === "read") {
         return { decision: "deny", reasonCode: "unknown_action" };
       }
       return { decision: "deny", reasonCode: "unknown_action" };
+    }
   }
 }
 
@@ -93,7 +102,7 @@ function authorizeReadProject(
   actor: ActorContext,
   _resource: Resource,
 ): AuthorizationDecision {
-  void _resource;
+  _resource;
   if (!actor.scope.includes("project:read")) {
     return { decision: "deny", reasonCode: "scope_missing" };
   }
@@ -104,7 +113,7 @@ function authorizeWriteProject(
   actor: ActorContext,
   _resource: Resource,
 ): AuthorizationDecision {
-  void _resource;
+  _resource;
   if (!actor.scope.includes("project:write")) {
     return { decision: "deny", reasonCode: "scope_missing" };
   }
@@ -115,7 +124,7 @@ function authorizeReadApproval(
   actor: ActorContext,
   _resource: Resource,
 ): AuthorizationDecision {
-  void _resource;
+  _resource;
   if (!actor.scope.includes("approval:read")) {
     return { decision: "deny", reasonCode: "scope_missing" };
   }

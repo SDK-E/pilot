@@ -36,24 +36,24 @@ export interface ReconcileInput {
 }
 
 export function reconcile(input: ReconcileInput): ReconciliationResult {
-  const handleMatch = input.handle !== null;
-  const stateMatch = input.durableStatus === input.runtimeStatus;
+  const isHandleMatch = input.handle !== null;
+  const isStateMatch = input.durableStatus === input.runtimeStatus;
 
   let resolvedStatus = input.durableStatus;
   let reason = "states match";
 
-  if (!handleMatch) {
+  if (!isHandleMatch) {
     resolvedStatus = "unknown";
     reason = "no handle found; runtime result present but dispatch record lost";
-  } else if (!stateMatch) {
+  } else if (!isStateMatch) {
     resolvedStatus = input.runtimeStatus;
     reason = "durable state repaired to match runtime state";
   }
 
   return {
     executionId: input.executionId,
-    handleMatch,
-    stateMatch,
+    handleMatch: isHandleMatch,
+    stateMatch: isStateMatch,
     resolvedStatus,
     reason,
   };

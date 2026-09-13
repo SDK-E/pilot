@@ -1,11 +1,14 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
+
 import { listConversationActivity } from "@/executions/execution-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 
 export const runtime = "nodejs";
 
-type RouteContext = { params: Promise<{ conversationId: string }> };
+interface RouteContext {
+  params: Promise<{ conversationId: string }>;
+}
 
 export async function GET(_request: Request, { params }: RouteContext) {
   const { user, organizationId } = await withAuth({ ensureSignedIn: true });

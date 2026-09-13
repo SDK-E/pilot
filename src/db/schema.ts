@@ -267,7 +267,7 @@ export const conversationMessages = pgTable(
     role: text("role").$type<"user" | "worker">().notNull(),
     content: text("content").notNull(),
     userQuestionOptions: jsonb("user_question_options").$type<
-      Array<{ label: string; description?: string }>
+      { label: string; description?: string }[]
     >(),
     userQuestionSelectionMode: text("user_question_selection_mode").$type<
       "single_select" | "multi_select"

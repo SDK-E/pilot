@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
+
 import type { SendMessageShortcut } from "@/users/user-preferences";
 
 const ComposerPreferencesContext =

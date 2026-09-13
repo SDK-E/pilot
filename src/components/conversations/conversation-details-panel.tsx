@@ -1,13 +1,6 @@
 "use client";
 
 import {
-  startTransition,
-  useActionState,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import {
   CheckCircle2,
   ChevronRight,
   CircleAlert,
@@ -16,16 +9,19 @@ import {
   Plus,
 } from "lucide-react";
 import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
   createConversationTaskAction,
   decideConversationApprovalAction,
   type CreateConversationTaskState,
   type DecideConversationApprovalState,
 } from "@/app/workspace/conversation-actions";
-import type { ActivityEventType } from "@/executions/activity-event";
-import {
-  groupActivityTimeline,
-  type TimelineActivity,
-} from "@/executions/activity-timeline";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -38,21 +34,27 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  groupActivityTimeline,
+  type TimelineActivity,
+} from "@/executions/activity-timeline";
+
+import type { ActivityEventType } from "@/executions/activity-event";
 
 const initialTaskState: CreateConversationTaskState = { status: "idle" };
 const initialApprovalState: DecideConversationApprovalState = {
   status: "idle",
 };
 
-type ConversationDetailsPanelProps = {
+interface ConversationDetailsPanelProps {
   activities: TimelineActivity[];
   agentId: string;
   conversationId: string;
-  tasks: Array<{ id: string; title: string; status: string }>;
-  approvals: Array<{ id: string; summary: string; status: string }>;
+  tasks: { id: string; title: string; status: string }[];
+  approvals: { id: string; summary: string; status: string }[];
   scratchpad: string;
   onTaskCreated: () => void;
-};
+}
 
 function activityIcon(type: ActivityEventType) {
   if (type === "execution.started" || type === "tool.started") {
@@ -98,11 +100,15 @@ export function ConversationDetailsPanel({
   const activityRuns = groupActivityTimeline(activities);
 
   useEffect(() => {
-    if (taskState.status === "success") {
-      taskFormRef.current?.reset();
-      startTransition(() => setTaskDialogOpen(false));
-      onTaskCreated();
+    if (taskState.status !== "success") {
+      return;
     }
+
+    taskFormRef.current?.reset();
+    startTransition(() => {
+      setTaskDialogOpen(false);
+    });
+    onTaskCreated();
   }, [onTaskCreated, taskState.status]);
 
   useEffect(() => {
@@ -136,7 +142,7 @@ export function ConversationDetailsPanel({
             <details className="group mt-3 rounded-xl border border-border bg-card/60 px-3 py-2 text-sm">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-medium [&::-webkit-details-marker]:hidden">
                 <span>
-                  {activityRuns.length
+                  {activityRuns.length > 0
                     ? `${activityRuns.length} response runs`
                     : "No activity yet"}
                 </span>
@@ -145,7 +151,7 @@ export function ConversationDetailsPanel({
                   className="size-4 text-muted-foreground transition-transform group-open:rotate-90"
                 />
               </summary>
-              {activityRuns.length ? (
+              {activityRuns.length > 0 ? (
                 <ol className="mt-3 space-y-3">
                   {activityRuns.map((run, index) => (
                     <li key={run.id}>
@@ -296,7 +302,7 @@ export function ConversationDetailsPanel({
                 </DialogContent>
               </Dialog>
             </div>
-            {tasks.length ? (
+            {tasks.length > 0 ? (
               <ul className="mt-3 space-y-2">
                 {tasks.map((task) => (
                   <li
@@ -323,7 +329,7 @@ export function ConversationDetailsPanel({
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
               Pilot pauses here before an action that needs your decision.
             </p>
-            {approvals.length ? (
+            {approvals.length > 0 ? (
               <ul className="mt-3 space-y-2">
                 {approvals.map((approval) => (
                   <li

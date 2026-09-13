@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { parseConversationRuntimeStream } from "@/ai/pilot-ai-client";
 
 const encoder = new TextEncoder();
@@ -115,7 +116,7 @@ test("AC-08-02: invalid event ordering (usage before text) does not produce fals
 
   const events = await Array.fromAsync(parseConversationRuntimeStream(stream));
   const textEvents = events.filter((e) => e.type === "text");
-  assert.ok(textEvents.length >= 1, "should still yield text events");
+  assert.ok(textEvents.length > 0, "should still yield text events");
   const completed = events.find((e) => e.type === "completed");
   assert.ok(completed, "should complete normally");
 });

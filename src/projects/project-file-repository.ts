@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, asc, eq } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import {
   conversations,
@@ -9,7 +10,10 @@ import {
   projects,
 } from "@/db/schema";
 
-type Owner = { organizationId: string; userId: string };
+interface Owner {
+  organizationId: string;
+  userId: string;
+}
 
 const fileFields = {
   id: projectFiles.id,

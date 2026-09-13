@@ -1,6 +1,7 @@
 import { del, get } from "@vercel/blob";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
+
 import {
   deleteConversationAttachment,
   getConversationAttachment,
@@ -8,14 +9,15 @@ import {
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 
 export const runtime = "nodejs";
-type RouteContext = { params: Promise<{ attachmentId: string }> };
+interface RouteContext {
+  params: Promise<{ attachmentId: string }>;
+}
 
 async function authorizedAttachment(params: RouteContext["params"]) {
   const { user, organizationId } = await withAuth({ ensureSignedIn: true });
   const attachmentId = z.uuid().safeParse((await params).attachmentId);
-  if (!organizationId || !attachmentId.success) return undefined;
-  if (!(await getActiveOrganizationMembership(user.id, organizationId)))
-    return undefined;
+  if (!organizationId || !attachmentId.success) return;
+  if (!(await getActiveOrganizationMembership(user.id, organizationId))) return;
   const attachment = await getConversationAttachment({
     organizationId,
     attachmentId: attachmentId.data,

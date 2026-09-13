@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { groupActivityTimeline } from "@/executions/activity-timeline";
 
 test("activity timeline keeps intermediate steps grouped by response run", () => {

@@ -15,11 +15,11 @@ const acceptedPrivateFileTypes = new Set([
 export function isAcceptedPrivateFile(file: File) {
   return (
     acceptedPrivateFileTypes.has(file.type) &&
-    file.size >= 1 &&
+    file.size > 0 &&
     file.size <= maximumPrivateFileBytes
   );
 }
 
 export function safePrivateFilename(name: string) {
-  return name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 160) || "upload";
+  return name.replaceAll(/[^a-zA-Z0-9._-]/g, "_").slice(0, 160) || "upload";
 }

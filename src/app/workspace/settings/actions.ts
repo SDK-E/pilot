@@ -3,15 +3,16 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+
 import { isResearchAvailable } from "@/conversations/research-availability";
-import { getWorker } from "@/workers/worker-repository";
-import { updateUserPreferences } from "@/users/user-preference-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import {
   updateOrganizationDefaultWorker,
   updateOrganizationModelPolicy,
 } from "@/organizations/organization-preference-repository";
 import { resolveActorContext } from "@/policy/actor-context";
+import { updateUserPreferences } from "@/users/user-preference-repository";
+import { getWorker } from "@/workers/worker-repository";
 
 const inputSchema = z.object({
   sendMessageShortcut: z.enum(["enter", "mod_enter"]),

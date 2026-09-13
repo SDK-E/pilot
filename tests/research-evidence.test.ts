@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { sanitizeResearchText } from "@/conversations/research-evidence";
 
 test("research transcript rejects pseudo tool calls and does not retain them", () => {

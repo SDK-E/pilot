@@ -4,9 +4,9 @@ import {
   PilotAiRuntimeError,
   streamConversationReply,
 } from "@/ai/pilot-ai-client";
+import { buildAttachmentContext } from "@/conversations/attachment-context";
 import { createConversationMessage } from "@/conversations/conversation-repository";
 import { isResearchAvailable } from "@/conversations/research-availability";
-import { buildAttachmentContext } from "@/conversations/attachment-context";
 import {
   sanitizeResearchText,
   saveResearchSources,
@@ -15,14 +15,14 @@ import {
   allowedProductionToolIds,
   type ProductionToolId,
 } from "@/conversations/tool-authorization";
-import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
-import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
 import {
   finishExecution,
   startExecution,
 } from "@/executions/execution-repository";
+import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
+import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 
-type StreamConversationMessageInput = {
+interface StreamConversationMessageInput {
   organizationId: string;
   worker: {
     id: string;
@@ -36,7 +36,7 @@ type StreamConversationMessageInput = {
   userId: string;
   message: string;
   signal: AbortSignal;
-};
+}
 
 function toStoredCount(value: number): number | undefined {
   if (!Number.isSafeInteger(value) || value < 0 || value > 2_147_483_647) {
@@ -57,7 +57,7 @@ async function projectContext(input: StreamConversationMessageInput) {
     userId: input.userId,
     conversationId: input.conversationId,
   });
-  if (!project) return undefined;
+  if (!project) return;
   return {
     id: project.id,
     instructions: project.instructions || undefined,
@@ -92,9 +92,13 @@ export async function streamConversationMessage(
   const encoder = new TextEncoder();
   const startedAt = performance.now();
   const abortController = new AbortController();
-  const abort = () => abortController.abort();
+  const abort = () => {
+    abortController.abort();
+  };
   input.signal.addEventListener("abort", abort, { once: true });
-  const serverTimeoutHandle = setTimeout(() => abortController.abort(), 90_000);
+  const serverTimeoutHandle = setTimeout(() => {
+    abortController.abort();
+  }, 90_000);
 
   return new ReadableStream<Uint8Array>({
     async start(controller) {

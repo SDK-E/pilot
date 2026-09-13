@@ -43,10 +43,10 @@ test.describe("Composer", () => {
     const textarea = page.getByLabel("Message Pilot");
     const longText = "Line 1\n".repeat(200);
     await textarea.fill(longText);
-    const maxHeight = await textarea.evaluate(
+    const isMaxHeight = await textarea.evaluate(
       (el) => el.scrollHeight > el.clientHeight,
     );
-    expect(maxHeight).toBe(true);
+    expect(isMaxHeight).toBe(true);
   });
 
   test("composer has safe-area padding on mobile", async ({ page }) => {
@@ -59,7 +59,7 @@ test.describe("Composer", () => {
     const paddingBottom = await page.evaluate(() => {
       const composer = document.querySelector(".safe-bottom");
       if (!composer) return null;
-      return window.getComputedStyle(composer).paddingBottom;
+      return globalThis.getComputedStyle(composer).paddingBottom;
     });
     expect(paddingBottom).not.toBe("0px");
   });

@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canUsePublicWebSearch } from "@/conversations/public-web-search-authorization";
+
 import {
   defaultEnabledToolIds,
   defaultToolApprovalRules,
   isToolAvailableToBaseAgent,
   toolCapabilities,
 } from "@/agents/agent-configuration";
+import { canUsePublicWebSearch } from "@/conversations/public-web-search-authorization";
 import { allowedProductionToolIds } from "@/conversations/tool-authorization";
 
 test("public web search is offered to either agent only for allow or ask", () => {

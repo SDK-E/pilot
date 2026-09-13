@@ -1,12 +1,4 @@
 import {
-  ChainOfThought,
-  ChainOfThoughtContent,
-  ChainOfThoughtHeader,
-  ChainOfThoughtStep,
-} from "@/components/ai-elements/chain-of-thought";
-import type { ActivityEventType } from "@/executions/activity-event";
-import type { TimelineActivity } from "@/executions/activity-timeline";
-import {
   CheckCircle2,
   CircleAlert,
   FileText,
@@ -14,6 +6,16 @@ import {
   Search,
   Wrench,
 } from "lucide-react";
+
+import {
+  ChainOfThought,
+  ChainOfThoughtContent,
+  ChainOfThoughtHeader,
+  ChainOfThoughtStep,
+} from "@/components/ai-elements/chain-of-thought";
+
+import type { ActivityEventType } from "@/executions/activity-event";
+import type { TimelineActivity } from "@/executions/activity-timeline";
 
 type Activity = TimelineActivity;
 
@@ -108,7 +110,7 @@ export function LiveConversationActivity({
               status={stepStatus(event.type)}
             />
           ))}
-          {!hasActiveTool ? (
+          {hasActiveTool ? null : (
             <ChainOfThoughtStep
               className="[&>div:first-child>div]:hidden"
               description="Streaming the answer into this chat"
@@ -116,7 +118,7 @@ export function LiveConversationActivity({
               label="Writing response"
               status="active"
             />
-          ) : null}
+          )}
         </div>
       </ChainOfThoughtContent>
     </ChainOfThought>

@@ -3,6 +3,7 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+
 import {
   approvalModes,
   baseAgentIds,
@@ -17,16 +18,16 @@ import {
   listWorkers,
 } from "@/workers/worker-repository";
 
-export type DeletePersonaState = {
+export interface DeletePersonaState {
   message?: string;
   status: "idle" | "error" | "success";
-};
+}
 
-export type DuplicatePersonaState = {
+export interface DuplicatePersonaState {
   href?: string;
   message?: string;
   status: "idle" | "error" | "success";
-};
+}
 
 const storedPersonaConfigurationSchema = z.object({
   baseAgentId: z.enum(baseAgentIds),

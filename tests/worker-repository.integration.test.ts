@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+
 import { eq } from "drizzle-orm";
-import type { ConfigurableToolId } from "@/agents/agent-configuration";
-import { db } from "@/db/client";
-import { organizations, userPreferences } from "@/db/schema";
+
 import {
   createConversation,
   createConversationMessage,
@@ -14,12 +13,18 @@ import {
   listOrganizationConversations,
   renameConversation,
 } from "@/conversations/conversation-repository";
+import { db } from "@/db/client";
+import { organizations, userPreferences } from "@/db/schema";
 import {
   appendToolActivity,
   finishExecution,
   listConversationActivity,
   startExecution,
 } from "@/executions/execution-repository";
+import {
+  getOrganizationPreferences,
+  updateOrganizationDefaultWorker,
+} from "@/organizations/organization-preference-repository";
 import {
   addProjectConversation,
   createProject,
@@ -33,11 +38,6 @@ import {
   updateProject,
 } from "@/projects/project-repository";
 import {
-  createWorker,
-  getWorker,
-  listWorkers,
-} from "@/workers/worker-repository";
-import {
   createTask,
   listConversationTasks,
   listTasks,
@@ -48,9 +48,12 @@ import {
   updateUserPreferences,
 } from "@/users/user-preference-repository";
 import {
-  getOrganizationPreferences,
-  updateOrganizationDefaultWorker,
-} from "@/organizations/organization-preference-repository";
+  createWorker,
+  getWorker,
+  listWorkers,
+} from "@/workers/worker-repository";
+
+import type { ConfigurableToolId } from "@/agents/agent-configuration";
 
 const suffix = randomUUID().replaceAll("-", "");
 const organizationId = `org_pilot_test_${suffix}`;

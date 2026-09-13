@@ -1,23 +1,25 @@
 import type { ActivityEventType } from "@/executions/activity-event";
 
-export type TimelineActivity = {
+export interface TimelineActivity {
   id: string;
   executionId: string;
   summary: string;
   type: ActivityEventType;
   toolId?: string | null;
   createdAt?: string | Date;
-};
+}
 
-export type ActivityTimelineRun = {
+export interface ActivityTimelineRun {
   id: string;
   events: TimelineActivity[];
   isComplete: boolean;
   isFailed: boolean;
   isWaitingForApproval: boolean;
-};
+}
 
-/** Groups only server-generated, already-sanitized activity by one response run. */
+/**
+Groups only server-generated, already-sanitized activity by one response run.
+*/
 export function groupActivityTimeline(
   activities: TimelineActivity[],
 ): ActivityTimelineRun[] {

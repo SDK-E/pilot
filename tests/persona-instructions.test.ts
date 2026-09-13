@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
 import { buildPersonaInstructions } from "@/agents/persona-instructions";
 
 test("persona instructions include only configured runtime settings", () => {

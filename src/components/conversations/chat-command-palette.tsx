@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { History, MessageSquareMore, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -15,27 +16,34 @@ import {
   CommandShortcut,
 } from "@/components/ui/command";
 
-type Chat = {
+interface Chat {
   id: string;
   workerId: string;
   title: string | null;
   agentName: string;
   latestMessagePreview: string | null;
   updatedLabel: string;
-};
+}
 
 export function ChatCommandPalette({ chats }: { chats: Chat[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setOpen((value) => !value);
+      if (!(
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "k"
+      )) {
+        return;
       }
+
+      event.preventDefault();
+      setOpen((value) => !value);
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    globalThis.addEventListener("keydown", handler);
+    return () => {
+      globalThis.removeEventListener("keydown", handler);
+    };
   }, []);
   const go = (href: string) => {
     setOpen(false);
@@ -45,7 +53,9 @@ export function ChatCommandPalette({ chats }: { chats: Chat[] }) {
     <>
       <Button
         className="w-full justify-start"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true);
+        }}
         size="sm"
         type="button"
         variant="ghost"
@@ -64,7 +74,11 @@ export function ChatCommandPalette({ chats }: { chats: Chat[] }) {
           <CommandList>
             <CommandEmpty>No matching chats.</CommandEmpty>
             <CommandGroup heading="Actions">
-              <CommandItem onSelect={() => go("/workspace")}>
+              <CommandItem
+                onSelect={() => {
+                  go("/workspace");
+                }}
+              >
                 <Plus />
                 New chat
               </CommandItem>
@@ -73,11 +87,11 @@ export function ChatCommandPalette({ chats }: { chats: Chat[] }) {
               {chats.map((chat) => (
                 <CommandItem
                   key={chat.id}
-                  onSelect={() =>
+                  onSelect={() => {
                     go(
                       `/workspace/workers/${chat.workerId}/conversations/${chat.id}`,
-                    )
-                  }
+                    );
+                  }}
                   value={`${chat.title} ${chat.agentName} ${chat.latestMessagePreview}`}
                 >
                   <MessageSquareMore />

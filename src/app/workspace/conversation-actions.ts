@@ -1,13 +1,14 @@
 "use server";
 
-import { buildPersonaInstructions } from "@/agents/persona-instructions";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+
+import { buildPersonaInstructions } from "@/agents/persona-instructions";
 import { getConversation } from "@/conversations/conversation-repository";
+import { allowedProductionToolIds } from "@/conversations/tool-authorization";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { createTask } from "@/tasks/task-repository";
-import { allowedProductionToolIds } from "@/conversations/tool-authorization";
 
 const inputSchema = z.object({
   workerId: z.uuid(),
@@ -16,10 +17,10 @@ const inputSchema = z.object({
   instructions: z.string().trim().min(1).max(10_000),
 });
 
-export type CreateConversationTaskState = {
+export interface CreateConversationTaskState {
   message?: string;
   status: "idle" | "error" | "success";
-};
+}
 
 export async function createConversationTaskAction(
   _previousState: CreateConversationTaskState,
@@ -76,10 +77,10 @@ const approvalDecisionSchema = z.object({
   decision: z.enum(["approve", "reject"]),
 });
 
-export type DecideConversationApprovalState = {
+export interface DecideConversationApprovalState {
   message?: string;
   status: "idle" | "error" | "success";
-};
+}
 
 export async function decideConversationApprovalAction(
   _previousState: DecideConversationApprovalState,
@@ -144,10 +145,10 @@ export async function decideConversationApprovalAction(
       message: "This approval has already been decided or is unavailable.",
     };
 
-  const approved = input.data.decision === "approve";
+  const isApproved = input.data.decision === "approve";
   const allowedToolIds = allowedProductionToolIds({
     ...worker,
-    baseAgentId: worker.baseAgentId as "conversational" | "research",
+    baseAgentId: worker.baseAgentId,
   });
   if (!allowedToolIds.includes(approval.toolId)) {
     return {
@@ -174,7 +175,7 @@ export async function decideConversationApprovalAction(
       runtimeRunId: approval.runtimeRunId,
       toolCallId: approval.toolCallId,
       toolId: approval.toolId,
-      approved,
+      approved: isApproved,
     });
     const { createConversationMessage } =
       await import("@/conversations/conversation-repository");
@@ -204,7 +205,7 @@ export async function decideConversationApprovalAction(
       approvalId: approval.id,
       organizationId,
       userId: user.id,
-      approved,
+      approved: isApproved,
       taskId: approval.taskId,
     });
   } catch {
@@ -232,6 +233,6 @@ export async function decideConversationApprovalAction(
   );
   return {
     status: "success",
-    message: approved ? "Tool use approved." : "Tool use declined.",
+    message: isApproved ? "Tool use approved." : "Tool use declined.",
   };
 }

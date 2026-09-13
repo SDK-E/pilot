@@ -1,14 +1,15 @@
 import "server-only";
 
 import { and, eq } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import { organizationPreferences, workers } from "@/db/schema";
 
-type OrganizationPreferences = {
+interface OrganizationPreferences {
   defaultWorkerId: string | null;
   primaryModelId: string;
   retryEnabled: boolean;
-};
+}
 
 const defaults: OrganizationPreferences = {
   defaultWorkerId: null,
@@ -43,7 +44,7 @@ export async function updateOrganizationDefaultWorker(input: {
       ),
     )
     .limit(1);
-  if (!worker) return undefined;
+  if (!worker) return;
 
   const [preferences] = await db
     .insert(organizationPreferences)

@@ -1,6 +1,9 @@
 "use client";
 
+import { useCompletion } from "@ai-sdk/react";
+import { ArrowLeft, Bot, Check, Copy } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -10,10 +13,16 @@ import {
   useRef,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
-import { useCompletion } from "@ai-sdk/react";
-import { ArrowLeft, Bot, Check, Copy } from "lucide-react";
+
+import { updateConversationPanelLayoutAction } from "@/app/workspace/panel-layout-actions";
 import { AgentAvatar } from "@/components/agents/agent-avatar";
+import {
+  Attachment,
+  AttachmentInfo,
+  AttachmentPreview,
+  AttachmentRemove,
+  Attachments,
+} from "@/components/ai-elements/attachments";
 import {
   Conversation,
   ConversationContent,
@@ -27,23 +36,6 @@ import {
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
-import { ConversationDetailsPanel } from "@/components/conversations/conversation-details-panel";
-import { DeleteAttachmentButton } from "@/components/conversations/delete-attachment-button";
-import { ConversationProjectPicker } from "@/components/conversations/conversation-project-picker";
-import { DeleteConversationButton } from "@/components/conversations/delete-conversation-button";
-import { RenameConversationForm } from "@/components/conversations/rename-conversation-form";
-import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
-import { updateConversationPanelLayoutAction } from "@/app/workspace/panel-layout-actions";
-import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
-import { ResearchExportLinks } from "@/components/conversations/research-export-links";
-import type { TimelineActivity } from "@/executions/activity-timeline";
-import {
-  Attachment,
-  AttachmentInfo,
-  AttachmentPreview,
-  AttachmentRemove,
-  Attachments,
-} from "@/components/ai-elements/attachments";
 import {
   PromptInput,
   PromptInputActionAddAttachments,
@@ -58,6 +50,14 @@ import {
   type PromptInputMessage,
   usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
+import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
+import { ConversationDetailsPanel } from "@/components/conversations/conversation-details-panel";
+import { ConversationProjectPicker } from "@/components/conversations/conversation-project-picker";
+import { DeleteAttachmentButton } from "@/components/conversations/delete-attachment-button";
+import { DeleteConversationButton } from "@/components/conversations/delete-conversation-button";
+import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
+import { RenameConversationForm } from "@/components/conversations/rename-conversation-form";
+import { ResearchExportLinks } from "@/components/conversations/research-export-links";
 import { Button } from "@/components/ui/button";
 import {
   ResizableHandle,
@@ -69,25 +69,27 @@ import {
   shouldSubmitMessage,
 } from "@/hooks/use-message-submit-shortcut";
 
-type PersistedMessage = {
+import type { TimelineActivity } from "@/executions/activity-timeline";
+
+interface PersistedMessage {
   id: string;
   role: "user" | "worker";
   content: string;
-  userQuestionOptions?: Array<{ label: string; description?: string }> | null;
+  userQuestionOptions?: { label: string; description?: string }[] | null;
   userQuestionSelectionMode?: "single_select" | "multi_select" | null;
-  sources?: Array<{
+  sources?: {
     title: string;
     domain: string;
     url: string;
     summary: string;
-  }>;
-};
+  }[];
+}
 
-type TransientTurn = {
+interface TransientTurn {
   id: string;
   prompt: string;
   completion: string;
-};
+}
 
 type PersistedActivity = TimelineActivity & {
   conversationMessageId: string | null;
@@ -95,14 +97,16 @@ type PersistedActivity = TimelineActivity & {
 
 function ComposerAttachmentPreviews() {
   const composerAttachments = usePromptInputAttachments();
-  if (!composerAttachments.files.length) return null;
+  if (composerAttachments.files.length === 0) return null;
   return (
     <Attachments className="px-1 pt-1" variant="inline">
       {composerAttachments.files.map((attachment) => (
         <Attachment
           data={attachment}
           key={attachment.id}
-          onRemove={() => composerAttachments.remove(attachment.id)}
+          onRemove={() => {
+            composerAttachments.remove(attachment.id);
+          }}
         >
           <AttachmentPreview />
           <AttachmentInfo />
@@ -123,7 +127,7 @@ async function filePartToFile(file: PromptInputMessage["files"][number]) {
   });
 }
 
-type ConversationShellProps = {
+interface ConversationShellProps {
   backHref: string;
   conversationId: string;
   messages: PersistedMessage[];
@@ -132,23 +136,23 @@ type ConversationShellProps = {
   conversationTitle: string;
   agentId: string;
   agentName: string;
-  tasks: Array<{ id: string; title: string; status: string }>;
-  approvals: Array<{ id: string; summary: string; status: string }>;
+  tasks: { id: string; title: string; status: string }[];
+  approvals: { id: string; summary: string; status: string }[];
   project?: {
     id: string;
     name: string;
     sharedMemoryEnabled: boolean;
   };
-  projects: Array<{ id: string; name: string }>;
-  attachments: Array<{
+  projects: { id: string; name: string }[];
+  attachments: {
     id: string;
     filename: string;
     contentType: string;
     byteSize: number;
-  }>;
+  }[];
   scratchpad: string;
   initialPanelLayout?: { conversation: number; details: number };
-};
+}
 
 export function ConversationShell({
   backHref,
@@ -213,20 +217,24 @@ export function ConversationShell({
     return displayedActivities.filter((activity) => {
       if (!activity.createdAt) return false;
       const timestamp = new Date(activity.createdAt).getTime();
-      return Number.isFinite(timestamp) && timestamp >= streamStartedAt - 1_500;
+      return Number.isFinite(timestamp) && timestamp >= streamStartedAt - 1500;
     });
   }, [displayedActivities, streamStartedAt]);
   useEffect(() => {
-    const media = window.matchMedia("(min-width: 1024px)");
-    const update = () => setDesktopLayout(media.matches);
+    const media = globalThis.matchMedia("(min-width: 1024px)");
+    const update = () => {
+      setDesktopLayout(media.matches);
+    };
     update();
     media.addEventListener("change", update);
-    let frame: number | undefined;
     if (initialPanelLayout) {
-      return () => media.removeEventListener("change", update);
+      return () => {
+        media.removeEventListener("change", update);
+      };
     }
+    let frame: number | undefined;
     try {
-      const saved = window.localStorage.getItem("pilot:conversation-panels:v1");
+      const saved = localStorage.getItem("pilot:conversation-panels:v1");
       if (saved) {
         const value: unknown = JSON.parse(saved);
         if (
@@ -236,9 +244,9 @@ export function ConversationShell({
             "number" &&
           typeof (value as { details?: unknown }).details === "number"
         ) {
-          frame = window.requestAnimationFrame(() =>
-            setPanelLayout(value as { conversation: number; details: number }),
-          );
+          frame = globalThis.requestAnimationFrame(() => {
+            setPanelLayout(value as { conversation: number; details: number });
+          });
         }
       }
     } catch {
@@ -246,7 +254,7 @@ export function ConversationShell({
     }
     return () => {
       media.removeEventListener("change", update);
-      if (frame) window.cancelAnimationFrame(frame);
+      if (frame) globalThis.cancelAnimationFrame(frame);
     };
     // Reads the server-provided or locally cached layout once on mount only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -309,7 +317,9 @@ export function ConversationShell({
       void syncMessages();
     },
   });
-  const handleTaskCreated = useCallback(() => router.refresh(), [router]);
+  const handleTaskCreated = useCallback(() => {
+    router.refresh();
+  }, [router]);
   const submitText = useCallback(
     (rawMessage: string) => {
       const message = rawMessage.trim();
@@ -330,7 +340,9 @@ export function ConversationShell({
     const initialMessage = sessionStorage.getItem(key);
     if (!initialMessage) return;
     sessionStorage.removeItem(key);
-    startTransition(() => submitText(initialMessage));
+    startTransition(() => {
+      submitText(initialMessage);
+    });
   }, [conversationId, submitText]);
 
   const uploadAttachment = useCallback(
@@ -403,11 +415,11 @@ export function ConversationShell({
       try {
         await navigator.clipboard.writeText(content);
         setCopiedMessageId(messageId);
-        window.setTimeout(() => {
+        globalThis.setTimeout(() => {
           setCopiedMessageId((current) =>
             current === messageId ? undefined : current,
           );
-        }, 2_000);
+        }, 2000);
       } catch {
         // Clipboard access can be unavailable in an embedded or insecure browser.
       }
@@ -432,17 +444,17 @@ export function ConversationShell({
   useEffect(() => {
     if (!isLoading) return;
 
-    let cancelled = false;
+    let isCancelled = false;
     const refreshActivities = async () => {
       try {
         const response = await fetch(
           `/api/conversations/${conversationId}/activity`,
           { cache: "no-store" },
         );
-        if (!response.ok || cancelled) return;
+        if (!response.ok || isCancelled) return;
         const payload: { activities?: PersistedActivity[] } =
           await response.json();
-        if (payload.activities && !cancelled) {
+        if (payload.activities && !isCancelled) {
           setLiveActivities(payload.activities);
         }
       } catch {
@@ -451,8 +463,11 @@ export function ConversationShell({
     };
 
     void refreshActivities();
-    const interval = window.setInterval(() => void refreshActivities(), 1_000);
-    const timeoutHandle = window.setTimeout(() => {
+    const interval = globalThis.setInterval(
+      () => void refreshActivities(),
+      1000,
+    );
+    const timeoutHandle = globalThis.setTimeout(() => {
       timedOutRef.current = true;
       setTimeoutError(
         "The response timed out. The request may still have completed; review the message before sending it again.",
@@ -460,9 +475,9 @@ export function ConversationShell({
       stop();
     }, 60_000);
     return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-      window.clearTimeout(timeoutHandle);
+      isCancelled = true;
+      globalThis.clearInterval(interval);
+      globalThis.clearTimeout(timeoutHandle);
     };
   }, [conversationId, isLoading, stop]);
 
@@ -531,7 +546,7 @@ export function ConversationShell({
             };
             setPanelLayout(next);
             try {
-              window.localStorage.setItem(
+              localStorage.setItem(
                 "pilot:conversation-panels:v1",
                 JSON.stringify(next),
               );
@@ -614,7 +629,7 @@ export function ConversationShell({
                                       <div className="flex flex-wrap gap-2">
                                         {message.userQuestionOptions.map(
                                           (option) => {
-                                            const selected = (
+                                            const isSelected = (
                                               selectedQuestionOptions[
                                                 message.id
                                               ] ?? []
@@ -626,14 +641,14 @@ export function ConversationShell({
                                                 title={option.description}
                                               >
                                                 <input
-                                                  checked={selected}
+                                                  checked={isSelected}
                                                   className="size-4 accent-primary"
-                                                  onChange={() =>
+                                                  onChange={() => {
                                                     toggleQuestionOption(
                                                       message.id,
                                                       option.label,
-                                                    )
-                                                  }
+                                                    );
+                                                  }}
                                                   type="checkbox"
                                                 />
                                                 {option.label}
@@ -645,21 +660,21 @@ export function ConversationShell({
                                       <Button
                                         disabled={
                                           isLoading ||
-                                          !(
+                                          (
                                             selectedQuestionOptions[
                                               message.id
                                             ] ?? []
-                                          ).length
+                                          ).length === 0
                                         }
-                                        onClick={() =>
+                                        onClick={() => {
                                           submitText(
                                             (
                                               selectedQuestionOptions[
                                                 message.id
                                               ] ?? []
                                             ).join("\n"),
-                                          )
-                                        }
+                                          );
+                                        }}
                                         size="sm"
                                         type="button"
                                       >
@@ -676,9 +691,9 @@ export function ConversationShell({
                                           <Button
                                             key={option.label}
                                             disabled={isLoading}
-                                            onClick={() =>
-                                              submitText(option.label)
-                                            }
+                                            onClick={() => {
+                                              submitText(option.label);
+                                            }}
                                             size="sm"
                                             title={option.description}
                                             type="button"
@@ -774,7 +789,7 @@ export function ConversationShell({
 
               <footer className="shrink-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-xl sm:px-6 sm:pb-5 safe-bottom">
                 <div className="mx-auto w-full max-w-3xl">
-                  {attachments.length ? (
+                  {attachments.length > 0 ? (
                     <ul
                       className="mb-3 flex flex-wrap gap-2"
                       aria-label="Chat attachments"
@@ -807,7 +822,9 @@ export function ConversationShell({
                         className="rounded-3xl border border-border bg-card p-2 shadow-lg shadow-foreground/[0.04] transition-shadow focus-within:shadow-xl focus-within:shadow-primary/[0.06]"
                         maxFileSize={10 * 1024 * 1024}
                         multiple
-                        onError={(event) => setAttachmentError(event.message)}
+                        onError={(event) => {
+                          setAttachmentError(event.message);
+                        }}
                         onSubmit={(message) => submitMessage(message)}
                       >
                         <ComposerAttachmentPreviews />

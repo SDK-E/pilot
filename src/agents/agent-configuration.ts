@@ -79,12 +79,12 @@ export const toolCapabilities = [
       "Requires a user-authorized MCP connection and scoped access controls.",
     availableFor: [],
   },
-] as const satisfies ReadonlyArray<{
+] as const satisfies readonly {
   id: ConfigurableToolId;
   name: string;
   description: string;
   availableFor: readonly BaseAgentId[];
-}>;
+}[];
 
 /**
  * A new persona begins with the only production tool that both bases can
@@ -106,7 +106,7 @@ export const defaultEnabledToolIds: readonly ConfigurableToolId[] = [
 export function defaultToolApprovalRules(): ApprovalRules {
   return Object.fromEntries(
     defaultEnabledToolIds.map((toolId) => [toolId, "ask"]),
-  ) as ApprovalRules;
+  );
 }
 
 export function isToolAvailableToBaseAgent(

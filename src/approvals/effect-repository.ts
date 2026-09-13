@@ -1,8 +1,10 @@
 import "server-only";
 
 import { and, desc, eq } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import { effectIntents } from "@/db/schema";
+
 import type { EffectIntent, ReconciliationResult } from "./effect-intent-types";
 
 export async function recordEffectIntent(input: {
@@ -72,15 +74,13 @@ export async function reconcileEffect(input: {
       reason: "Effect intent not found for reconciliation",
     };
   }
-  const externalStateAvailable = intent.status === "dispatched";
+  const isExternalStateAvailable = intent.status === "dispatched";
   return {
     intentId: intent.id,
-    handleMatch: externalStateAvailable,
-    stateMatch: externalStateAvailable,
-    resolvedStatus: externalStateAvailable
-      ? (intent.status as EffectIntent["status"])
-      : "unknown",
-    reason: externalStateAvailable
+    handleMatch: isExternalStateAvailable,
+    stateMatch: isExternalStateAvailable,
+    resolvedStatus: isExternalStateAvailable ? intent.status : "unknown",
+    reason: isExternalStateAvailable
       ? "External state verified"
       : "External state could not be verified; reconciliation required",
   };

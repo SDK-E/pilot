@@ -1,9 +1,10 @@
 import "server-only";
 
-import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { and, eq } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import { members } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 
 export type ActorScope =
   | "conversation:read"
@@ -15,14 +16,14 @@ export type ActorScope =
   | "execution:run"
   | "admin:organization";
 
-export type ActorContext = {
+export interface ActorContext {
   organizationId: string;
   workosUserId: string;
   membership: Awaited<ReturnType<typeof getActiveOrganizationMembership>>;
   roles: string[];
   scope: ActorScope[];
   policyVersion: "02";
-};
+}
 
 export async function resolveActorContext(input: {
   user: { id: string };

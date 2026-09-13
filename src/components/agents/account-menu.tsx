@@ -1,8 +1,9 @@
 "use client";
 
-import { useTransition } from "react";
-import Link from "next/link";
 import { ChevronsUpDown, LogOut, Settings, UserRound } from "lucide-react";
+import Link from "next/link";
+import { useTransition } from "react";
+
 import { signOutAction } from "@/app/auth/actions";
 import { selectOrganization } from "@/app/workspace/actions";
 import { Button } from "@/components/ui/button";
@@ -16,13 +17,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
 import type { UserOrganization } from "@/organizations/user-organizations";
 
-type AccountMenuProps = {
+interface AccountMenuProps {
   activeOrganizationId?: string;
   organizations: UserOrganization[];
   user: { email: string; name?: string | null };
-};
+}
 
 export function AccountMenu({
   activeOrganizationId,
@@ -109,7 +111,9 @@ export function AccountMenu({
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onSelect={() => startTransition(() => void signOutAction())}
+          onSelect={() => {
+            startTransition(() => void signOutAction());
+          }}
           variant="destructive"
         >
           <LogOut aria-hidden="true" /> Log out

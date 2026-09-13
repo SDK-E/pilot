@@ -39,8 +39,8 @@ export function createSkillActivity(input: { skillId: string }) {
   const name = input.skillId
     .split("/")
     .at(-1)
-    ?.replace(/[._-]+/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+    ?.replaceAll(/[._-]+/g, " ")
+    .replaceAll(/\b\w/g, (letter) => letter.toUpperCase())
     .slice(0, 80);
   return {
     type: "skill.selected" as const,

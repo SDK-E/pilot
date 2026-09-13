@@ -81,14 +81,16 @@ export function transitionEffectStatus(
   };
 
   switch (status) {
-    case "dispatched":
+    case "dispatched": {
       updated.dispatchedAt = now;
       break;
-    case "confirmed":
+    }
+    case "confirmed": {
       updated.confirmedAt = now;
       updated.externalRef = result?.externalRef ?? intent.externalRef;
       break;
-    case "failed":
+    }
+    case "failed": {
       updated.failedAt = now;
       updated.result = result ?? {
         status: "failed",
@@ -96,13 +98,15 @@ export function transitionEffectStatus(
         error: intent.result?.error ?? "External effect failed",
       };
       break;
-    case "unknown":
+    }
+    case "unknown": {
       updated.result = result ?? {
         status: "unknown",
         reconciliationRequired: true,
         error: "External state could not be verified",
       };
       break;
+    }
   }
 
   return updated;

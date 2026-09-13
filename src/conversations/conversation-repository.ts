@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, count, desc, eq, like, or, sql } from "drizzle-orm";
+
 import { db } from "@/db/client";
 import { conversationMessages, conversations, workers } from "@/db/schema";
 
@@ -20,7 +21,7 @@ export async function createConversation(input: {
       ),
     )
     .limit(1);
-  if (!worker) return undefined;
+  if (!worker) return;
 
   const [conversation] = await db
     .insert(conversations)
@@ -248,14 +249,14 @@ export async function renameConversation(input: {
   return renamed;
 }
 
-type ConversationMessageInput = {
+interface ConversationMessageInput {
   organizationId: string;
   workerId: string;
   conversationId: string;
   createdByWorkosUserId: string;
   role: "user" | "worker";
   content: string;
-  userQuestionOptions?: Array<{ label: string; description?: string }>;
+  userQuestionOptions?: { label: string; description?: string }[];
   userQuestionSelectionMode?: "single_select" | "multi_select";
   modelId?: string;
   runtimeRunId?: string;
@@ -263,7 +264,7 @@ type ConversationMessageInput = {
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
-};
+}
 
 export async function createConversationMessage(
   input: ConversationMessageInput,
@@ -274,7 +275,7 @@ export async function createConversationMessage(
     input.conversationId,
     input.createdByWorkosUserId,
   );
-  if (!conversation) return undefined;
+  if (!conversation) return;
 
   const [message] = await db
     .insert(conversationMessages)
@@ -319,7 +320,7 @@ export async function listConversationMessages(
     conversationId,
     userId,
   );
-  if (!conversation) return undefined;
+  if (!conversation) return;
 
   return db
     .select({

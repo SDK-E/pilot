@@ -1,5 +1,6 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "cn";
+
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 function initials(name: string) {
   const words = name.trim().split(/\s+/).filter(Boolean);

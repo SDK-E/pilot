@@ -1,6 +1,7 @@
-import { notFound, redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
+
 import { AgentCreationForm } from "@/components/workers/worker-creation-form";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getWorker } from "@/workers/worker-repository";

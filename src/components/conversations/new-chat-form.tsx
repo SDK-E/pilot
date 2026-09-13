@@ -1,9 +1,10 @@
 "use client";
 
-import { startTransition, useEffect, useId, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Bot, Globe2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { startTransition, useEffect, useId, useState } from "react";
+
 import { AgentAvatar } from "@/components/agents/agent-avatar";
 import {
   PromptInput,
@@ -19,15 +20,15 @@ import {
   PromptInputTools,
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
-import { Button } from "@/components/ui/button";
 import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
+import { Button } from "@/components/ui/button";
 import { shouldSubmitMessage } from "@/hooks/use-message-submit-shortcut";
 
-type AgentOption = {
+interface AgentOption {
   id: string;
   name: string;
   baseAgentId: string;
-};
+}
 
 const promptSuggestions = [
   "Help me plan a project",
@@ -65,7 +66,9 @@ export function NewChatForm({
       research: "Research: ",
     };
     if (mode && templates[mode])
-      startTransition(() => setInput(templates[mode]));
+      startTransition(() => {
+        setInput(templates[mode]);
+      });
   }, [mode]);
 
   const focusComposer = () => document.getElementById(textareaId)?.focus();
@@ -97,10 +100,10 @@ export function NewChatForm({
         prompt,
       );
       router.push(payload.href);
-    } catch (cause) {
+    } catch (error_) {
       setError(
-        cause instanceof Error
-          ? cause.message
+        error_ instanceof Error
+          ? error_.message
           : "Pilot could not start a chat.",
       );
       setIsStarting(false);
@@ -201,7 +204,9 @@ export function NewChatForm({
           <Button
             className="rounded-full bg-muted px-3 text-xs font-normal text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             key={suggestion}
-            onClick={() => setInput(suggestion)}
+            onClick={() => {
+              setInput(suggestion);
+            }}
             type="button"
             variant="ghost"
           >

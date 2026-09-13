@@ -87,7 +87,7 @@ test.describe("Validation", () => {
     );
     await page.goto("/workspace");
     const textarea = page.getByLabel("Message Pilot");
-    await textarea.fill("   ");
+    await textarea.fill(" ".repeat(3));
     const sendButton = page.getByRole("button", { name: /Send message/ });
     await sendButton.click();
     await expect(page.getByRole("alert")).toContainText(

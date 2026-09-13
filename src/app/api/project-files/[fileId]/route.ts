@@ -1,6 +1,7 @@
 import { del, get } from "@vercel/blob";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
+
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import {
   deleteProjectFile,
@@ -8,14 +9,15 @@ import {
 } from "@/projects/project-file-repository";
 
 export const runtime = "nodejs";
-type RouteContext = { params: Promise<{ fileId: string }> };
+interface RouteContext {
+  params: Promise<{ fileId: string }>;
+}
 
 async function authorizedFile(params: RouteContext["params"]) {
   const { user, organizationId } = await withAuth({ ensureSignedIn: true });
   const fileId = z.uuid().safeParse((await params).fileId);
-  if (!organizationId || !fileId.success) return undefined;
-  if (!(await getActiveOrganizationMembership(user.id, organizationId)))
-    return undefined;
+  if (!organizationId || !fileId.success) return;
+  if (!(await getActiveOrganizationMembership(user.id, organizationId))) return;
   const file = await getProjectFile({
     organizationId,
     userId: user.id,

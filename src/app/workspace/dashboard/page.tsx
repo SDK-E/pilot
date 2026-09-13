@@ -1,6 +1,7 @@
-import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { Bot, Gauge, MessageSquareMore, Sparkles } from "lucide-react";
+import { redirect } from "next/navigation";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getOrganizationConversationMetrics } from "@/conversations/conversation-repository";
 import { getOrganizationExecutionMetrics } from "@/executions/execution-repository";

@@ -1,20 +1,21 @@
-import Link from "next/link";
 import { Check, CircleDotDashed, MessageSquareMore, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+
 import {
   createTaskAction,
   updateTaskStatusAction,
 } from "@/app/workspace/tasks/actions";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-type WorkTask = {
+interface WorkTask {
   id: string;
   title: string;
   status: string;
   workerId: string | null;
   conversationId: string | null;
-};
+}
 
 function statusVariant(status: string) {
   if (status === "failed" || status === "cancelled")
@@ -111,7 +112,7 @@ export function WorkQueue({ tasks }: { tasks: WorkTask[] }) {
             {tasks.length} total
           </span>
         </div>
-        {tasks.length ? (
+        {tasks.length > 0 ? (
           <ul className="space-y-3">
             {tasks.map((task) => (
               <li key={task.id}>

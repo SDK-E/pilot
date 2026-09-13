@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
+
 import { eq } from "drizzle-orm";
-import { db } from "@/db/client";
-import { conversations, organizations, workers } from "@/db/schema";
+
 import {
   createConversation,
   listOrganizationConversations,
 } from "@/conversations/conversation-repository";
+import { db } from "@/db/client";
+import { conversations, organizations, workers } from "@/db/schema";
 
 test("AC-07-02: private workspace search excludes other user's titles", async () => {
   const suffix = randomUUID().replaceAll("-", "");

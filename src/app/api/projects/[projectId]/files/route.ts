@@ -1,17 +1,21 @@
 import { randomUUID } from "node:crypto";
+
 import { del, put } from "@vercel/blob";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
+
 import {
   isAcceptedPrivateFile,
   safePrivateFilename,
 } from "@/files/private-file-policy";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
-import { getProject } from "@/projects/project-repository";
 import { createProjectFile } from "@/projects/project-file-repository";
+import { getProject } from "@/projects/project-repository";
 
 export const runtime = "nodejs";
-type RouteContext = { params: Promise<{ projectId: string }> };
+interface RouteContext {
+  params: Promise<{ projectId: string }>;
+}
 
 function response(message: string, status: number) {
   return Response.json({ error: message }, { status });
@@ -31,7 +35,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     projectId: projectId.data,
   });
   if (!project) return response("Project not found.", 404);
-  const formData = await request.formData().catch(() => undefined);
+  const formData = await request.formData().catch(() => {});
   const file = formData?.get("file");
   if (!(file instanceof File)) return response("Choose a file to upload.", 400);
   if (!isAcceptedPrivateFile(file))
@@ -56,7 +60,7 @@ export async function POST(request: Request, { params }: RouteContext) {
     if (!saved) throw new Error("Project file metadata could not be saved.");
     return Response.json({ id: saved.id }, { status: 201 });
   } catch {
-    await del(blob.url).catch(() => undefined);
+    await del(blob.url).catch(() => {});
     return response("Pilot could not save this project file.", 500);
   }
 }

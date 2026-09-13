@@ -3,7 +3,7 @@ export type TextDirection = "ltr" | "rtl" | "auto";
 export type Coverage = "complete" | "partial" | "minimal" | "none";
 export type LocaleStatus = "stable" | "beta" | "experimental" | "deprecated";
 
-export type LocaleDefinition = {
+export interface LocaleDefinition {
   tag: string;
   nativeName: string;
   englishName: string;
@@ -12,4 +12,4 @@ export type LocaleDefinition = {
   status: LocaleStatus;
   coverage: Coverage;
   available: boolean;
-};
+}
