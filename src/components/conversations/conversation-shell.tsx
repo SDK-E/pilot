@@ -266,7 +266,7 @@ export function ConversationShell({
   }, [conversationId, isLoading, stop]);
 
   return (
-    <main className="flex h-svh overflow-hidden bg-background">
+    <main className="flex h-[calc(100svh-4rem)] overflow-hidden bg-background">
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4 sm:px-6">
         <Link
           href={backHref}
