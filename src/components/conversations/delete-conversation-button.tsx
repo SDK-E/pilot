@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import {
   deleteConversationAction,
@@ -23,14 +24,21 @@ const initialState: DeleteConversationState = { status: "idle" };
 export function DeleteConversationButton({
   workerId,
   conversationId,
+  redirectHref,
 }: {
   workerId: string;
   conversationId: string;
+  redirectHref?: string;
 }) {
+  const router = useRouter();
   const [state, action, pending] = useActionState(
     deleteConversationAction,
     initialState,
   );
+  useEffect(() => {
+    if (state.status === "success" && redirectHref)
+      router.replace(redirectHref);
+  }, [redirectHref, router, state.status]);
 
   return (
     <AlertDialog>

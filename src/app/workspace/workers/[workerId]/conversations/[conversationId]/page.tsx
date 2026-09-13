@@ -99,14 +99,14 @@ export default async function ConversationPage({
 
   return (
     <ConversationShell
-      backHref="/workspace/chats"
+      backHref="/workspace"
       conversationId={conversation.id}
       messages={messages}
       activities={activities}
       tasks={tasks}
       approvals={approvals}
       runtimeConfigured={isRuntimeConfigured}
-      title={conversation.title ?? "New conversation"}
+      conversationTitle={conversation.title ?? "New conversation"}
       agentId={worker.id}
       agentName={worker.name}
       project={project}

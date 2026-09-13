@@ -38,6 +38,8 @@ import {
 import { ConversationDetailsPanel } from "@/components/conversations/conversation-details-panel";
 import { DeleteAttachmentButton } from "@/components/conversations/delete-attachment-button";
 import { ConversationProjectPicker } from "@/components/conversations/conversation-project-picker";
+import { DeleteConversationButton } from "@/components/conversations/delete-conversation-button";
+import { RenameConversationForm } from "@/components/conversations/rename-conversation-form";
 import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
 import type { ActivityEventType } from "@/executions/activity-event";
@@ -53,6 +55,12 @@ type PersistedMessage = {
   userQuestionSelectionMode?: "single_select" | "multi_select" | null;
 };
 
+type TransientTurn = {
+  id: string;
+  prompt: string;
+  completion: string;
+};
+
 type PersistedActivity = {
   id: string;
   conversationMessageId: string | null;
@@ -66,7 +74,7 @@ type ConversationShellProps = {
   messages: PersistedMessage[];
   activities: PersistedActivity[];
   runtimeConfigured: boolean;
-  title: string;
+  conversationTitle: string;
   agentId: string;
   agentName: string;
   tasks: Array<{ id: string; title: string; status: string }>;
@@ -92,7 +100,7 @@ export function ConversationShell({
   messages,
   activities,
   runtimeConfigured,
-  title,
+  conversationTitle,
   agentId,
   agentName,
   tasks,
@@ -105,6 +113,10 @@ export function ConversationShell({
   const router = useRouter();
   const sendMessageShortcut = useSendMessageShortcut();
   const [pendingUserMessage, setPendingUserMessage] = useState<string>();
+  const [freshMessages, setFreshMessages] = useState<PersistedMessage[] | null>(
+    null,
+  );
+  const [transientTurns, setTransientTurns] = useState<TransientTurn[]>([]);
   const [selectedQuestionOptions, setSelectedQuestionOptions] = useState<
     Record<string, string[]>
   >({});
@@ -119,11 +131,34 @@ export function ConversationShell({
   const lastSubmittedMessageRef = useRef<string | undefined>(undefined);
   const fieldErrorId = useId();
   const timedOutRef = useRef(false);
+  const displayedMessages = freshMessages ?? messages;
   const displayedActivities = useMemo(() => {
     const byId = new Map(activities.map((activity) => [activity.id, activity]));
     for (const activity of liveActivities) byId.set(activity.id, activity);
     return [...byId.values()];
   }, [activities, liveActivities]);
+  const syncMessages = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `/api/conversations/${conversationId}/messages?workerId=${agentId}`,
+        { cache: "no-store" },
+      );
+      if (!response.ok) return;
+      const payload: { messages?: PersistedMessage[] } = await response.json();
+      if (payload.messages) {
+        setFreshMessages(payload.messages);
+        setTransientTurns([]);
+      }
+    } catch {
+      // The streaming turn remains visible locally until the next visit.
+    }
+  }, [agentId, conversationId]);
+  const keepTransientTurn = useCallback((prompt: string, text: string) => {
+    setTransientTurns((current) => [
+      ...current,
+      { id: `${Date.now()}-${current.length}`, prompt, completion: text },
+    ]);
+  }, []);
   const {
     complete,
     completion,
@@ -139,6 +174,8 @@ export function ConversationShell({
     experimental_throttle: 50,
     streamProtocol: "text",
     onError: (cause) => {
+      const prompt = lastSubmittedMessageRef.current;
+      if (prompt) keepTransientTurn(prompt, "");
       setPendingUserMessage(undefined);
       setStreamError(
         cause instanceof Error
@@ -146,13 +183,14 @@ export function ConversationShell({
           : "Pilot could not complete this message.",
       );
       setTimeoutError(undefined);
-      router.refresh();
+      void syncMessages();
     },
-    onFinish: () => {
+    onFinish: (prompt, finalCompletion) => {
+      keepTransientTurn(prompt, finalCompletion);
       setCompletion("");
       setPendingUserMessage(undefined);
       setTimeoutError(undefined);
-      router.refresh();
+      void syncMessages();
     },
   });
   const handleTaskCreated = useCallback(() => router.refresh(), [router]);
@@ -310,15 +348,13 @@ export function ConversationShell({
           className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft aria-hidden="true" className="size-4" />
-          <span className="hidden sm:inline">Chats</span>
+          <span className="hidden sm:inline">Chat history</span>
         </Link>
         <div className="flex min-w-0 items-center gap-2 text-center">
           <AgentAvatar name={agentName} />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{agentName}</p>
-            <p className="truncate text-xs text-muted-foreground">
-              Persona · {title}
-            </p>
+            <p className="truncate text-xs text-muted-foreground">Persona</p>
             {project ? (
               <Link
                 className="block truncate text-xs text-primary hover:underline"
@@ -332,17 +368,31 @@ export function ConversationShell({
             ) : null}
           </div>
         </div>
-        <ConversationProjectPicker
-          conversationId={conversationId}
-          currentProject={project}
-          projects={projects}
-        />
+        <div className="flex items-center gap-1">
+          <RenameConversationForm
+            conversationId={conversationId}
+            title={conversationTitle}
+            workerId={agentId}
+          />
+          <DeleteConversationButton
+            conversationId={conversationId}
+            redirectHref="/workspace"
+            workerId={agentId}
+          />
+          <ConversationProjectPicker
+            conversationId={conversationId}
+            currentProject={project}
+            projects={projects}
+          />
+        </div>
       </header>
 
       <section className="flex min-h-0 flex-1 overflow-hidden flex-col lg:flex-row">
         <Conversation className="min-h-0 min-w-0 flex-1">
           <ConversationContent className="mx-auto w-full max-w-3xl gap-8 px-5 py-8 sm:px-8 sm:py-12">
-            {messages.length === 0 ? (
+            {displayedMessages.length === 0 &&
+            transientTurns.length === 0 &&
+            !pendingUserMessage ? (
               <ConversationEmptyState
                 className="min-h-[min(52svh,34rem)]"
                 description={`Start with a clear objective, context, or question for ${agentName}.`}
@@ -350,7 +400,7 @@ export function ConversationShell({
                 title={`How can ${agentName} help?`}
               />
             ) : (
-              messages.map((message) => {
+              displayedMessages.map((message) => {
                 const from = message.role === "user" ? "user" : "assistant";
 
                 return (
@@ -468,6 +518,22 @@ export function ConversationShell({
                 );
               })
             )}
+            {transientTurns.map((turn) => (
+              <div key={turn.id}>
+                <Message from="user">
+                  <MessageContent>
+                    <p className="whitespace-pre-wrap">{turn.prompt}</p>
+                  </MessageContent>
+                </Message>
+                {turn.completion ? (
+                  <Message from="assistant">
+                    <MessageContent>
+                      <MessageResponse>{turn.completion}</MessageResponse>
+                    </MessageContent>
+                  </Message>
+                ) : null}
+              </div>
+            ))}
             {pendingUserMessage ? (
               <Message from="user">
                 <MessageContent>

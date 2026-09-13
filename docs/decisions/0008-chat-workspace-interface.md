@@ -29,26 +29,29 @@ access. Attachments, browser and scratchpad views, and reasoning detail remain
 absent until their runtime event contract, durable records, and authorization
 checks are implemented.
 
-The interface displays a collapsed, transient “Pilot is responding”
-activity only while the browser has an active protected stream. It reports the
-observed generation state, not model reasoning or a tool action, and is
-replaced by Pilot’s persisted execution activity after the request resolves.
+The interface displays a collapsed live activity during a protected stream.
+It starts with the observed generation state and expands into the same
+sanitized server-generated execution and capability lifecycle summaries that
+are persisted for the chat. It never represents hidden model reasoning,
+prompts, tool inputs, outputs, URLs, errors, or secrets.
 
-The existing conversation server action remains the source of truth for a
-message lifecycle. Pilot creates no conversation until a message is submitted,
-and messages, executions, and completed activity are persisted through the
-authorized Pilot-to-runtime path. The UI displays completed activity in a
-collapsed disclosure. The opening message receives a local, deterministic title
-without another model request, and the newest organization-scoped conversations
-appear in the expanded sidebar for direct return to a chat. New and existing
-conversations stream text through WorkOS-authorized Pilot routes. Both agent
-bases can use only their explicitly authorized public web-search capability. A
-new conversation is created only after its validated first prompt; Pilot
-persists that prompt before streaming and the complete assistant message plus
-execution only after the stream ends.
-Streaming tool traces, browser/scratchpad views, and reasoning detail remain
-unimplemented because their event, persistence, and approval contracts are not
-yet present.
+Pilot creates no conversation until a message is submitted, and messages,
+executions, and completed activity are persisted through the authorized
+Pilot-to-runtime path. The validated opening prompt creates its private chat,
+then the browser navigates to that chat immediately and streams there. Once the
+stream closes, the browser fetches an authenticated owner-scoped message
+snapshot and updates the transcript in place; it does not require a page
+refresh. This also makes a persisted Ask User suspension and its choices
+available in the active session. The opening message receives a local,
+deterministic title without another model request. New and existing chats use
+the same WorkOS-authorized streaming route. Both agent bases can use only their
+explicitly authorized capabilities.
+
+The docked composer and the chat header remain fixed while only the transcript,
+activity rail, or sidebar history scrolls. The header names the selected persona
+rather than its internal base-agent type. The user can rename or delete the
+open private chat; deletion redirects to New chat only after the server action
+has confirmed it.
 
 The desktop conversation rail groups safe, persisted runtime activity, tasks,
 and approvals for the open chat. Activity is collapsed by default and expands
@@ -82,10 +85,12 @@ provides only WorkOS-active organizations, reuses the server-side membership
 check before changing the session organization, and signs out through a POST
 Server Action. Agent fleet and Personas are reached through Settings.
 
-The Chats page lets the creator rename a conversation. The server action and
-repository scope the update to the active organization, selected agent,
-conversation ID, and creator ID. Renaming changes only the Pilot title; it does
-not alter messages, activity, tasks, approvals, or Mastra memory.
+Private chat history is reached through the Command-K palette rather than a
+standalone Chats page. It contains only the signed-in creator's conversations
+and opens them directly. Renaming changes only the Pilot title; it does not
+alter messages, activity, tasks, approvals, or Mastra memory. Both rename and
+delete actions scope the active organization, selected persona, conversation
+ID, and creator ID on the server.
 
 If a runtime request fails after Pilot has persisted the submitted user message,
 Pilot takes the user to that conversation rather than leaving it hidden on the

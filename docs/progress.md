@@ -1,6 +1,6 @@
 # Pilot implementation status
 
-Updated 2026-09-12. This is an implementation record, not a completion claim.
+Updated 2026-09-13. This is an implementation record, not a completion claim.
 
 ## Verification repairs
 
@@ -44,6 +44,24 @@ not introduce project sharing, files, or knowledge retrieval.
 Ship an open-source, self-hostable AI workforce platform with persistent organizational agents. Pilot owns the domain; Mastra provides runtime capabilities behind typed boundaries. First prove one agent end-to-end, including durable execution, protected actions, approval, suspend/resume, results and history. Do not expand into multiple agent architectures or secondary features before that works.
 
 ## Current slice: production chat workspace interface
+
+### In-progress conversation-flow repair
+
+The first non-empty message now creates its private conversation and moves the
+browser to that session before the runtime finishes. The stream renders in that
+session, then an authenticated owner-scoped message snapshot updates the
+transcript without a page refresh. The snapshot includes a persisted Ask User
+question and bounded choices, so a suspended request is usable immediately.
+The route is covered by AuthKit's conversation matcher and by an anonymous and
+forged-session browser boundary regression.
+
+Chat history is available through the Cmd/Ctrl-K palette and the private
+sidebar list; `/workspace/chats` redirects to New chat. The open chat header
+names the selected persona, and supplies rename/delete controls. The composer,
+header, and side panels remain fixed around a single transcript scrollbar.
+This slice does not turn the manual Tasks panel into a runtime Todo tool:
+there is no server-authorized Todo capability yet, so it must not be presented
+as one.
 
 The bounded public `web-search` capability is now shared by Conversational and
 Research personas. Pilot authorizes it only when the saved persona preference

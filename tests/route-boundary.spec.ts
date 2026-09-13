@@ -65,18 +65,22 @@ test("foreign resource access produces no mutation", async ({ request }) => {
 test("forged session cannot read another user's conversation activity", async ({
   request,
 }) => {
-  const path =
-    "/api/conversations/00000000-0000-4000-8000-000000000000/activity";
-  for (const cookie of ["", "wos-session=forged-session"]) {
-    const response = await request.get(path, {
-      maxRedirects: 0,
-      headers: { cookie },
-    });
-    expect(response.status()).toBeGreaterThanOrEqual(300);
-    expect(response.status()).toBeLessThan(400);
-    expect(new URL(response.headers().location).hostname).toBe(
-      "api.workos.com",
-    );
+  const paths = [
+    "/api/conversations/00000000-0000-4000-8000-000000000000/activity",
+    "/api/conversations/00000000-0000-4000-8000-000000000000/messages?workerId=00000000-0000-4000-8000-000000000000",
+  ];
+  for (const path of paths) {
+    for (const cookie of ["", "wos-session=forged-session"]) {
+      const response = await request.get(path, {
+        maxRedirects: 0,
+        headers: { cookie },
+      });
+      expect(response.status()).toBeGreaterThanOrEqual(300);
+      expect(response.status()).toBeLessThan(400);
+      expect(new URL(response.headers().location).hostname).toBe(
+        "api.workos.com",
+      );
+    }
   }
 });
 
