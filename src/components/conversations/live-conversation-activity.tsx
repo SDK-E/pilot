@@ -1,7 +1,38 @@
-import { ChevronRight, LoaderCircle } from "lucide-react";
+import {
+  ChainOfThought,
+  ChainOfThoughtContent,
+  ChainOfThoughtHeader,
+  ChainOfThoughtStep,
+} from "@/components/ai-elements/chain-of-thought";
 import type { ActivityEventType } from "@/executions/activity-event";
+import {
+  CheckCircle2,
+  CircleAlert,
+  LoaderCircle,
+  Search,
+  Wrench,
+} from "lucide-react";
 
-/** Displays the current stream state and sanitized persisted tool activity. */
+function stepStatus(
+  type: ActivityEventType,
+): "active" | "complete" | "pending" {
+  return type === "execution.started" || type === "tool.started"
+    ? "active"
+    : "complete";
+}
+
+function stepIcon(type: ActivityEventType) {
+  if (type === "tool.started" || type === "tool.completed") return Search;
+  if (type === "tool.failed" || type === "execution.failed") return CircleAlert;
+  if (type === "execution.completed") return CheckCircle2;
+  return Wrench;
+}
+
+/**
+ * A readable activity trace backed only by Pilot's sanitized server events.
+ * It deliberately excludes private model reasoning, prompts, tool inputs,
+ * outputs, URLs, errors, and credentials.
+ */
 export function LiveConversationActivity({
   events = [],
 }: {
@@ -18,29 +49,49 @@ export function LiveConversationActivity({
   const summary = latest?.summary ?? "Pilot is responding…";
 
   return (
-    <details className="group mt-1 w-fit rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-      <summary className="flex cursor-pointer list-none items-center gap-2 font-medium text-foreground [&::-webkit-details-marker]:hidden">
-        <ChevronRight
-          aria-hidden="true"
-          className="size-3.5 transition-transform group-open:rotate-90"
-        />
-        <LoaderCircle
-          aria-hidden="true"
-          className="size-3.5 animate-spin text-primary"
-        />
-        {summary}
-      </summary>
-      {currentEvents.length > 0 ? (
-        <ul className="mt-2 space-y-1 border-l border-border pl-3">
-          {currentEvents.map((event) => (
-            <li key={event.id}>{event.summary}</li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-2 border-l border-border pl-3">
-          Generating a response through Pilot.
+    <ChainOfThought
+      className="mt-3 max-w-xl rounded-2xl border border-border bg-muted/35 px-3 py-2"
+      defaultOpen={false}
+    >
+      <ChainOfThoughtHeader className="text-foreground">
+        <span className="flex items-center gap-2">
+          <LoaderCircle
+            aria-hidden="true"
+            className="size-3.5 animate-spin text-primary"
+          />
+          {summary}
+        </span>
+      </ChainOfThoughtHeader>
+      <ChainOfThoughtContent className="border-t border-border pt-3">
+        <p className="text-xs leading-5 text-muted-foreground">
+          Pilot’s verified working steps. Private model reasoning and tool data
+          are never shown here.
         </p>
-      )}
-    </details>
+        <div className="space-y-3">
+          {(currentEvents.length ? currentEvents : [undefined]).map(
+            (event, index) => (
+              <ChainOfThoughtStep
+                description={
+                  event
+                    ? event.type.startsWith("tool.")
+                      ? "Protected capability activity"
+                      : "Conversation execution"
+                    : "Preparing the response"
+                }
+                icon={event ? stepIcon(event.type) : LoaderCircle}
+                key={event?.id ?? "responding"}
+                label={event?.summary ?? "Generating a response"}
+                status={event ? stepStatus(event.type) : "active"}
+                className={
+                  index === currentEvents.length - 1
+                    ? "[&>div:first-child>div]:hidden"
+                    : undefined
+                }
+              />
+            ),
+          )}
+        </div>
+      </ChainOfThoughtContent>
+    </ChainOfThought>
   );
 }

@@ -48,10 +48,20 @@ the same WorkOS-authorized streaming route. Both agent bases can use only their
 explicitly authorized capabilities.
 
 The docked composer and the chat header remain fixed while only the transcript,
-activity rail, or sidebar history scrolls. The header names the selected persona
-rather than its internal base-agent type. The user can rename or delete the
-open private chat; deletion redirects to New chat only after the server action
-has confirmed it.
+activity rail, or sidebar history scrolls. The composer uses the maintained AI
+Elements Prompt Input and attachment primitives: it stays compact, supports
+keyboard submission preferences, offers a file action menu, previews selected
+files, and preserves Pilot's server-authorized attachment upload boundary. The
+header names the selected persona rather than its internal base-agent type. The
+user can rename or delete the open private chat; deletion redirects to New chat
+only after the server action has confirmed it.
+
+The live activity disclosure uses AI Elements Chain of Thought as a readable
+visual trace of Pilot's verified execution and tool lifecycle summaries. It is
+collapsed by default. On narrow layouts, the full details rail is itself a
+collapsed disclosure. This is not raw model chain-of-thought: Pilot never
+stores or displays private reasoning, prompts, tool arguments, tool results,
+URLs, errors, or credentials.
 
 The desktop conversation rail groups safe, persisted runtime activity, tasks,
 and approvals for the open chat. Activity is collapsed by default and expands
@@ -101,7 +111,7 @@ composer.
 ## Sources checked on 2026-09-07
 
 - [AI Elements](https://ai-sdk.dev/elements) and the official Conversation,
-  Message, Prompt Input, and Reasoning registry metadata.
+  Message, Prompt Input, Attachments, and Chain of Thought registry metadata.
 - [shadcn/ui](https://ui.shadcn.com/docs) and the installed Radix Nova
   components.
 - Installed Next.js `16.3.4` documentation for Server Actions and Server/

@@ -12,15 +12,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useCompletion } from "@ai-sdk/react";
-import {
-  ArrowLeft,
-  Bot,
-  Check,
-  Copy,
-  Paperclip,
-  SendHorizontal,
-  Square,
-} from "lucide-react";
+import { ArrowLeft, Bot, Check, Copy } from "lucide-react";
 import { AgentAvatar } from "@/components/agents/agent-avatar";
 import {
   Conversation,
@@ -43,8 +35,28 @@ import { RenameConversationForm } from "@/components/conversations/rename-conver
 import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
 import type { ActivityEventType } from "@/executions/activity-event";
+import {
+  Attachment,
+  AttachmentInfo,
+  AttachmentPreview,
+  AttachmentRemove,
+  Attachments,
+} from "@/components/ai-elements/attachments";
+import {
+  PromptInput,
+  PromptInputActionAddAttachments,
+  PromptInputActionMenu,
+  PromptInputActionMenuContent,
+  PromptInputActionMenuTrigger,
+  PromptInputBody,
+  PromptInputFooter,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+  type PromptInputMessage,
+  usePromptInputAttachments,
+} from "@/components/ai-elements/prompt-input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { shouldSubmitMessage } from "@/hooks/use-message-submit-shortcut";
 
 type PersistedMessage = {
@@ -67,6 +79,36 @@ type PersistedActivity = {
   summary: string;
   type: ActivityEventType;
 };
+
+function ComposerAttachmentPreviews() {
+  const composerAttachments = usePromptInputAttachments();
+  if (!composerAttachments.files.length) return null;
+  return (
+    <Attachments className="px-1 pt-1" variant="inline">
+      {composerAttachments.files.map((attachment) => (
+        <Attachment
+          data={attachment}
+          key={attachment.id}
+          onRemove={() => composerAttachments.remove(attachment.id)}
+        >
+          <AttachmentPreview />
+          <AttachmentInfo />
+          <AttachmentRemove />
+        </Attachment>
+      ))}
+    </Attachments>
+  );
+}
+
+async function filePartToFile(file: PromptInputMessage["files"][number]) {
+  if (!file.url) throw new Error("Pilot could not read this attachment.");
+  const response = await fetch(file.url);
+  if (!response.ok) throw new Error("Pilot could not read this attachment.");
+  const blob = await response.blob();
+  return new File([blob], file.filename ?? "attachment", {
+    type: file.mediaType || blob.type || "application/octet-stream",
+  });
+}
 
 type ConversationShellProps = {
   backHref: string;
@@ -216,18 +258,56 @@ export function ConversationShell({
     startTransition(() => submitText(initialMessage));
   }, [conversationId, submitText]);
 
-  const submitMessage = useCallback(() => {
-    const raw = input;
-    if (!raw.trim()) {
-      setValidationError("Message cannot be blank.");
-      textareaRef.current?.focus();
-      return;
-    }
-    const message = raw.trim();
-    if (isLoading) return;
-    setValidationError(undefined);
-    submitText(message);
-  }, [input, isLoading, submitText]);
+  const uploadAttachment = useCallback(
+    async (file: File) => {
+      setUploading(true);
+      setAttachmentError(undefined);
+      try {
+        const formData = new FormData();
+        formData.set("workerId", agentId);
+        formData.set("file", file);
+        const result = await fetch(
+          `/api/conversations/${conversationId}/attachments`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
+        if (!result.ok) throw new Error("Pilot could not attach this file.");
+        return true;
+      } catch (error) {
+        setAttachmentError(
+          error instanceof Error
+            ? error.message
+            : "Pilot could not attach this file.",
+        );
+        return false;
+      } finally {
+        setUploading(false);
+      }
+    },
+    [agentId, conversationId],
+  );
+
+  const submitMessage = useCallback(
+    async (message: PromptInputMessage) => {
+      const text = message.text?.trim() ?? "";
+      if (!text) {
+        setValidationError("Message cannot be blank.");
+        textareaRef.current?.focus();
+        return;
+      }
+      if (isLoading || uploading) return;
+      setValidationError(undefined);
+      if (message.files?.length) {
+        const files = await Promise.all(message.files.map(filePartToFile));
+        const uploaded = await Promise.all(files.map(uploadAttachment));
+        if (uploaded.some((success) => !success)) return;
+      }
+      submitText(text);
+    },
+    [isLoading, submitText, uploadAttachment, uploading],
+  );
   const restoreLastMessage = useCallback(() => {
     setTimeoutError(undefined);
     setStreamError(undefined);
@@ -272,35 +352,6 @@ export function ConversationShell({
       });
     },
     [],
-  );
-  const uploadAttachment = useCallback(
-    async (file: File) => {
-      setUploading(true);
-      setAttachmentError(undefined);
-      try {
-        const formData = new FormData();
-        formData.set("workerId", agentId);
-        formData.set("file", file);
-        const result = await fetch(
-          `/api/conversations/${conversationId}/attachments`,
-          {
-            method: "POST",
-            body: formData,
-          },
-        );
-        if (!result.ok) throw new Error("Pilot could not attach this file.");
-        router.refresh();
-      } catch (error) {
-        setAttachmentError(
-          error instanceof Error
-            ? error.message
-            : "Pilot could not attach this file.",
-        );
-      } finally {
-        setUploading(false);
-      }
-    },
-    [agentId, conversationId, router],
   );
 
   useEffect(() => {
@@ -597,85 +648,108 @@ export function ConversationShell({
             </ul>
           ) : null}
           {runtimeConfigured ? (
-            <form
-              className="space-y-2"
-              onSubmit={(event) => {
-                event.preventDefault();
-                submitMessage();
-              }}
-            >
-              <div className="flex items-center gap-2 px-2 pt-2">
-                <label className="inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-                  <Paperclip className="size-4" />{" "}
-                  {uploading ? "Attaching…" : "Attach"}
-                  <input
-                    className="sr-only"
-                    disabled={uploading || isLoading}
-                    type="file"
-                    accept=".pdf,.txt,.md,.csv,.docx,.xlsx,image/jpeg,image/png,image/webp"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) void uploadAttachment(file);
-                      event.currentTarget.value = "";
+            <>
+              <PromptInput
+                accept=".pdf,.txt,.md,.csv,.docx,.xlsx,image/jpeg,image/png,image/webp"
+                className="rounded-3xl border border-border bg-card p-2 shadow-lg shadow-foreground/[0.04] transition-shadow focus-within:shadow-xl focus-within:shadow-primary/[0.06]"
+                maxFileSize={10 * 1024 * 1024}
+                multiple
+                onError={(event) => setAttachmentError(event.message)}
+                onSubmit={(message) => submitMessage(message)}
+              >
+                <ComposerAttachmentPreviews />
+                <PromptInputBody>
+                  <PromptInputTextarea
+                    aria-describedby={
+                      validationError ? fieldErrorId : undefined
+                    }
+                    aria-invalid={validationError ? true : undefined}
+                    aria-label="Message Pilot"
+                    className="min-h-20 px-3 pt-3 text-[15px] leading-6 sm:min-h-24"
+                    disabled={isLoading || uploading}
+                    id={fieldErrorId}
+                    maxLength={10_000}
+                    onChange={() => {
+                      if (validationError) setValidationError(undefined);
                     }}
+                    onKeyDown={(event) => {
+                      if (
+                        event.key !== "Enter" ||
+                        event.nativeEvent.isComposing
+                      )
+                        return;
+                      if (shouldSubmitMessage(event, sendMessageShortcut)) {
+                        event.preventDefault();
+                        event.currentTarget.form?.requestSubmit();
+                        return;
+                      }
+                      if (
+                        sendMessageShortcut === "mod_enter" &&
+                        !event.shiftKey
+                      ) {
+                        event.preventDefault();
+                        const textarea = event.currentTarget;
+                        const next = `${textarea.value.slice(0, textarea.selectionStart)}\n${textarea.value.slice(textarea.selectionEnd)}`;
+                        setInput(next);
+                        requestAnimationFrame(() => {
+                          const position = textarea.selectionStart + 1;
+                          textarea.setSelectionRange(position, position);
+                        });
+                      }
+                    }}
+                    placeholder="Message Pilot…"
+                    ref={textareaRef}
+                    required
+                    rows={2}
+                    value={input}
                   />
-                </label>
-                {attachmentError ? (
-                  <p aria-live="polite" className="text-xs text-destructive">
-                    {attachmentError}
-                  </p>
-                ) : null}
-              </div>
-              <Textarea
-                aria-describedby={
-                  validationError ? `${fieldErrorId}` : undefined
-                }
-                aria-invalid={validationError ? true : undefined}
-                aria-label="Message"
-                className="composer-textarea min-h-28 resize-y rounded-[1.5rem] border-border bg-card px-4 py-3 shadow-xl shadow-foreground/[0.06] focus-visible:ring-2"
-                id={fieldErrorId}
-                maxLength={10_000}
-                onChange={(event) => {
-                  setInput(event.target.value);
-                  if (validationError) setValidationError(undefined);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" || event.nativeEvent.isComposing)
-                    return;
-                  if (shouldSubmitMessage(event, sendMessageShortcut)) {
-                    event.preventDefault();
-                    submitMessage();
-                    return;
-                  }
-                  if (sendMessageShortcut === "mod_enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    const textarea = event.currentTarget;
-                    const next = `${textarea.value.slice(0, textarea.selectionStart)}\n${textarea.value.slice(textarea.selectionEnd)}`;
-                    setInput(next);
-                    requestAnimationFrame(() => {
-                      const position = textarea.selectionStart + 1;
-                      textarea.setSelectionRange(position, position);
-                    });
-                  }
-                }}
-                placeholder="Message Pilot…"
-                ref={textareaRef}
-                required
-                rows={3}
-                value={input}
-              />
+                </PromptInputBody>
+                <PromptInputFooter className="px-1 pb-1">
+                  <PromptInputTools>
+                    <PromptInputActionMenu>
+                      <PromptInputActionMenuTrigger
+                        disabled={isLoading || uploading}
+                        tooltip="Add files"
+                      />
+                      <PromptInputActionMenuContent>
+                        <PromptInputActionAddAttachments label="Add files" />
+                      </PromptInputActionMenuContent>
+                    </PromptInputActionMenu>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+                      <Bot
+                        aria-hidden="true"
+                        className="size-3.5 text-primary"
+                      />
+                      {agentName}
+                    </span>
+                  </PromptInputTools>
+                  <PromptInputSubmit
+                    disabled={isLoading ? false : !input.trim() || uploading}
+                    onStop={cancel}
+                    status={isLoading ? "streaming" : "ready"}
+                  />
+                </PromptInputFooter>
+              </PromptInput>
               {validationError ? (
                 <p
                   aria-live="assertive"
-                  className="text-sm text-destructive"
+                  className="mt-2 px-2 text-sm text-destructive"
                   id={fieldErrorId}
                   role="alert"
                 >
                   {validationError}
                 </p>
               ) : null}
+              {attachmentError ? (
+                <p
+                  aria-live="polite"
+                  className="mt-2 px-2 text-sm text-destructive"
+                >
+                  {attachmentError}
+                </p>
+              ) : null}
               {timeoutError ? (
-                <div className="space-y-2">
+                <div className="mt-2 space-y-2 px-2">
                   <p
                     aria-live="assertive"
                     className="text-sm text-destructive"
@@ -703,47 +777,31 @@ export function ConversationShell({
                 </div>
               ) : null}
               {streamError && !timeoutError ? (
-                <p aria-live="polite" className="text-sm text-destructive">
+                <p
+                  aria-live="polite"
+                  className="mt-2 px-2 text-sm text-destructive"
+                >
                   {streamError}
                 </p>
               ) : null}
               {error && !timeoutError ? (
-                <p aria-live="polite" className="text-sm text-destructive">
+                <p
+                  aria-live="polite"
+                  className="mt-2 px-2 text-sm text-destructive"
+                >
                   {error.message || "Pilot could not complete this message."}
                 </p>
               ) : null}
-              <div className="flex items-center justify-between gap-3 px-3 pb-2">
-                <p
-                  aria-live="polite"
-                  className="inline-flex items-center gap-2 text-xs text-muted-foreground"
-                >
-                  <Bot className="size-3.5 text-primary" aria-hidden="true" />
-                  {isLoading
-                    ? "Pilot is responding…"
-                    : "Pilot can make mistakes. Check important work."}
-                </p>
-                {isLoading ? (
-                  <Button
-                    aria-label="Stop generating"
-                    className="composer-action"
-                    onClick={stop}
-                    size="icon"
-                    type="button"
-                    variant="outline"
-                  >
-                    <Square
-                      aria-hidden="true"
-                      className="size-3.5 fill-current"
-                    />
-                  </Button>
-                ) : (
-                  <Button className="composer-action" size="icon" type="submit">
-                    <SendHorizontal aria-hidden="true" className="size-4" />
-                    <span className="sr-only">Send message</span>
-                  </Button>
-                )}
-              </div>
-            </form>
+              <p
+                aria-live="polite"
+                className="mt-2 inline-flex items-center gap-2 px-2 text-xs text-muted-foreground"
+              >
+                <Bot className="size-3.5 text-primary" aria-hidden="true" />
+                {isLoading
+                  ? "Pilot is working…"
+                  : "Pilot can make mistakes. Check important work."}
+              </p>
+            </>
           ) : (
             <p className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-center text-sm text-muted-foreground">
               Messaging becomes available after this environment is connected to

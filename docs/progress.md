@@ -57,9 +57,13 @@ forged-session browser boundary regression.
 
 Chat history is available through the Cmd/Ctrl-K palette and the private
 sidebar list; `/workspace/chats` redirects to New chat. The open chat header
-names the selected persona, and supplies rename/delete controls. The composer,
-header, and side panels remain fixed around a single transcript scrollbar.
-This slice does not turn the manual Tasks panel into a runtime Todo tool:
+names the selected persona, and supplies rename/delete controls. The composer
+uses AI Elements Prompt Input with a compact file action menu and selected-file
+previews. The live response trace uses AI Elements Chain of Thought to display
+only sanitized execution and tool summaries; it is collapsed by default. On
+narrow screens, the full chat-details rail is also collapsed by default. The
+composer, header, and side panels remain fixed around a single transcript
+scrollbar. This slice does not turn the manual Tasks panel into a runtime Todo tool:
 there is no server-authorized Todo capability yet, so it must not be presented
 as one.
 

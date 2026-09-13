@@ -21,6 +21,7 @@
   "dependencies": {
     "@ai-sdk/react": "4.0.96",
     "@neondatabase/serverless": "1.1.0",
+    "@radix-ui/react-use-controllable-state": "^1.2.6",
     "@streamdown/cjk": "^1.0.3",
     "@streamdown/code": "^1.1.1",
     "@streamdown/math": "^1.0.2",
