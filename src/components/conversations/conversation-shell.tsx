@@ -502,7 +502,7 @@ export function ConversationShell({
         />
       </section>
 
-      <div className="border-t border-border bg-background/95 px-4 py-4 backdrop-blur sm:px-6 sm:pb-6 safe-bottom">
+      <div className="shrink-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-xl sm:px-6 sm:pb-5 safe-bottom">
         <div className="mx-auto w-full max-w-3xl">
           {attachments.length ? (
             <ul
@@ -538,8 +538,8 @@ export function ConversationShell({
                 submitMessage();
               }}
             >
-              <div className="flex items-center gap-2">
-                <label className="inline-flex cursor-pointer items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+              <div className="flex items-center gap-2 px-2 pt-2">
+                <label className="inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                   <Paperclip className="size-4" />{" "}
                   {uploading ? "Attaching…" : "Attach"}
                   <input
@@ -566,7 +566,7 @@ export function ConversationShell({
                 }
                 aria-invalid={validationError ? true : undefined}
                 aria-label="Message"
-                className="composer-textarea min-h-28 resize-y rounded-2xl border-border bg-card px-4 py-3 shadow-lg shadow-black/10 focus-visible:ring-2"
+                className="composer-textarea min-h-28 resize-y rounded-[1.5rem] border-border bg-card px-4 py-3 shadow-xl shadow-foreground/[0.06] focus-visible:ring-2"
                 id={fieldErrorId}
                 maxLength={10_000}
                 onChange={(event) => {
@@ -646,7 +646,7 @@ export function ConversationShell({
                   {error.message || "Pilot could not complete this message."}
                 </p>
               ) : null}
-              <div className="flex items-center justify-between gap-3 px-1">
+              <div className="flex items-center justify-between gap-3 px-3 pb-2">
                 <p
                   aria-live="polite"
                   className="inline-flex items-center gap-2 text-xs text-muted-foreground"
