@@ -5,6 +5,7 @@ import { z } from "zod";
 import { ConversationShell } from "@/components/conversations/conversation-shell";
 import { listConversationAttachments } from "@/conversations/attachment-repository";
 import { getConversationScratchpad } from "@/conversations/scratchpad-repository";
+import { listMessageSources } from "@/conversations/research-evidence";
 import {
   getConversation,
   listConversationMessages,
@@ -61,6 +62,7 @@ export default async function ConversationPage({
     projects,
     attachments,
     scratchpad,
+    sources,
   ] = await Promise.all([
     getWorker(organizationId, workerId),
     getConversation(organizationId, workerId, conversationId, user.id),
@@ -92,6 +94,7 @@ export default async function ConversationPage({
       conversationId,
       userId: user.id,
     }),
+    listMessageSources({ organizationId, conversationId, userId: user.id }),
   ]);
   if (!worker || !conversation || !messages) notFound();
 
@@ -101,7 +104,10 @@ export default async function ConversationPage({
     <ConversationShell
       backHref="/workspace"
       conversationId={conversation.id}
-      messages={messages}
+      messages={messages.map((message) => ({
+        ...message,
+        sources: sources.filter((source) => source.messageId === message.id),
+      }))}
       activities={activities}
       tasks={tasks}
       approvals={approvals}
