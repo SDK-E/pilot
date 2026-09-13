@@ -45,6 +45,28 @@ Ship an open-source, self-hostable AI workforce platform with persistent organiz
 
 ## Current slice: production chat workspace interface
 
+### Verified conversation controls and exports (2026-09-13)
+
+The private conversation header now uses an accessible dialog for rename rather
+than a nested button inside a native disclosure. The existing server action
+continues to authenticate WorkOS, recheck membership, and filter the renamed
+record by organization, worker, conversation, and creator.
+
+Research exports now offer a real PDF download. The server renders visible
+messages and their owner-scoped source evidence through `@react-pdf/renderer`;
+it does not print escaped Markdown into a browser print page. The PDF renderer
+is validated by the production build, while the deterministic export-content
+test covers headings, bullets, links, and code-block text. Local Node 26's test
+loader cannot execute React PDF's current hyphenation dependency, so the binary
+renderer is not run through the `tsx --test` process; this remains a separate
+Node 24 deployment-runtime verification item.
+
+The conversation pane now owns its sticky composer and the conversation-details
+rail is a keyboard-accessible shadcn Resizable panel. Widths are stored as a
+local user preference, the rail no longer relies on desktop `display: contents`
+behavior, and narrow layouts retain a vertically resizable, collapsible details
+area. The header, composer, and rails remain fixed while the transcript scrolls.
+
 ### In-progress conversation-flow repair
 
 The first non-empty message now creates its private conversation and moves the
