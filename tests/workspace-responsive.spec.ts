@@ -23,6 +23,24 @@ for (const viewport of [
     ).toBe(true);
     expect(errors).toEqual([]);
   });
+
+  test(`public page has no horizontal overflow at ${viewport.width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+
+    const hasOverflow = await page.evaluate(() => {
+      const html = document.documentElement;
+      const body = document.body;
+      return (
+        html.scrollWidth > window.innerWidth ||
+        body.scrollWidth > window.innerWidth
+      );
+    });
+
+    expect(hasOverflow).toBe(false);
+  });
 }
 
 test("public keyboard navigation reaches the sign-in action", async ({

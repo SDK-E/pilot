@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCompletion } from "@ai-sdk/react";
@@ -51,6 +51,7 @@ export function NewChatForm({
   const generationStartTimeRef = useRef<number | null>(null);
   const lastPromptRef = useRef<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fieldErrorId = useId();
   const {
     complete,
     completion,
@@ -251,17 +252,19 @@ export function NewChatForm({
         </section>
       ) : null}
       <form
-        className="space-y-3"
+        className="space-y-3 safe-bottom"
         onSubmit={(event) => {
           event.preventDefault();
           submitMessage();
         }}
       >
         <Textarea
+          aria-describedby={validationError ? `${fieldErrorId}` : undefined}
           aria-invalid={validationError ? true : undefined}
           aria-label="Message Pilot"
-          className="min-h-32 resize-y rounded-2xl border-border bg-card px-4 py-4 text-base shadow-lg shadow-black/10 focus-visible:ring-2"
+          className="composer-textarea min-h-28 resize-y rounded-2xl border-border bg-card px-4 py-3 text-base shadow-lg shadow-black/10 focus-visible:ring-2"
           disabled={isLoading}
+          id={fieldErrorId}
           maxLength={10_000}
           onChange={(event) => {
             setInput(event.target.value);
@@ -282,8 +285,9 @@ export function NewChatForm({
         {validationError ? (
           <p
             aria-live="assertive"
-            role="alert"
             className="text-sm text-destructive"
+            id={fieldErrorId}
+            role="alert"
           >
             {validationError}
           </p>
@@ -292,8 +296,8 @@ export function NewChatForm({
           <div className="space-y-2">
             <p
               aria-live="assertive"
-              role="alert"
               className="text-sm text-destructive"
+              role="alert"
             >
               {timeoutError}
             </p>
@@ -327,6 +331,7 @@ export function NewChatForm({
           {isLoading ? (
             <Button
               aria-label="Stop generating"
+              className="composer-action"
               onClick={stop}
               size="icon"
               type="button"
@@ -335,7 +340,7 @@ export function NewChatForm({
               <Square aria-hidden="true" className="size-3.5 fill-current" />
             </Button>
           ) : (
-            <Button size="icon" type="submit">
+            <Button className="composer-action" size="icon" type="submit">
               <SendHorizontal className="size-4" aria-hidden="true" />
               <span className="sr-only">Send</span>
             </Button>

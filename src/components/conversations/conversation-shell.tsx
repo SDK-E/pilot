@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { useCompletion } from "@ai-sdk/react";
 import {
@@ -103,6 +110,7 @@ export function ConversationShell({
   const [timeoutError, setTimeoutError] = useState<string>();
   const [validationError, setValidationError] = useState<string>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fieldErrorId = useId();
   const timedOutRef = useRef(false);
   const displayedActivities = useMemo(() => {
     const byId = new Map(activities.map((activity) => [activity.id, activity]));
@@ -433,7 +441,7 @@ export function ConversationShell({
         />
       </section>
 
-      <div className="border-t border-border bg-background/95 px-4 py-4 backdrop-blur sm:px-6 sm:pb-6">
+      <div className="border-t border-border bg-background/95 px-4 py-4 backdrop-blur sm:px-6 sm:pb-6 safe-bottom">
         <div className="mx-auto w-full max-w-3xl">
           {attachments.length ? (
             <ul
@@ -492,9 +500,13 @@ export function ConversationShell({
                 ) : null}
               </div>
               <Textarea
+                aria-describedby={
+                  validationError ? `${fieldErrorId}` : undefined
+                }
                 aria-invalid={validationError ? true : undefined}
                 aria-label="Message"
-                className="min-h-28 resize-y rounded-2xl border-border bg-card px-4 py-3 shadow-lg shadow-black/10 focus-visible:ring-2"
+                className="composer-textarea min-h-28 resize-y rounded-2xl border-border bg-card px-4 py-3 shadow-lg shadow-black/10 focus-visible:ring-2"
+                id={fieldErrorId}
                 maxLength={10_000}
                 onChange={(event) => {
                   setInput(event.target.value);
@@ -515,8 +527,9 @@ export function ConversationShell({
               {validationError ? (
                 <p
                   aria-live="assertive"
-                  role="alert"
                   className="text-sm text-destructive"
+                  id={fieldErrorId}
+                  role="alert"
                 >
                   {validationError}
                 </p>
@@ -525,8 +538,8 @@ export function ConversationShell({
                 <div className="space-y-2">
                   <p
                     aria-live="assertive"
-                    role="alert"
                     className="text-sm text-destructive"
+                    role="alert"
                   >
                     {timeoutError}
                   </p>
@@ -568,6 +581,7 @@ export function ConversationShell({
                 {isLoading ? (
                   <Button
                     aria-label="Stop generating"
+                    className="composer-action"
                     onClick={stop}
                     size="icon"
                     type="button"
@@ -579,7 +593,7 @@ export function ConversationShell({
                     />
                   </Button>
                 ) : (
-                  <Button size="icon" type="submit">
+                  <Button className="composer-action" size="icon" type="submit">
                     <SendHorizontal aria-hidden="true" className="size-4" />
                     <span className="sr-only">Send message</span>
                   </Button>

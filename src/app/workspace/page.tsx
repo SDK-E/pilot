@@ -2,7 +2,11 @@ import { redirect } from "next/navigation";
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { ArrowUpRight, MessageSquareMore, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { isResearchAvailable } from "@/conversations/research-availability";
+import {
+  isResearchAvailable,
+  getResearchState,
+  getResearchDisabledTooltip,
+} from "@/conversations/research-availability";
 import { NewChatForm } from "@/components/conversations/new-chat-form";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
@@ -29,6 +33,7 @@ export default async function WorkspaceHome({
         ])
       : [[], { defaultWorkerId: null }, { mode: undefined }];
   const mode = resolvedSearchParams?.mode;
+  const researchState = getResearchState(agents);
 
   return (
     <main className="flex min-h-[calc(100svh-4rem)] flex-1 flex-col items-center justify-center px-5 py-10 sm:px-8">
@@ -59,7 +64,7 @@ export default async function WorkspaceHome({
           defaultAgentId={organizationPreferences.defaultWorkerId}
           mode={mode}
         />
-        <div className="grid gap-3 text-left sm:grid-cols-3">
+        <div className="grid gap-3 text-left grid-cols-responsive">
           {[
             {
               title: "Plan",
@@ -78,25 +83,39 @@ export default async function WorkspaceHome({
               description: "Search the public web with cited sources",
               icon: ArrowUpRight,
               href: "/workspace?mode=research",
-              disabled: !agents.some(
-                (agent) =>
-                  agent.baseAgentId === "research" &&
-                  isResearchAvailable(agent.baseAgentId),
-              ),
+              disabled: researchState !== "available",
+              disabledTooltip: getResearchDisabledTooltip(researchState),
             },
           ].map((item) => {
             const IconComponent = item.icon;
+            const isResearchDisabled =
+              item.title === "Research" && item.disabled;
+            if (isResearchDisabled) {
+              return (
+                <Button
+                  key={item.title}
+                  aria-disabled={true}
+                  className="h-auto justify-start rounded-xl border border-border bg-card/45 p-4 text-left opacity-70"
+                  disabled
+                  title={item.disabledTooltip}
+                  variant="outline"
+                >
+                  <IconComponent
+                    className="mb-3 size-4 text-primary"
+                    aria-hidden="true"
+                  />
+                  <p className="text-sm font-medium">{item.title}</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    {item.description}
+                  </p>
+                </Button>
+              );
+            }
             return (
               <Button
                 key={item.title}
                 asChild
                 className="h-auto justify-start rounded-xl border border-border bg-card/45 p-4 text-left"
-                disabled={item.disabled}
-                title={
-                  item.disabled
-                    ? "Research is not enabled for this environment yet."
-                    : undefined
-                }
                 variant="outline"
               >
                 <Link href={item.href}>

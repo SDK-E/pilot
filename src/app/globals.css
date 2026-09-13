@@ -49,20 +49,118 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --sidebar-width: 16rem;
+  --sidebar-width-mobile: 18rem;
+  --content-max-width: 48rem;
+  --control-touch-target: 2.75rem;
+  --focus-ring-color: var(--ring);
+  --focus-ring-width: 3px;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply font-sans min-h-[100dvh];
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground min-h-[100dvh];
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
   }
-  html {
-    @apply font-sans;
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted-foreground) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--muted-foreground);
+    border-radius: 9999px;
+  }
+  .focus-ring {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .composer-textarea {
+    flex: 1 1 auto;
+    max-height: 10rem;
+    overflow-y: auto;
+    field-sizing: content;
+  }
+  .composer-action {
+    flex: 0 0 var(--control-touch-target);
+    min-height: var(--control-touch-target);
+    min-width: var(--control-touch-target);
+  }
+  .message-content {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .long-content-scroll {
+    overflow-x: auto;
+  }
+  .responsive-media {
+    max-width: 100%;
+    height: auto;
+  }
+  .grid-minmax {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  }
+}
+
+@layer layout {
+  .page-root {
+    min-height: 100dvh;
+    min-width: 0;
+  }
+  .content-container {
+    width: 100%;
+    max-width: var(--content-max-width);
+    min-width: 0;
+  }
+}
+
+@layer safe-area {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .safe-left {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+  .safe-right {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+@layer responsive {
+  .grid-cols-responsive {
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 768px) {
+    .grid-cols-responsive {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .grid-cols-responsive {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 }
 

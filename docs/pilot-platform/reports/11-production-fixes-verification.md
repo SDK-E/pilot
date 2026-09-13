@@ -37,6 +37,7 @@
 Please test the following flows on the production URL:
 
 ### 1. First-message routing
+
 1. Open https://pilot.sdk.enterprises
 2. Sign in with a WorkOS test account (if needed; anonymous/public tests already pass)
 3. Type a unique prompt in the composer and submit
@@ -46,6 +47,7 @@ Please test the following flows on the production URL:
 7. Check the sidebar under "Chats" — the new conversation should appear immediately with a derived title, correct agent, and generation status
 
 ### 2. Generation timeout & recovery
+
 1. In a new or existing conversation, submit a prompt
 2. If the runtime is slow, wait 60 seconds — the UI should show "Generation timed out. The request took longer than expected." with Retry and Cancel buttons
 3. Click Retry — the same prompt should re-send and start a new stream
@@ -53,18 +55,21 @@ Please test the following flows on the production URL:
 5. Click "Stop generating" during an active response — it should abort cleanly
 
 ### 3. Whitespace validation
+
 1. Submit an empty message (no text) — should show "Message cannot be blank.", focus the textarea, and show `aria-invalid`
 2. Submit spaces-only — same behavior
 3. Start typing — the error should clear immediately
 4. Submit a very long message (>10k characters) — should be rejected by the textarea maxLength
 
 ### 4. Starter cards
+
 1. On the workspace homepage, click **Plan** — should navigate to `/workspace?mode=plan` and pre-fill the composer with "Help me plan: "
 2. Click **Draft** — should pre-fill with "Help me draft: "
 3. Click **Research** — should pre-fill with "Research: " (only if a research agent is available in the org; otherwise the card should be disabled with a tooltip)
 4. Tab through the cards and activate with Enter/Space — keyboard accessibility should work
 
 ### 5. Recovery / navigation edge cases
+
 - Navigate away from an active generation and back — the conversation should preserve its state
 - Use browser Back/Forward — the composer and conversation should remain coherent
 - Open the same conversation in two tabs — both should remain functional

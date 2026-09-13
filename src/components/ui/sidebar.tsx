@@ -30,6 +30,7 @@ const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
+const SIDEBAR_MOBILE_SHEET_ID = "sidebar-mobile-sheet";
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed";
@@ -186,6 +187,8 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
+          data-open={openMobile}
+          id={SIDEBAR_MOBILE_SHEET_ID}
           className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
           style={
             {
@@ -255,15 +258,18 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, openMobile, isMobile } = useSidebar();
 
   return (
     <Button
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
-      size="icon-sm"
-      className={cn(className)}
+      size="icon"
+      aria-controls={isMobile ? SIDEBAR_MOBILE_SHEET_ID : undefined}
+      aria-expanded={isMobile ? openMobile : undefined}
+      aria-label={openMobile ? "Close navigation" : "Open navigation"}
+      className={cn("h-11 w-11 min-h-11 min-w-11", className)}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();

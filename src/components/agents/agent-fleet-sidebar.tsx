@@ -160,7 +160,7 @@ export function AgentFleetShell({
       </Sidebar>
       <SidebarInset className="min-w-0 bg-background">
         <header className="flex h-16 items-center border-b border-border px-4 sm:px-5">
-          <SidebarTrigger aria-label="Toggle navigation" />
+          <SidebarTrigger />
           <span className="ml-3 text-sm text-muted-foreground">Workspace</span>
           <div className="ml-auto">
             <ThemeSwitcher />
