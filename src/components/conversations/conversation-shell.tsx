@@ -57,7 +57,10 @@ import {
   usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
 import { Button } from "@/components/ui/button";
-import { shouldSubmitMessage } from "@/hooks/use-message-submit-shortcut";
+import {
+  shouldInsertComposerNewline,
+  shouldSubmitMessage,
+} from "@/hooks/use-message-submit-shortcut";
 
 type PersistedMessage = {
   id: string;
@@ -684,7 +687,8 @@ export function ConversationShell({
                     disabled={isLoading || uploading}
                     id={fieldErrorId}
                     maxLength={10_000}
-                    onChange={() => {
+                    onChange={(event) => {
+                      setInput(event.currentTarget.value);
                       if (validationError) setValidationError(undefined);
                     }}
                     onKeyDown={(event) => {
@@ -699,17 +703,24 @@ export function ConversationShell({
                         return;
                       }
                       if (
-                        sendMessageShortcut === "mod_enter" &&
-                        !event.shiftKey
+                        shouldInsertComposerNewline(event, sendMessageShortcut)
                       ) {
                         event.preventDefault();
                         const textarea = event.currentTarget;
-                        const next = `${textarea.value.slice(0, textarea.selectionStart)}\n${textarea.value.slice(textarea.selectionEnd)}`;
+                        const selectionStart = textarea.selectionStart;
+                        const next = `${textarea.value.slice(0, selectionStart)}\n${textarea.value.slice(textarea.selectionEnd)}`;
                         setInput(next);
                         requestAnimationFrame(() => {
-                          const position = textarea.selectionStart + 1;
-                          textarea.setSelectionRange(position, position);
+                          textarea.setSelectionRange(
+                            selectionStart + 1,
+                            selectionStart + 1,
+                          );
                         });
+                        return;
+                      }
+                      if (sendMessageShortcut === "mod_enter") {
+                        event.preventDefault();
+                        setInput("");
                       }
                     }}
                     placeholder="Message Pilot…"

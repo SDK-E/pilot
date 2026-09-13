@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { KeyboardEvent } from "react";
-import { shouldSubmitMessage } from "@/hooks/use-message-submit-shortcut";
+import {
+  shouldInsertComposerNewline,
+  shouldSubmitMessage,
+} from "@/hooks/use-message-submit-shortcut";
 
 function keyEvent(overrides: Record<string, unknown> = {}) {
   return {
@@ -38,6 +41,35 @@ test("mod-enter mode accepts Ctrl or Command and preserves a plain Enter", () =>
   );
   assert.equal(
     shouldSubmitMessage(keyEvent({ metaKey: true }), "mod_enter"),
+    true,
+  );
+});
+
+test("mod-enter composer does not create blank invisible lines", () => {
+  assert.equal(
+    shouldInsertComposerNewline(
+      {
+        currentTarget: { value: "   " },
+        key: "Enter",
+        metaKey: false,
+        ctrlKey: false,
+        nativeEvent: { isComposing: false },
+      } as never,
+      "mod_enter",
+    ),
+    false,
+  );
+  assert.equal(
+    shouldInsertComposerNewline(
+      {
+        currentTarget: { value: "Draft" },
+        key: "Enter",
+        metaKey: false,
+        ctrlKey: false,
+        nativeEvent: { isComposing: false },
+      } as never,
+      "mod_enter",
+    ),
     true,
   );
 });
