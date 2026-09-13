@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   Gauge,
   FolderKanban,
-  History,
   MessageSquareMore,
   Plus,
   Settings,
@@ -12,6 +11,7 @@ import {
 import { AccountMenu } from "@/components/agents/account-menu";
 import { PilotWordmark } from "@/components/brand/pilot-wordmark";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
+import { ChatCommandPalette } from "@/components/conversations/chat-command-palette";
 import {
   Sidebar,
   SidebarContent,
@@ -89,13 +89,8 @@ export function AgentFleetShell({
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Chats">
-                    <Link href="/workspace/chats">
-                      <MessageSquareMore aria-hidden="true" />
-                      <span>Chats</span>
-                    </Link>
-                  </SidebarMenuButton>
+                <SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
+                  <ChatCommandPalette chats={recentChats} />
                 </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
@@ -103,8 +98,7 @@ export function AgentFleetShell({
 
           <SidebarGroup className="min-h-0 flex-1 px-3 pb-0 pt-5 group-data-[collapsible=icon]:hidden">
             <SidebarGroupLabel className="px-2 text-[11px] uppercase tracking-[0.12em] text-sidebar-foreground/55">
-              <History aria-hidden="true" className="mr-2 size-3.5" />
-              Chat history
+              Recent conversations
             </SidebarGroupLabel>
             <SidebarGroupContent className="min-h-0 flex-1 overflow-y-auto scrollbar-thin">
               {recentChats.length ? (
