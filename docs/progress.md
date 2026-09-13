@@ -67,6 +67,14 @@ local user preference, the rail no longer relies on desktop `display: contents`
 behavior, and narrow layouts retain a vertically resizable, collapsible details
 area. The header, composer, and rails remain fixed while the transcript scrolls.
 
+Activity is now grouped by execution rather than flattened across the whole
+chat. Each response run expands into its verified preparation, capability,
+approval, completion, or failure milestones. This improves the readable
+per-turn chain without turning activity into model reasoning. A skill milestone
+will remain absent until the request-scoped production runtime activates the
+existing skill resolver and can send an equivalent authenticated, sanitized
+event; the UI does not invent loaded skills.
+
 ### In-progress conversation-flow repair
 
 The first non-empty message now creates its private conversation and moves the
