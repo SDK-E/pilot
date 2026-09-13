@@ -33,6 +33,7 @@ import { ConversationProjectPicker } from "@/components/conversations/conversati
 import { DeleteConversationButton } from "@/components/conversations/delete-conversation-button";
 import { RenameConversationForm } from "@/components/conversations/rename-conversation-form";
 import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
+import { updateConversationPanelLayoutAction } from "@/app/workspace/panel-layout-actions";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
 import { ResearchExportLinks } from "@/components/conversations/research-export-links";
 import type { TimelineActivity } from "@/executions/activity-timeline";
@@ -146,6 +147,7 @@ type ConversationShellProps = {
     byteSize: number;
   }>;
   scratchpad: string;
+  initialPanelLayout?: { conversation: number; details: number };
 };
 
 export function ConversationShell({
@@ -163,6 +165,7 @@ export function ConversationShell({
   projects,
   attachments,
   scratchpad,
+  initialPanelLayout,
 }: ConversationShellProps) {
   const router = useRouter();
   const sendMessageShortcut = useSendMessageShortcut();
@@ -186,7 +189,15 @@ export function ConversationShell({
   const [panelLayout, setPanelLayout] = useState<{
     conversation: number;
     details: number;
-  }>({ conversation: 72, details: 28 });
+  }>(initialPanelLayout ?? { conversation: 72, details: 28 });
+  const panelLayoutSaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(
+    () => () => {
+      if (panelLayoutSaveTimer.current)
+        clearTimeout(panelLayoutSaveTimer.current);
+    },
+    [],
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastSubmittedMessageRef = useRef<string | undefined>(undefined);
   const fieldErrorId = useId();
@@ -211,6 +222,9 @@ export function ConversationShell({
     update();
     media.addEventListener("change", update);
     let frame: number | undefined;
+    if (initialPanelLayout) {
+      return () => media.removeEventListener("change", update);
+    }
     try {
       const saved = window.localStorage.getItem("pilot:conversation-panels:v1");
       if (saved) {
@@ -234,6 +248,8 @@ export function ConversationShell({
       media.removeEventListener("change", update);
       if (frame) window.cancelAnimationFrame(frame);
     };
+    // Reads the server-provided or locally cached layout once on mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const syncMessages = useCallback(async () => {
     try {
@@ -522,6 +538,11 @@ export function ConversationShell({
             } catch {
               // Panel sizing is a local preference; an unavailable storage API is safe to ignore.
             }
+            if (panelLayoutSaveTimer.current)
+              clearTimeout(panelLayoutSaveTimer.current);
+            panelLayoutSaveTimer.current = setTimeout(() => {
+              void updateConversationPanelLayoutAction(next);
+            }, 600);
           }}
           orientation={desktopLayout ? "horizontal" : "vertical"}
         >

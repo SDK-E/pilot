@@ -53,6 +53,10 @@ export const userPreferences = pgTable("user_preferences", {
     .notNull()
     .default("mod_enter"),
   uiLocale: text("ui_locale").$type<string | null>(),
+  conversationPanelLayout: jsonb("conversation_panel_layout").$type<{
+    conversation: number;
+    details: number;
+  } | null>(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

@@ -13,6 +13,7 @@ import {
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
 import { listConversationActivity } from "@/executions/execution-repository";
 import { getWorker } from "@/workers/worker-repository";
+import { getUserPreferences } from "@/users/user-preference-repository";
 import { listConversationTasks } from "@/tasks/task-repository";
 import { listConversationApprovals } from "@/approvals/approval-repository";
 import {
@@ -63,6 +64,7 @@ export default async function ConversationPage({
     attachments,
     scratchpad,
     sources,
+    preferences,
   ] = await Promise.all([
     getWorker(organizationId, workerId),
     getConversation(organizationId, workerId, conversationId, user.id),
@@ -95,6 +97,7 @@ export default async function ConversationPage({
       userId: user.id,
     }),
     listMessageSources({ organizationId, conversationId, userId: user.id }),
+    getUserPreferences(user.id),
   ]);
   if (!worker || !conversation || !messages) notFound();
 
@@ -119,6 +122,7 @@ export default async function ConversationPage({
       projects={projects}
       attachments={attachments}
       scratchpad={scratchpad}
+      initialPanelLayout={preferences.conversationPanelLayout ?? undefined}
     />
   );
 }

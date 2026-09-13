@@ -766,3 +766,11 @@ Pilot Work is now an owner-scoped queue at `/workspace/work`, backed by existing
 Task reads now use the task creator as the private ownership boundary, closing a future cross-user leak for tasks attached to a shared organization conversation. The former `/workspace/tasks` route redirects to the Work surface.
 
 The local development Neon database was brought up to the committed migration state before verification; no shared or production database was migrated manually. `pnpm test:db` passed the private task lifecycle and organization-isolation flow. Durable runtime dispatch is intentionally deferred: it needs its own persistence, recovery, cancellation, and budget contract before Work can claim autonomous execution.
+
+## Per-user conversation panel layout (2026-09-14)
+
+The conversation shell's resizable panel split (transcript vs. details/activity rail) is now persisted per WorkOS user in Neon, not only in the viewer's `localStorage`. `user_preferences.conversation_panel_layout` (migration `0026_conversation_panel_layout.sql`, additive/nullable) stores the last saved `{conversation, details}` percentages. The conversation page loads it server-side via `getUserPreferences` and passes it to `ConversationShell` as `initialPanelLayout`; a resize debounces a call to the new `updateConversationPanelLayoutAction` (authenticated, self-scoped, bounds-checked with Zod) alongside the existing `localStorage` write, so a user's layout now follows them across browsers/devices while still rendering instantly from cache on repeat visits in the same browser.
+
+The left navigation sidebar (`AgentFleetShell`) remains icon-collapsible only, not drag-resizable — that gap from the plan is still open, as is left-nav layout persistence.
+
+Verified locally: `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm build`, `pnpm test` (25 passed, pre-existing WorkOS/DB-gated specs skipped), `pnpm test:server` (79/79), `pnpm test:db` (1/1, after updating its stale preferences fixture), `pnpm audit --audit-level high` (clean). The local development Neon database's `user_preferences` table was altered directly for this column, matching how prior additive migrations in this range (`0022`–`0025`) reached this database — `pnpm db:migrate`'s tracked journal does not yet include those, a pre-existing gap this slice did not attempt to fix.
