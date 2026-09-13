@@ -7,6 +7,7 @@ import {
   MessageSquareMore,
   Plus,
   Settings,
+  Workflow,
 } from "lucide-react";
 import { AccountMenu } from "@/components/agents/account-menu";
 import { PilotWordmark } from "@/components/brand/pilot-wordmark";
@@ -144,6 +145,14 @@ export function AgentFleetShell({
 
         <SidebarFooter className="gap-3 border-t border-sidebar-border p-3">
           <SidebarMenu className="gap-1">
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Pilot Work">
+                <Link href="/workspace/work">
+                  <Workflow aria-hidden="true" />
+                  <span>Work</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Dashboard">
                 <Link href="/workspace/dashboard">

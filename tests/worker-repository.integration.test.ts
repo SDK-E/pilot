@@ -41,6 +41,7 @@ import {
   createTask,
   listConversationTasks,
   listTasks,
+  updateUserManagedTaskStatus,
 } from "@/tasks/task-repository";
 import {
   getUserPreferences,
@@ -113,6 +114,8 @@ test("workers are persisted and isolated by organization", async (t) => {
   assert.equal(await getWorker(otherOrganizationId, created.id), undefined);
   assert.deepEqual(await getOrganizationPreferences(organizationId), {
     defaultWorkerId: null,
+    primaryModelId: "kilo/kilo-auto/free",
+    retryEnabled: true,
   });
   assert.equal(
     await updateOrganizationDefaultWorker({
@@ -130,6 +133,8 @@ test("workers are persisted and isolated by organization", async (t) => {
   );
   assert.deepEqual(await getOrganizationPreferences(organizationId), {
     defaultWorkerId: created.id,
+    primaryModelId: "kilo/kilo-auto/free",
+    retryEnabled: true,
   });
 
   const conversation = await createConversation({
@@ -489,6 +494,33 @@ test("workers are persisted and isolated by organization", async (t) => {
   assert.deepEqual(
     await listTasks({ organizationId, userId: `another_user_${suffix}` }),
     [],
+  );
+  assert.equal(
+    await updateUserManagedTaskStatus({
+      organizationId,
+      userId: `another_user_${suffix}`,
+      taskId: task.id,
+      status: "cancelled",
+    }),
+    undefined,
+  );
+  assert.deepEqual(
+    await updateUserManagedTaskStatus({
+      organizationId,
+      userId: `user_${suffix}`,
+      taskId: task.id,
+      status: "completed",
+    }),
+    { id: task.id, status: "completed" },
+  );
+  assert.equal(
+    await updateUserManagedTaskStatus({
+      organizationId,
+      userId: `user_${suffix}`,
+      taskId: task.id,
+      status: "cancelled",
+    }),
+    undefined,
   );
   assert.equal(
     await createTask({

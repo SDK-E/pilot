@@ -758,3 +758,11 @@ Pilot now treats model-emitted tool syntax as invalid research output. Research 
 Organization owners and administrators can configure a Kilo Gateway primary model in Settings. The setting accepts only `kilo/...` gateway IDs; the durable default remains `kilo/kilo-auto/free`. Planned tools continue to be displayed but cannot be enabled or passed to Pilot AI until their authorization and lifecycle boundaries exist.
 
 Verified locally: Pilot typecheck, lint, Prettier, build and 75 server tests; Pilot AI typecheck and 55 runtime tests. Production migration and authenticated browser verification remain required before claiming release verification.
+
+## Pilot Work foundation (2026-09-13)
+
+Pilot Work is now an owner-scoped queue at `/workspace/work`, backed by existing persisted task records rather than a simulated autonomous runtime. A signed-in member can create private work, view its real status, open its originating chat, and only move their own `ready` work to `completed` or `cancelled`. Runtime-owned states remain server controlled.
+
+Task reads now use the task creator as the private ownership boundary, closing a future cross-user leak for tasks attached to a shared organization conversation. The former `/workspace/tasks` route redirects to the Work surface.
+
+The local development Neon database was brought up to the committed migration state before verification; no shared or production database was migrated manually. `pnpm test:db` passed the private task lifecycle and organization-isolation flow. Durable runtime dispatch is intentionally deferred: it needs its own persistence, recovery, cancellation, and budget contract before Work can claim autonomous execution.

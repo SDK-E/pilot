@@ -11,6 +11,11 @@ const inputSchema = z.object({
   instructions: z.string().trim().min(1).max(10_000),
 });
 
+const taskStatusSchema = z.object({
+  taskId: z.uuid(),
+  status: z.enum(["completed", "cancelled"]),
+});
+
 export async function createTaskAction(formData: FormData) {
   const input = inputSchema.safeParse({
     title: formData.get("title"),
@@ -26,4 +31,26 @@ export async function createTaskAction(formData: FormData) {
     createdByWorkosUserId: user.id,
   });
   revalidatePath("/workspace/tasks");
+  revalidatePath("/workspace/work");
+}
+
+export async function updateTaskStatusAction(formData: FormData) {
+  const input = taskStatusSchema.safeParse({
+    taskId: formData.get("taskId"),
+    status: formData.get("status"),
+  });
+  if (!input.success) return;
+  const { user, organizationId } = await withAuth({ ensureSignedIn: true });
+  if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId)) return;
+  if (!(await getActiveOrganizationMembership(user.id, organizationId))) return;
+  const { updateUserManagedTaskStatus } =
+    await import("@/tasks/task-repository");
+  await updateUserManagedTaskStatus({
+    organizationId,
+    userId: user.id,
+    taskId: input.data.taskId,
+    status: input.data.status,
+  });
+  revalidatePath("/workspace/tasks");
+  revalidatePath("/workspace/work");
 }

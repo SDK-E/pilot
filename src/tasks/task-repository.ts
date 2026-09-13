@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { conversations, tasks } from "@/db/schema";
 
@@ -48,14 +48,10 @@ export async function listTasks(input: {
       conversationId: tasks.conversationId,
     })
     .from(tasks)
-    .leftJoin(conversations, eq(tasks.conversationId, conversations.id))
     .where(
       and(
         eq(tasks.organizationId, input.organizationId),
-        or(
-          eq(tasks.createdByWorkosUserId, input.userId),
-          eq(conversations.createdByWorkosUserId, input.userId),
-        ),
+        eq(tasks.createdByWorkosUserId, input.userId),
       ),
     )
     .orderBy(desc(tasks.updatedAt));
@@ -79,8 +75,36 @@ export async function listConversationTasks(input: {
       and(
         eq(tasks.organizationId, input.organizationId),
         eq(tasks.conversationId, input.conversationId),
+        eq(tasks.createdByWorkosUserId, input.userId),
         eq(conversations.createdByWorkosUserId, input.userId),
       ),
     )
     .orderBy(desc(tasks.updatedAt));
+}
+
+type UserManagedTaskStatus = "completed" | "cancelled";
+
+/**
+ * Users may conclude or cancel only their own queued/active work. Runtime
+ * states remain server-controlled so a browser cannot make work appear to run.
+ */
+export async function updateUserManagedTaskStatus(input: {
+  organizationId: string;
+  userId: string;
+  taskId: string;
+  status: UserManagedTaskStatus;
+}) {
+  const [task] = await db
+    .update(tasks)
+    .set({ status: input.status, updatedAt: new Date() })
+    .where(
+      and(
+        eq(tasks.organizationId, input.organizationId),
+        eq(tasks.id, input.taskId),
+        eq(tasks.createdByWorkosUserId, input.userId),
+        eq(tasks.status, "ready"),
+      ),
+    )
+    .returning({ id: tasks.id, status: tasks.status });
+  return task;
 }
