@@ -57,8 +57,8 @@ user can rename or delete the open private chat; deletion redirects to New chat
 only after the server action has confirmed it.
 
 The live activity disclosure uses AI Elements Chain of Thought as a readable
-visual trace of Pilot's verified execution and tool lifecycle summaries. It is
-collapsed by default. On narrow layouts, the full details rail is itself a
+visual trace of Pilot's verified execution and tool lifecycle summaries for the
+current response. It is collapsed by default. On narrow layouts, the full details rail is itself a
 collapsed disclosure. This is not raw model chain-of-thought: Pilot never
 stores or displays private reasoning, prompts, tool arguments, tool results,
 URLs, errors, or credentials.

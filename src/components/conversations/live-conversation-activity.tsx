@@ -8,14 +8,15 @@ import type { ActivityEventType } from "@/executions/activity-event";
 import {
   CheckCircle2,
   CircleAlert,
+  FileText,
   LoaderCircle,
   Search,
   Wrench,
 } from "lucide-react";
 
-function stepStatus(
-  type: ActivityEventType,
-): "active" | "complete" | "pending" {
+type Activity = { id: string; summary: string; type: ActivityEventType };
+
+function stepStatus(type: ActivityEventType): "active" | "complete" {
   return type === "execution.started" || type === "tool.started"
     ? "active"
     : "complete";
@@ -28,6 +29,14 @@ function stepIcon(type: ActivityEventType) {
   return Wrench;
 }
 
+function stepDescription(type: ActivityEventType) {
+  if (type === "execution.started") return "Preparing this chat response";
+  if (type === "tool.started") return "Using an enabled capability";
+  if (type === "tool.completed") return "Capability result received";
+  if (type === "tool.failed") return "Capability did not complete";
+  return "Response execution";
+}
+
 /**
  * A readable activity trace backed only by Pilot's sanitized server events.
  * It deliberately excludes private model reasoning, prompts, tool inputs,
@@ -36,7 +45,7 @@ function stepIcon(type: ActivityEventType) {
 export function LiveConversationActivity({
   events = [],
 }: {
-  events?: Array<{ id: string; summary: string; type: ActivityEventType }>;
+  events?: Activity[];
 }) {
   const currentEvents = events.filter(
     (event) =>
@@ -47,6 +56,7 @@ export function LiveConversationActivity({
   );
   const latest = currentEvents.at(-1);
   const summary = latest?.summary ?? "Pilot is responding…";
+  const hasActiveTool = latest?.type === "tool.started";
 
   return (
     <ChainOfThought
@@ -64,32 +74,33 @@ export function LiveConversationActivity({
       </ChainOfThoughtHeader>
       <ChainOfThoughtContent className="border-t border-border pt-3">
         <p className="text-xs leading-5 text-muted-foreground">
-          Pilot’s verified working steps. Private model reasoning and tool data
-          are never shown here.
+          Verified steps for this response. Private model reasoning and tool
+          data stay private.
         </p>
         <div className="space-y-3">
-          {(currentEvents.length ? currentEvents : [undefined]).map(
-            (event, index) => (
-              <ChainOfThoughtStep
-                description={
-                  event
-                    ? event.type.startsWith("tool.")
-                      ? "Protected capability activity"
-                      : "Conversation execution"
-                    : "Preparing the response"
-                }
-                icon={event ? stepIcon(event.type) : LoaderCircle}
-                key={event?.id ?? "responding"}
-                label={event?.summary ?? "Generating a response"}
-                status={event ? stepStatus(event.type) : "active"}
-                className={
-                  index === currentEvents.length - 1
-                    ? "[&>div:first-child>div]:hidden"
-                    : undefined
-                }
-              />
-            ),
-          )}
+          {currentEvents.map((event, index) => (
+            <ChainOfThoughtStep
+              className={
+                index === currentEvents.length - 1 && hasActiveTool
+                  ? "[&>div:first-child>div]:hidden"
+                  : undefined
+              }
+              description={stepDescription(event.type)}
+              icon={stepIcon(event.type)}
+              key={event.id}
+              label={event.summary}
+              status={stepStatus(event.type)}
+            />
+          ))}
+          {!hasActiveTool ? (
+            <ChainOfThoughtStep
+              className="[&>div:first-child>div]:hidden"
+              description="Streaming the answer into this chat"
+              icon={FileText}
+              label="Writing response"
+              status="active"
+            />
+          ) : null}
         </div>
       </ChainOfThoughtContent>
     </ChainOfThought>

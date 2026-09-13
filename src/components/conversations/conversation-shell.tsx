@@ -78,6 +78,7 @@ type PersistedActivity = {
   conversationMessageId: string | null;
   summary: string;
   type: ActivityEventType;
+  createdAt?: string | Date;
 };
 
 function ComposerAttachmentPreviews() {
@@ -163,6 +164,7 @@ export function ConversationShell({
     Record<string, string[]>
   >({});
   const [liveActivities, setLiveActivities] = useState(activities);
+  const [streamStartedAt, setStreamStartedAt] = useState<number>();
   const [attachmentError, setAttachmentError] = useState<string>();
   const [uploading, setUploading] = useState(false);
   const [streamError, setStreamError] = useState<string>();
@@ -179,6 +181,14 @@ export function ConversationShell({
     for (const activity of liveActivities) byId.set(activity.id, activity);
     return [...byId.values()];
   }, [activities, liveActivities]);
+  const currentStreamActivities = useMemo(() => {
+    if (!streamStartedAt) return [];
+    return displayedActivities.filter((activity) => {
+      if (!activity.createdAt) return false;
+      const timestamp = new Date(activity.createdAt).getTime();
+      return Number.isFinite(timestamp) && timestamp >= streamStartedAt - 1_500;
+    });
+  }, [displayedActivities, streamStartedAt]);
   const syncMessages = useCallback(async () => {
     try {
       const response = await fetch(
@@ -225,6 +235,7 @@ export function ConversationShell({
           : "Pilot could not complete this message.",
       );
       setTimeoutError(undefined);
+      setStreamStartedAt(undefined);
       void syncMessages();
     },
     onFinish: (prompt, finalCompletion) => {
@@ -232,6 +243,7 @@ export function ConversationShell({
       setCompletion("");
       setPendingUserMessage(undefined);
       setTimeoutError(undefined);
+      setStreamStartedAt(undefined);
       void syncMessages();
     },
   });
@@ -241,6 +253,7 @@ export function ConversationShell({
       const message = rawMessage.trim();
       if (!message || isLoading) return;
       lastSubmittedMessageRef.current = message;
+      setStreamStartedAt(Date.now());
       setPendingUserMessage(message);
       setCompletion("");
       setInput("");
@@ -599,7 +612,9 @@ export function ConversationShell({
                     <MessageResponse>{completion}</MessageResponse>
                   ) : null}
                   {isLoading ? (
-                    <LiveConversationActivity events={displayedActivities} />
+                    <LiveConversationActivity
+                      events={currentStreamActivities}
+                    />
                   ) : null}
                 </MessageContent>
               </Message>
