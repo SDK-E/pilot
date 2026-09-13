@@ -31,7 +31,10 @@ import {
 type RecentChat = {
   id: string;
   workerId: string;
+  agentName: string;
   title: string | null;
+  updatedLabel: string;
+  latestMessagePreview: string | null;
 };
 
 type AgentFleetShellProps = {
@@ -110,7 +113,7 @@ export function AgentFleetShell({
                     <SidebarMenuItem key={chat.id}>
                       <SidebarMenuButton
                         asChild
-                        className="h-8 px-2.5 text-[13px] font-normal"
+                        className="h-auto min-h-11 items-start px-2.5 py-1.5 text-[13px] font-normal"
                         tooltip={chat.title ?? "New conversation"}
                       >
                         <Link
@@ -118,9 +121,19 @@ export function AgentFleetShell({
                         >
                           <MessageSquareMore
                             aria-hidden="true"
-                            className="size-3.5"
+                            className="mt-0.5 size-3.5"
                           />
-                          <span>{chat.title ?? "New conversation"}</span>
+                          <span className="min-w-0 leading-4">
+                            <span className="block truncate">
+                              {chat.title ?? "New conversation"}
+                            </span>
+                            <span className="block truncate text-[11px] text-sidebar-foreground/55">
+                              {chat.latestMessagePreview || chat.agentName}
+                            </span>
+                            <span className="block text-[10px] text-sidebar-foreground/45">
+                              {chat.agentName} · {chat.updatedLabel}
+                            </span>
+                          </span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

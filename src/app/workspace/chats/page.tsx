@@ -80,7 +80,14 @@ export default async function ChatsPage({
                     {chat.title ?? "New conversation"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {chat.agentName} · {chat.updatedAt.toLocaleString()}
+                    {chat.latestMessagePreview || "No messages yet"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {chat.agentName} · Updated{" "}
+                    {chat.updatedAt.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
                   </p>
                 </Link>
                 <DeleteConversationButton

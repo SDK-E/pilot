@@ -93,3 +93,9 @@ This verified UI slice restores a conversational hierarchy in an existing chat:
 - `mod_enter` consistently inserts a line break on plain Enter, while Ctrl/Command+Enter sends.
 
 Verification before deployment: `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm build`, and `pnpm test:server` (72 passing) pass. `pnpm test` reports 25 passing and 42 explicitly skipped authenticated-fixture scenarios. `pnpm knip` still reports the pre-existing Plan 11 unused-file/export backlog; this UI slice adds no new Knip findings.
+
+## 2026-09-13 history identification update
+
+The creator-scoped chat history query now returns each chat’s agent, last visible message preview, and update time. The sidebar and Chats page render that context so duplicate titles are distinguishable without widening organization access. Existing rename and destructive-confirmation deletion controls remain available from Chats.
+
+Verification before deployment: `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test:server` (72 passing), and `pnpm build` passed.

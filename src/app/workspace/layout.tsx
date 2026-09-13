@@ -29,11 +29,19 @@ export default async function WorkspaceLayout({
     organizationsPromise,
   ]);
   const recentChats = membership
-    ? await listRecentOrganizationConversations(
-        organizationId!,
-        user?.id ?? "",
-        50,
-      )
+    ? (
+        await listRecentOrganizationConversations(
+          organizationId!,
+          user?.id ?? "",
+          50,
+        )
+      ).map((chat) => ({
+        ...chat,
+        updatedLabel: new Intl.DateTimeFormat("en", {
+          day: "numeric",
+          month: "short",
+        }).format(chat.updatedAt),
+      }))
     : [];
 
   return (

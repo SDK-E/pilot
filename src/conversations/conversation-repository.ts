@@ -79,6 +79,13 @@ export async function listOrganizationConversations(
       title: conversations.title,
       createdAt: conversations.createdAt,
       updatedAt: conversations.updatedAt,
+      latestMessagePreview: sql<string | null>`(
+        select ${conversationMessages.content}
+        from ${conversationMessages}
+        where ${conversationMessages.conversationId} = ${conversations.id}
+        order by ${conversationMessages.createdAt} desc
+        limit 1
+      )`,
     })
     .from(conversations)
     .innerJoin(workers, eq(conversations.workerId, workers.id))
@@ -97,6 +104,14 @@ export async function listRecentOrganizationConversations(
       workerId: conversations.workerId,
       agentName: workers.name,
       title: conversations.title,
+      updatedAt: conversations.updatedAt,
+      latestMessagePreview: sql<string | null>`(
+        select ${conversationMessages.content}
+        from ${conversationMessages}
+        where ${conversationMessages.conversationId} = ${conversations.id}
+        order by ${conversationMessages.createdAt} desc
+        limit 1
+      )`,
     })
     .from(conversations)
     .innerJoin(workers, eq(conversations.workerId, workers.id))
