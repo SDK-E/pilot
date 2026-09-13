@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
+  startTransition,
   useId,
   useMemo,
   useRef,
@@ -169,6 +170,14 @@ export function ConversationShell({
     },
     [complete, isLoading, setCompletion, setInput],
   );
+  useEffect(() => {
+    const key = `pilot:initial-message:${conversationId}`;
+    const initialMessage = sessionStorage.getItem(key);
+    if (!initialMessage) return;
+    sessionStorage.removeItem(key);
+    startTransition(() => submitText(initialMessage));
+  }, [conversationId, submitText]);
+
   const submitMessage = useCallback(() => {
     const raw = input;
     if (!raw.trim()) {
@@ -307,7 +316,9 @@ export function ConversationShell({
           <AgentAvatar name={agentName} />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{agentName}</p>
-            <p className="truncate text-xs text-muted-foreground">{title}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              Persona · {title}
+            </p>
             {project ? (
               <Link
                 className="block truncate text-xs text-primary hover:underline"
