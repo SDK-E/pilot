@@ -3,6 +3,7 @@ import { and, asc, count, eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { activityEvents, conversations, executions } from "@/db/schema";
 import {
+  createSkillActivity,
   createToolActivity,
   type ToolActivityState,
 } from "@/executions/activity-event";
@@ -95,6 +96,34 @@ export async function appendToolActivity(input: {
     type: event.type,
     toolId: event.toolId,
     toolCallId: event.toolCallId,
+    summary: event.summary,
+  });
+}
+
+/** Persists only a validated, server-derived skill label for the active run. */
+export async function appendSkillActivity(input: {
+  organizationId: string;
+  executionId: string;
+  skillId: string;
+}) {
+  const event = createSkillActivity(input);
+  const [execution] = await db
+    .select({ id: executions.id })
+    .from(executions)
+    .where(
+      and(
+        eq(executions.organizationId, input.organizationId),
+        eq(executions.id, input.executionId),
+        inArray(executions.status, ["running", "awaiting_approval"]),
+      ),
+    )
+    .limit(1);
+  if (!execution) return;
+
+  await db.insert(activityEvents).values({
+    organizationId: input.organizationId,
+    executionId: execution.id,
+    type: event.type,
     summary: event.summary,
   });
 }

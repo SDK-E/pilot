@@ -70,10 +70,13 @@ area. The header, composer, and rails remain fixed while the transcript scrolls.
 Activity is now grouped by execution rather than flattened across the whole
 chat. Each response run expands into its verified preparation, capability,
 approval, completion, or failure milestones. This improves the readable
-per-turn chain without turning activity into model reasoning. A skill milestone
-will remain absent until the request-scoped production runtime activates the
-existing skill resolver and can send an equivalent authenticated, sanitized
-event; the UI does not invent loaded skills.
+per-turn chain without turning activity into model reasoning. When the
+production runtime's separately enabled skill resolver loads audited guidance,
+it sends a typed, OIDC-authenticated `skill.selected` event. Pilot accepts only
+a constrained skill identifier and persists a bounded display label; it never
+persists the request query, instructions, source, audit outcome, errors, or
+other runtime payloads. If the flag, callback, or OIDC context is absent, skill
+discovery fails closed and the UI does not invent a milestone.
 
 ### In-progress conversation-flow repair
 

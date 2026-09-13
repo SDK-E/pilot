@@ -440,6 +440,7 @@ export const activityEvents = pgTable(
         | "execution.started"
         | "execution.completed"
         | "execution.failed"
+        | "skill.selected"
         | "tool.started"
         | "tool.completed"
         | "tool.failed"

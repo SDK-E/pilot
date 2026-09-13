@@ -24,6 +24,7 @@ function stepStatus(type: ActivityEventType): "active" | "complete" {
 }
 
 function stepIcon(type: ActivityEventType) {
+  if (type === "skill.selected") return FileText;
   if (
     type === "tool.started" ||
     type === "tool.completed" ||
@@ -36,6 +37,8 @@ function stepIcon(type: ActivityEventType) {
 }
 
 function stepDescription(type: ActivityEventType) {
+  if (type === "skill.selected")
+    return "Selected safe guidance for this response";
   if (type === "execution.started") return "Preparing this chat response";
   if (type === "tool.started") return "Using an enabled capability";
   if (type === "tool.completed") return "Capability result received";
@@ -59,6 +62,7 @@ export function LiveConversationActivity({
   const currentEvents = events.filter(
     (event) =>
       event.type === "execution.started" ||
+      event.type === "skill.selected" ||
       event.type === "tool.started" ||
       event.type === "tool.completed" ||
       event.type === "tool.failed" ||
