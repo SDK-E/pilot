@@ -43,8 +43,8 @@ export function DeleteConversationButton({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
           <AlertDialogDescription>
-            This permanently deletes the conversation and its messages for
-            everyone in this organization.
+            This permanently deletes this private chat, its messages, and its
+            saved working context. This cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         {state.status === "error" ? (
