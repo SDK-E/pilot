@@ -9,7 +9,7 @@
 ## What Changed
 
 - **Fix 1 — First-message routing:** `POST /api/conversations/stream` now returns a `Location` header. `NewChatForm` navigates via `useEffect` on `isLoading` transitioning `true→false`, with `router.refresh()` to update the sidebar. No more race condition where stalled streams prevented navigation.
-- **Fix 2 — Generation timeout & recovery:** Client-side 60s timeout in both `NewChatForm` and `ConversationShell`. On timeout, shows "Generation timed out" with Retry/Cancel buttons. Server-side 90s timeout wrapper added to `stream-message.ts`. Retry re-sends the same prompt idempotently.
+- **Fix 2 — Generation timeout & recovery:** Client-side 60s timeout in both `NewChatForm` and `ConversationShell`. On timeout, shows a clear warning with Review message and Cancel buttons. Server-side 90s timeout wrapper added to `stream-message.ts`. The recovery action restores the message for review rather than re-sending it automatically, because duplicate execution protection is not implemented yet.
 - **Fix 3 — Whitespace validation:** Empty or whitespace-only submissions now show an accessible inline error ("Message cannot be blank."), focus the textarea, set `aria-invalid="true"`, and clear on typing.
 - **Fix 4 — Starter cards:** Plan, Draft, and Research cards on `/workspace` are now interactive `<Button>` elements. Clicking navigates to `?mode=` and pre-fills the composer with a template. Research card disables when no research agent is available.
 
@@ -49,8 +49,8 @@ Please test the following flows on the production URL:
 ### 2. Generation timeout & recovery
 
 1. In a new or existing conversation, submit a prompt
-2. If the runtime is slow, wait 60 seconds — the UI should show "Generation timed out. The request took longer than expected." with Retry and Cancel buttons
-3. Click Retry — the same prompt should re-send and start a new stream
+2. If the runtime is slow, wait 60 seconds — the UI should warn that the request may still have completed, with Review message and Cancel buttons
+3. Click Review message — the prompt should return to the composer without re-sending. Review or edit it before sending.
 4. Click Cancel — the pending state should clear and the composer should return to idle
 5. Click "Stop generating" during an active response — it should abort cleanly
 
@@ -88,7 +88,7 @@ This verified UI slice restores a conversational hierarchy in an existing chat:
 - task creation opens a keyboard-accessible shadcn dialog instead of sharing the composer surface;
 - the side panel uses plain-language sections for Agent activity, Working notes, Tasks, and Needs your approval, with actionable empty states;
 - project assignment is labelled Choose project and communicates the no-project state in its menu;
-- a failed or timed-out existing-chat message can retry the actual last submission, and Stop now aborts the active client stream;
+- a timed-out existing-chat message is restored for review rather than sent again automatically, and Stop aborts the active client stream;
 - all persisted messages expose a keyboard-discoverable Copy action;
 - `mod_enter` consistently inserts a line break on plain Enter, while Ctrl/Command+Enter sends.
 

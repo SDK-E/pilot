@@ -114,7 +114,7 @@ export function NewChatForm({
       const handle = window.setTimeout(() => {
         timedOutRef.current = true;
         setTimeoutError(
-          "Generation timed out. The request took longer than expected.",
+          "The response timed out. The request may still have completed; review the message before sending it again.",
         );
         stop();
       }, 60_000);
@@ -199,9 +199,12 @@ export function NewChatForm({
     submitMessage(message.text ?? "");
   };
 
-  const retry = () => {
+  const restoreLastMessage = () => {
     setTimeoutError(undefined);
-    if (lastPromptRef.current) submitMessage(lastPromptRef.current);
+    setPendingPrompt(undefined);
+    setCompletion("");
+    setInput(lastPromptRef.current);
+    requestAnimationFrame(focusComposer);
   };
 
   const cancel = () => {
@@ -348,8 +351,8 @@ export function NewChatForm({
             {timeoutError}
           </p>
           <div className="flex shrink-0 gap-2">
-            <Button onClick={retry} size="sm" type="button">
-              Retry
+            <Button onClick={restoreLastMessage} size="sm" type="button">
+              Review message
             </Button>
             <Button onClick={cancel} size="sm" type="button" variant="outline">
               Cancel

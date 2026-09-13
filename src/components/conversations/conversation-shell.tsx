@@ -181,12 +181,14 @@ export function ConversationShell({
     setValidationError(undefined);
     submitText(message);
   }, [input, isLoading, submitText]);
-  const retry = useCallback(() => {
-    const lastMessage = lastSubmittedMessageRef.current;
+  const restoreLastMessage = useCallback(() => {
     setTimeoutError(undefined);
     setStreamError(undefined);
-    if (lastMessage) submitText(lastMessage);
-  }, [submitText]);
+    setPendingUserMessage(undefined);
+    setCompletion("");
+    setInput(lastSubmittedMessageRef.current ?? "");
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  }, [setCompletion, setInput]);
   const cancel = useCallback(() => {
     stop();
     setTimeoutError(undefined);
@@ -280,7 +282,7 @@ export function ConversationShell({
     const timeoutHandle = window.setTimeout(() => {
       timedOutRef.current = true;
       setTimeoutError(
-        "Generation timed out. The request took longer than expected.",
+        "The response timed out. The request may still have completed; review the message before sending it again.",
       );
       stop();
     }, 60_000);
@@ -605,8 +607,12 @@ export function ConversationShell({
                     {timeoutError}
                   </p>
                   <div className="flex items-center gap-2">
-                    <Button onClick={retry} size="sm" type="button">
-                      Retry
+                    <Button
+                      onClick={restoreLastMessage}
+                      size="sm"
+                      type="button"
+                    >
+                      Review message
                     </Button>
                     <Button
                       onClick={cancel}
