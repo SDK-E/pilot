@@ -348,7 +348,7 @@ export function ConversationShell({
           className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft aria-hidden="true" className="size-4" />
-          <span className="hidden sm:inline">Chat history</span>
+          <span className="hidden sm:inline">New chat</span>
         </Link>
         <div className="flex min-w-0 items-center gap-2 text-center">
           <AgentAvatar name={agentName} />
