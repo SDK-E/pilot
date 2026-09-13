@@ -39,7 +39,7 @@ const productionToolIdSchema = z.enum(["web-search", "scratchpad", "ask-user"]);
 const runtimeResponseSchema = z.object({
   id: z.string().min(1),
   object: z.literal("chat.completion"),
-  model: z.literal("kilo/kilo-auto/free"),
+  model: z.string().min(1).max(200),
   choices: z
     .array(
       z.object({
@@ -61,7 +61,7 @@ const runtimeResponseSchema = z.object({
 const runtimeStreamChunkSchema = z.object({
   id: z.string().min(1),
   object: z.literal("chat.completion.chunk"),
-  model: z.literal("kilo/kilo-auto/free"),
+  model: z.string().min(1).max(200),
   choices: z.array(
     z.object({
       delta: z.object({ content: z.string().optional() }),
@@ -82,7 +82,10 @@ const generateConversationRequestSchema = z.object({
   worker: z.object({
     id: z.uuid(),
     instructions: z.string().min(1).max(20_000),
-    modelId: z.literal("kilo/kilo-auto/free"),
+    modelId: z
+      .string()
+      .regex(/^kilo\/[a-z0-9][a-z0-9._:-]*(?:\/[a-z0-9][a-z0-9._:-]*)*$/i)
+      .max(200),
     baseAgentId: z.enum(["conversational", "research"]),
     enabledToolIds: z.array(z.string()).max(20),
     approvalRules: z.record(z.string(), z.string()),
@@ -129,7 +132,7 @@ export type PilotAiStreamEvent =
     }
   | {
       type: "completed";
-      modelId: "kilo/kilo-auto/free";
+      modelId: string;
       runId: string | null;
       finishReason: string;
       usage: {

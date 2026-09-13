@@ -12,6 +12,7 @@ import {
   updateDefaultAgentAction,
   updateMessageShortcutAction,
   updateLocaleAction,
+  updateModelPolicyAction,
 } from "./actions";
 
 export default async function SettingsPage() {
@@ -27,7 +28,11 @@ export default async function SettingsPage() {
     getUserPreferences(user.id),
     membership
       ? getOrganizationPreferences(organizationId!)
-      : Promise.resolve({ defaultWorkerId: null }),
+      : Promise.resolve({
+          defaultWorkerId: null,
+          primaryModelId: "kilo/kilo-auto/free",
+          retryEnabled: true,
+        }),
     membership ? listWorkers(organizationId!) : Promise.resolve([]),
   ]);
 
@@ -143,6 +148,37 @@ export default async function SettingsPage() {
           </p>
         )}
       </section>
+      {membership?.role?.slug === "owner" ||
+      membership?.role?.slug === "admin" ? (
+        <section className="rounded-2xl border border-border bg-card/50 p-5">
+          <h2 className="font-medium">Model policy</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Organization admins choose the primary Kilo Gateway model. Pilot
+            retries eligible failures once with <code>kilo-auto/free</code>.
+          </p>
+          <form action={updateModelPolicyAction} className="mt-4 space-y-3">
+            <input
+              className="h-9 w-full rounded-xl border border-input bg-background px-3 text-sm"
+              defaultValue={organizationPreferences.primaryModelId}
+              name="primaryModelId"
+              required
+            />
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                defaultChecked={organizationPreferences.retryEnabled}
+                name="retryEnabled"
+                type="checkbox"
+                value="true"
+              />{" "}
+              Retry once with Free
+            </label>
+            <input name="retryEnabled" type="hidden" value="false" />
+            <Button type="submit" variant="outline">
+              Save model policy
+            </Button>
+          </form>
+        </section>
+      ) : null}
       <section className="rounded-2xl border border-border bg-card/50 p-5">
         <h2 className="font-medium">Agents</h2>
         <p className="mt-1 text-sm text-muted-foreground">

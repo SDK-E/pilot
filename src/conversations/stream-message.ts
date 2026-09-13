@@ -8,10 +8,15 @@ import { createConversationMessage } from "@/conversations/conversation-reposito
 import { isResearchAvailable } from "@/conversations/research-availability";
 import { buildAttachmentContext } from "@/conversations/attachment-context";
 import {
+  sanitizeResearchText,
+  saveResearchSources,
+} from "@/conversations/research-evidence";
+import {
   allowedProductionToolIds,
   type ProductionToolId,
 } from "@/conversations/tool-authorization";
 import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
+import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
 import {
   finishExecution,
   startExecution,
@@ -22,7 +27,7 @@ type StreamConversationMessageInput = {
   worker: {
     id: string;
     instructions: string;
-    modelId: "kilo/kilo-auto/free";
+    modelId: string;
     baseAgentId: "conversational" | "research";
     enabledToolIds: string[];
     approvalRules: Record<string, string>;
@@ -101,11 +106,15 @@ export async function streamConversationMessage(
           userId: input.userId,
           maximumCharacters: 20_000 - input.worker.instructions.length - 2,
         });
+        const modelPolicy = await getOrganizationPreferences(
+          input.organizationId,
+        );
         for await (const event of streamConversationReply(
           {
             organizationId: input.organizationId,
             worker: {
               ...input.worker,
+              modelId: modelPolicy.primaryModelId,
               instructions: attachmentContext
                 ? `${input.worker.instructions}\n\n${attachmentContext}`
                 : input.worker.instructions,
@@ -120,7 +129,10 @@ export async function streamConversationMessage(
         )) {
           if (event.type === "text") {
             text += event.text;
-            controller.enqueue(encoder.encode(event.text));
+            // Buffer research responses until final validation so malformed pseudo-tool
+            // syntax cannot be streamed into the private transcript.
+            if (input.worker.baseAgentId !== "research")
+              controller.enqueue(encoder.encode(event.text));
             continue;
           }
           if (event.type === "suspended") {
@@ -160,13 +172,22 @@ export async function streamConversationMessage(
             return;
           }
 
+          const validated =
+            input.worker.baseAgentId === "research"
+              ? sanitizeResearchText(text)
+              : { text, invalidToolSyntax: false, sources: [] };
+          if (validated.invalidToolSyntax || !validated.text) {
+            throw new Error("Pilot returned an invalid research response.");
+          }
+          if (input.worker.baseAgentId === "research")
+            controller.enqueue(encoder.encode(validated.text));
           const workerMessage = await createConversationMessage({
             organizationId: input.organizationId,
             workerId: input.worker.id,
             conversationId: input.conversationId,
             createdByWorkosUserId: input.userId,
             role: "worker",
-            content: text,
+            content: validated.text,
             modelId: event.modelId,
             runtimeRunId: event.runId ?? undefined,
             latencyMs: toStoredCount(Math.round(performance.now() - startedAt)),
@@ -179,6 +200,13 @@ export async function streamConversationMessage(
               "Pilot Conversation no longer belongs to this Worker.",
             );
           }
+          await saveResearchSources({
+            organizationId: input.organizationId,
+            conversationId: input.conversationId,
+            messageId: workerMessage.id,
+            userId: input.userId,
+            sources: validated.sources,
+          });
           if (execution) {
             await finishExecution({
               organizationId: input.organizationId,

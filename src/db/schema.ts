@@ -115,6 +115,10 @@ export const organizationPreferences = pgTable("organization_preferences", {
   defaultWorkerId: uuid("default_worker_id").references(() => workers.id, {
     onDelete: "set null",
   }),
+  primaryModelId: text("primary_model_id")
+    .notNull()
+    .default("kilo/kilo-auto/free"),
+  retryEnabled: boolean("retry_enabled").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -282,6 +286,37 @@ export const conversationMessages = pgTable(
     index("conversation_messages_organization_created_at_index").on(
       table.organizationId,
       table.createdAt,
+    ),
+  ],
+);
+
+export const conversationSources = pgTable(
+  "conversation_sources",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    messageId: uuid("message_id")
+      .notNull()
+      .references(() => conversationMessages.id, { onDelete: "cascade" }),
+    createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
+    title: text("title").notNull(),
+    domain: text("domain").notNull(),
+    url: text("url").notNull(),
+    summary: text("summary").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("conversation_sources_message_index").on(table.messageId),
+    index("conversation_sources_conversation_creator_index").on(
+      table.conversationId,
+      table.createdByWorkosUserId,
     ),
   ],
 );

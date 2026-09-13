@@ -5,6 +5,7 @@ import {
   listConversationMessages,
 } from "@/conversations/conversation-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { listMessageSources } from "@/conversations/research-evidence";
 
 export const runtime = "nodejs";
 
@@ -57,8 +58,18 @@ export async function GET(request: Request, { params }: RouteContext) {
     return Response.json({ error: "Conversation not found." }, { status: 404 });
   }
 
+  const sources = await listMessageSources({
+    organizationId,
+    conversationId: parsedConversationId.data,
+    userId: user.id,
+  });
   return Response.json(
-    { messages },
+    {
+      messages: messages.map((message) => ({
+        ...message,
+        sources: sources.filter((source) => source.messageId === message.id),
+      })),
+    },
     { headers: { "cache-control": "no-store" } },
   );
 }

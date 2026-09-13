@@ -717,3 +717,11 @@ Type avec clé d'idempotence stable (effectKey), status : prepared → dispatche
 - git diff --check: clean
 
 ## Next acceptance steps
+
+## Research-quality boundary (2026-09-13)
+
+Pilot now treats model-emitted tool syntax as invalid research output. Research text is held until the runtime completes, then a server-only guard rejects pseudo tool calls such as `webSearch>` and `<tool_call>` before any content is persisted or rendered. URL citations found in a completed, valid research response are stored as creator-scoped message evidence in `conversation_sources`, separately from the sanitized execution activity log. The chat renders those sources in a collapsible panel and offers owner-scoped Markdown or print-to-PDF exports. Exports include only visible messages and stored evidence.
+
+Organization owners and administrators can configure a Kilo Gateway primary model in Settings. The setting accepts only `kilo/...` gateway IDs; the durable default remains `kilo/kilo-auto/free`. Planned tools continue to be displayed but cannot be enabled or passed to Pilot AI until their authorization and lifecycle boundaries exist.
+
+Verified locally: Pilot typecheck, lint, Prettier, build and 75 server tests; Pilot AI typecheck and 55 runtime tests. Production migration and authenticated browser verification remain required before claiming release verification.

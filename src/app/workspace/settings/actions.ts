@@ -7,7 +7,11 @@ import { isResearchAvailable } from "@/conversations/research-availability";
 import { getWorker } from "@/workers/worker-repository";
 import { updateUserPreferences } from "@/users/user-preference-repository";
 import { getActiveOrganizationMembership } from "@/organizations/active-membership";
-import { updateOrganizationDefaultWorker } from "@/organizations/organization-preference-repository";
+import {
+  updateOrganizationDefaultWorker,
+  updateOrganizationModelPolicy,
+} from "@/organizations/organization-preference-repository";
+import { resolveActorContext } from "@/policy/actor-context";
 
 const inputSchema = z.object({
   sendMessageShortcut: z.enum(["enter", "mod_enter"]),
@@ -71,5 +75,36 @@ export async function updateDefaultAgentAction(formData: FormData) {
   });
   if (!preferences) throw new Error("This agent is unavailable.");
   revalidatePath("/workspace");
+  revalidatePath("/workspace/settings");
+}
+
+const modelPolicySchema = z.object({
+  primaryModelId: z
+    .string()
+    .trim()
+    .regex(/^kilo\/[a-z0-9][a-z0-9._:-]*(?:\/[a-z0-9][a-z0-9._:-]*)*$/i)
+    .max(200),
+  retryEnabled: z.enum(["true", "false"]),
+});
+
+export async function updateModelPolicyAction(formData: FormData) {
+  const input = modelPolicySchema.safeParse({
+    primaryModelId: formData.get("primaryModelId"),
+    retryEnabled: formData.get("retryEnabled"),
+  });
+  if (!input.success) throw new Error("Enter a valid Kilo Gateway model ID.");
+  const { user, organizationId } = await withAuth({ ensureSignedIn: true });
+  if (!organizationId) throw new Error("Choose an organization first.");
+  const actor = await resolveActorContext({ user, organizationId });
+  if (!actor.scope.includes("admin:organization"))
+    throw new Error(
+      "Only organization owners and administrators can update model policy.",
+    );
+  await updateOrganizationModelPolicy({
+    organizationId,
+    primaryModelId: input.data.primaryModelId,
+    retryEnabled: input.data.retryEnabled === "true",
+  });
+  revalidatePath("/workspace", "layout");
   revalidatePath("/workspace/settings");
 }

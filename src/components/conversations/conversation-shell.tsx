@@ -34,6 +34,7 @@ import { DeleteConversationButton } from "@/components/conversations/delete-conv
 import { RenameConversationForm } from "@/components/conversations/rename-conversation-form";
 import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
+import { ResearchExportLinks } from "@/components/conversations/research-export-links";
 import type { ActivityEventType } from "@/executions/activity-event";
 import {
   Attachment,
@@ -68,6 +69,12 @@ type PersistedMessage = {
   content: string;
   userQuestionOptions?: Array<{ label: string; description?: string }> | null;
   userQuestionSelectionMode?: "single_select" | "multi_select" | null;
+  sources?: Array<{
+    title: string;
+    domain: string;
+    url: string;
+    summary: string;
+  }>;
 };
 
 type TransientTurn = {
@@ -446,6 +453,12 @@ export function ConversationShell({
             redirectHref="/workspace"
             workerId={agentId}
           />
+          {agentId ? (
+            <ResearchExportLinks
+              conversationId={conversationId}
+              workerId={agentId}
+            />
+          ) : null}
           <ConversationProjectPicker
             conversationId={conversationId}
             currentProject={project}
@@ -476,6 +489,30 @@ export function ConversationShell({
                       {from === "assistant" ? (
                         <>
                           <MessageResponse>{message.content}</MessageResponse>
+                          {message.sources?.length ? (
+                            <details className="mt-3 rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs">
+                              <summary className="cursor-pointer font-medium">
+                                Sources ({message.sources.length})
+                              </summary>
+                              <ul className="mt-2 space-y-2">
+                                {message.sources.map((source) => (
+                                  <li key={source.url}>
+                                    <a
+                                      className="text-primary underline"
+                                      href={source.url}
+                                      rel="noreferrer"
+                                      target="_blank"
+                                    >
+                                      {source.title}
+                                    </a>
+                                    <span className="ml-2 text-muted-foreground">
+                                      {source.domain}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </details>
+                          ) : null}
                           {message.userQuestionOptions?.length ? (
                             message.userQuestionSelectionMode ===
                             "multi_select" ? (
