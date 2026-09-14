@@ -236,6 +236,12 @@ export function ConversationShell(props: ConversationShellProps) {
               defaultSize={`${String(panels.layout.conversation)}%`}
               id="conversation"
               minSize="45%"
+              // react-resizable-panels hardcodes overflow: auto on its inner
+              // wrapper div, which can't be reached via className. Left as
+              // auto, it becomes a second scroll container around the
+              // transcript's own overflow-y-auto region, showing two
+              // scrollbars for one scrollable area.
+              style={{ overflow: "hidden" }}
             >
               <div className="flex h-full min-h-0 min-w-0 flex-col">
                 {transcript}
@@ -247,6 +253,7 @@ export function ConversationShell(props: ConversationShellProps) {
               defaultSize={`${String(panels.layout.details)}%`}
               id="details"
               minSize="18%"
+              style={{ overflow: "hidden" }}
             >
               {renderDetailsPanel(true)}
             </ResizablePanel>
