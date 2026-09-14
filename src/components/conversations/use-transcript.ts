@@ -10,6 +10,7 @@ export interface TransientTurn {
   id: string;
   prompt: string;
   completion: string;
+  error?: string;
 }
 
 /**
@@ -24,12 +25,23 @@ export function useTranscript(
   const [messages, setMessages] = useState(initialMessages);
   const [transientTurns, setTransientTurns] = useState<TransientTurn[]>([]);
 
-  const keepTurn = useCallback((prompt: string, completion: string) => {
-    setTransientTurns((current) => [
-      ...current,
-      { id: `${Date.now()}-${current.length}`, prompt, completion },
-    ]);
-  }, []);
+  const keepTurn = useCallback(
+    (prompt: string, completion: string, error?: string) => {
+      setTransientTurns((current) => {
+        const last = current.at(-1);
+        // A retry of the same message that failed again replaces the prior
+        // failed turn instead of stacking up another silent duplicate.
+        if (last?.error && last.prompt === prompt) {
+          return [...current.slice(0, -1), { ...last, completion, error }];
+        }
+        return [
+          ...current,
+          { id: `${Date.now()}-${current.length}`, prompt, completion, error },
+        ];
+      });
+    },
+    [],
+  );
 
   const sync = useCallback(async () => {
     try {

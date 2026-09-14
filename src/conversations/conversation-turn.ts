@@ -183,10 +183,30 @@ async function persistReply(
   return { message, text: cleaned.text };
 }
 
-async function failTurn(input: TurnInput, turn: Turn, reason: string) {
+/**
+ * Records why a turn failed. A worker-role reply is persisted alongside the
+ * user's message so a reload shows a clear, styleable failure instead of an
+ * orphaned message with no answer.
+ */
+async function failTurn(
+  input: TurnInput,
+  turn: Turn,
+  reason: "Generation cancelled" | "Runtime generation failed",
+) {
+  const isCancelled = reason === "Generation cancelled";
+  const message = await createConversationMessage(owner(input), {
+    conversationId: input.conversationId,
+    role: "worker",
+    content: isCancelled
+      ? "Generation was stopped."
+      : "Pilot couldn't complete this response. Try sending it again.",
+    isError: !isCancelled,
+    latencyMs: storedCount(Math.round(performance.now() - turn.startedAt)),
+  });
   await finishExecution({
     organizationId: input.organizationId,
     executionId: turn.execution.id,
+    conversationMessageId: message?.id,
     errorMessage: reason,
   });
 }

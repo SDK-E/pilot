@@ -50,8 +50,10 @@ export function useConversationStream(input: {
     experimental_throttle: 50,
     streamProtocol: "text",
     onError: (cause) => {
-      if (lastPrompt.current) transcript.keepTurn(lastPrompt.current, "");
-      setStreamError(cause.message || "Pilot could not complete this message.");
+      const message = cause.message || "Pilot could not complete this message.";
+      if (lastPrompt.current)
+        transcript.keepTurn(lastPrompt.current, "", message);
+      setStreamError(message);
       finishTurn();
     },
     onFinish: (prompt, finalCompletion) => {

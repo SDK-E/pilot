@@ -42,6 +42,18 @@ function useCopyMessage() {
   return { copiedId, copy };
 }
 
+const ERROR_CONTENT_CLASSNAME =
+  "rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive";
+
+function assistantContentClassName(isError?: boolean) {
+  return isError ? ERROR_CONTENT_CLASSNAME : undefined;
+}
+
+function AssistantMessageBody({ message }: { message: PersistedMessage }) {
+  if (message.isError) return <p>{message.content}</p>;
+  return <MessageResponse>{message.content}</MessageResponse>;
+}
+
 function AssistantMessage({
   message,
   isLoading,
@@ -60,11 +72,11 @@ function AssistantMessage({
   const isCopied = copiedId === message.id;
   return (
     <Message from="assistant">
-      <MessageContent>
+      <MessageContent className={assistantContentClassName(message.isError)}>
         {activities.length > 0 ? (
           <MessageActivityTrace events={activities} />
         ) : null}
-        <MessageResponse>{message.content}</MessageResponse>
+        <AssistantMessageBody message={message} />
         {message.sources?.length ? (
           <SourceList sources={message.sources} />
         ) : null}
@@ -95,6 +107,28 @@ function AssistantMessage({
       </MessageActions>
     </Message>
   );
+}
+
+function TransientTurnReply({ turn }: { turn: TransientTurn }) {
+  if (turn.completion) {
+    return (
+      <Message from="assistant">
+        <MessageContent>
+          <MessageResponse>{turn.completion}</MessageResponse>
+        </MessageContent>
+      </Message>
+    );
+  }
+  if (turn.error) {
+    return (
+      <Message from="assistant">
+        <MessageContent className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive">
+          <p>{turn.error}</p>
+        </MessageContent>
+      </Message>
+    );
+  }
+  return null;
 }
 
 function UserMessage({ content }: { content: string }) {
@@ -169,13 +203,7 @@ export function MessageList({
         {transientTurns.map((turn) => (
           <div key={turn.id}>
             <UserMessage content={turn.prompt} />
-            {turn.completion ? (
-              <Message from="assistant">
-                <MessageContent>
-                  <MessageResponse>{turn.completion}</MessageResponse>
-                </MessageContent>
-              </Message>
-            ) : null}
+            <TransientTurnReply turn={turn} />
           </div>
         ))}
         {pendingPrompt ? (

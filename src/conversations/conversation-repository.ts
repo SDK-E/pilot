@@ -129,6 +129,7 @@ export interface NewConversationMessage {
   conversationId: string;
   role: "user" | "worker";
   content: string;
+  isError?: boolean;
   userQuestionOptions?: { label: string; description?: string }[];
   userQuestionSelectionMode?: "single_select" | "multi_select";
   modelId?: string;
@@ -153,6 +154,7 @@ export async function createConversationMessage(
       id: conversationMessages.id,
       role: conversationMessages.role,
       content: conversationMessages.content,
+      isError: conversationMessages.isError,
       createdAt: conversationMessages.createdAt,
     });
   await db
@@ -174,6 +176,7 @@ export async function listConversationMessages(
       id: conversationMessages.id,
       role: conversationMessages.role,
       content: conversationMessages.content,
+      isError: conversationMessages.isError,
       userQuestionOptions: conversationMessages.userQuestionOptions,
       userQuestionSelectionMode: conversationMessages.userQuestionSelectionMode,
       createdAt: conversationMessages.createdAt,

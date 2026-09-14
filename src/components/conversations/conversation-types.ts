@@ -4,6 +4,7 @@ export interface PersistedMessage {
   id: string;
   role: "user" | "worker";
   content: string;
+  isError?: boolean;
   userQuestionOptions?: { label: string; description?: string }[] | null;
   userQuestionSelectionMode?: "single_select" | "multi_select" | null;
   sources?: { title: string; domain: string; url: string; summary: string }[];

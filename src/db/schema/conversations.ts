@@ -2,6 +2,7 @@
  * Creator-scoped conversations and everything attached to them.
  */
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -60,6 +61,9 @@ export const conversationMessages = pgTable(
       .references(() => conversations.id, { onDelete: "cascade" }),
     role: text("role").$type<"user" | "worker">().notNull(),
     content: text("content").notNull(),
+    // A worker-role reply Pilot generated after a turn failed, so the client
+    // can style it distinctly instead of leaving the user's message orphaned.
+    isError: boolean("is_error").notNull().default(false),
     userQuestionOptions: jsonb("user_question_options").$type<
       { label: string; description?: string }[]
     >(),
