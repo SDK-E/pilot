@@ -11,13 +11,7 @@ import {
 } from "@/organizations/workspace-session";
 
 export const runtime = "nodejs";
-// A turn can legitimately run up to STREAM_TIMEOUT_MS (90s in
-// conversation-turn.ts) plus a fallback-model retry — most visibly with the
-// code-sandbox tool, whose real VM boot and command execution routinely push
-// a turn past the platform's default function duration. Without this, the
-// function is killed mid-stream before that timeout ever fires, and the
-// platform's own generic crash page becomes the "response" the client reads
-// as if it were streamed reply text.
+// Comfortably above conversation-turn.ts's STREAM_TIMEOUT_MS plus a retry.
 export const maxDuration = 180;
 
 const inputSchema = z.object({ prompt: z.string().trim().min(1).max(10_000) });
@@ -59,11 +53,6 @@ export async function POST(request: Request, { params }: RouteContext) {
       request.signal,
     );
   } catch (streamError) {
-    // beginTurn (inside streamMessage) can throw before any bytes are sent
-    // (e.g. the conversation is unavailable, or it's already mid-turn). A
-    // clean error response here, instead of letting the exception escape
-    // uncaught, is what keeps the client from ever reading a raw platform
-    // crash page as if it were a streamed reply.
     // eslint-disable-next-line no-console -- only path to surface this server-side
     console.error("Stream route failed to start a turn:", {
       name: streamError instanceof Error ? streamError.name : "unknown",

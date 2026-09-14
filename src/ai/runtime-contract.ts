@@ -159,13 +159,7 @@ export class PilotAiRuntimeError extends Error {
   }
 }
 
-/**
- * A model provider outage can return an HTTP error page (a Next.js/Vercel
- * "500" document, complete with `<!DOCTYPE html>`) with a 200 status and no
- * error surfaced anywhere in the stack. Nothing upstream distinguishes that
- * from real completion text, so a reply shaped like a full HTML document is
- * treated as a runtime failure instead of a successful answer.
- */
+// Catches a provider outage returning an HTTP error page as a 200 "success".
 const HTML_DOCUMENT_PATTERN = /^\s*<(!doctype\s+html|html[\s>])/i;
 
 export function isHtmlDocumentText(text: string): boolean {
