@@ -18,6 +18,27 @@ interface RouteContext {
   params: Promise<{ conversationId: string }>;
 }
 
+// TEMPORARY: diagnosing a production 500 on this route (2026-09-14). vercel
+// logs does not surface this project's function stdout, so the detail is
+// returned in the body instead. Revert once root-caused.
+function diagResponse(streamError: unknown) {
+  return Response.json(
+    {
+      diagName:
+        streamError instanceof Error ? streamError.name : typeof streamError,
+      diagMessage:
+        streamError instanceof Error
+          ? streamError.message
+          : String(streamError),
+      diagStack:
+        streamError instanceof Error
+          ? streamError.stack?.slice(0, 2000)
+          : undefined,
+    },
+    { status: 500 },
+  );
+}
+
 export async function POST(request: Request, { params }: RouteContext) {
   const session = await getWorkspaceSession();
   if (!isWorkspaceSession(session)) return sessionFailureResponse(session);
@@ -51,19 +72,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       request.signal,
     );
   } catch (streamError) {
-    // TEMPORARY: diagnosing a production 500 on this route (2026-09-14).
-    // eslint-disable-next-line no-console -- temporary production diagnostic
-    console.error(
-      "[diag] streamMessage threw:",
-      streamError instanceof Error
-        ? {
-            name: streamError.name,
-            message: streamError.message,
-            stack: streamError.stack,
-          }
-        : streamError,
-    );
-    throw streamError;
+    return diagResponse(streamError);
   }
   return new Response(stream, {
     headers: {
