@@ -43,7 +43,7 @@ const agentFormSchema = z.object({
   tone: z.string().trim().max(200).optional(),
   outputFormat: z.string().trim().max(1000).optional(),
   enabledToolIds: z.array(z.enum(TOOL_IDS)),
-  approvalRules: z.record(z.enum(TOOL_IDS), z.enum(APPROVAL_MODES)),
+  approvalRules: z.partialRecord(z.enum(TOOL_IDS), z.enum(APPROVAL_MODES)),
 });
 
 /**
@@ -83,7 +83,10 @@ function agentFromForm(
       modelId: DEFAULT_MODEL_ID,
       enabledToolIds,
       approvalRules: Object.fromEntries(
-        enabledToolIds.map((toolId) => [toolId, approvalRules[toolId]]),
+        enabledToolIds.flatMap((toolId) => {
+          const mode = approvalRules[toolId];
+          return mode ? [[toolId, mode]] : [];
+        }),
       ),
     },
   };
