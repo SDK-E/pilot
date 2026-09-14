@@ -9,15 +9,36 @@ import {
   type ToolActivityState,
 } from "@/executions/activity-event";
 
+function isUniqueViolation(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "23505"
+  );
+}
+
+/**
+ * Opens an execution for a conversation, or returns undefined if one is
+ * already running or awaiting approval there (executions_conversation_active_unique).
+ * Callers should treat that the same as "could not start this turn" rather
+ * than starting a second, overlapping one.
+ */
 export async function startExecution(input: {
   organizationId: string;
   workerId: string;
   conversationId: string;
 }) {
-  const [execution] = await db
-    .insert(executions)
-    .values({ ...input, status: "running" })
-    .returning({ id: executions.id });
+  let execution;
+  try {
+    [execution] = await db
+      .insert(executions)
+      .values({ ...input, status: "running" })
+      .returning({ id: executions.id });
+  } catch (error) {
+    if (isUniqueViolation(error)) return;
+    throw error;
+  }
   if (execution)
     await db.insert(activityEvents).values({
       organizationId: input.organizationId,

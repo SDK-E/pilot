@@ -46,21 +46,35 @@ function owner(input: TurnInput) {
 }
 
 /**
- * Records the user's message and opens the execution the runtime reports to.
+ * Opens the execution the runtime reports to, then records the user's
+ * message. The execution opens first: it is the turn's reservation (see
+ * executions_conversation_active_unique), so a retried or duplicated request
+ * for a turn already in flight is rejected here, before it can persist
+ * another copy of the user's message.
  */
 async function beginTurn(input: TurnInput) {
-  const userMessage = await createConversationMessage(owner(input), {
-    conversationId: input.conversationId,
-    role: "user",
-    content: input.message,
-  });
-  if (!userMessage) throw new Error("This conversation is unavailable.");
   const execution = await startExecution({
     organizationId: input.organizationId,
     workerId: input.agent.id,
     conversationId: input.conversationId,
   });
   if (!execution) throw new Error("Pilot could not start this turn.");
+  const userMessage = await createConversationMessage(owner(input), {
+    conversationId: input.conversationId,
+    role: "user",
+    content: input.message,
+  });
+  if (!userMessage) {
+    // The execution already reserved this conversation; leaving it "running"
+    // with no message behind it would permanently block every future turn
+    // under executions_conversation_active_unique.
+    await finishExecution({
+      organizationId: input.organizationId,
+      executionId: execution.id,
+      errorMessage: "This conversation is unavailable.",
+    });
+    throw new Error("This conversation is unavailable.");
+  }
   return { userMessage, execution, startedAt: performance.now() };
 }
 

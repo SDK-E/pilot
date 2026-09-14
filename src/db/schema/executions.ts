@@ -1,7 +1,15 @@
 /**
  * One execution per model turn, with its sanitized activity trail.
  */
-import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 import { workers } from "./agents";
 import { conversationMessages, conversations } from "./conversations";
@@ -39,6 +47,14 @@ export const executions = pgTable(
       table.conversationId,
       table.startedAt,
     ),
+    // A retried or duplicated POST to the stream route must not open a second
+    // turn on top of one already in flight, which is what let each retry
+    // persist another duplicate user message. Scoped to the two non-terminal
+    // statuses so a conversation can still start a new turn once the previous
+    // one has completed or failed.
+    uniqueIndex("executions_conversation_active_unique")
+      .on(table.conversationId)
+      .where(sql`${table.status} in ('running', 'awaiting_approval')`),
   ],
 );
 
