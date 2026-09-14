@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ComposerPreferencesProvider } from "@/components/conversations/composer-preferences";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
 import { listConversations } from "@/conversations/conversation-repository";
+import { listLocalWorkspacesForUser } from "@/organizations/local-workspace";
 import { listUserOrganizations } from "@/organizations/user-organizations";
 import {
   getWorkspaceSession,
@@ -21,13 +22,26 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/">) {
     ? session.organizationId
     : undefined;
 
-  const [preferences, organizations, recentConversations] = await Promise.all([
+  const [
+    preferences,
+    workosOrganizations,
+    localWorkspaces,
+    recentConversations,
+  ] = await Promise.all([
     getUserPreferences(user.id),
     listUserOrganizations(user.id),
+    listLocalWorkspacesForUser(user.id),
     organizationId
       ? listConversations({ organizationId, userId: user.id })
       : Promise.resolve([]),
   ]);
+  const organizations = [
+    ...workosOrganizations,
+    ...localWorkspaces.map((workspace) => ({
+      id: workspace.organizationId,
+      name: workspace.organizationName,
+    })),
+  ];
 
   return (
     <ComposerPreferencesProvider

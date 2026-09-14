@@ -218,6 +218,13 @@
       "when": 1789348371032,
       "tag": "0029_drop_ui_locale",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1789348372032,
+      "tag": "0030_local_organizations",
+      "breakpoints": true
     }
   ]
 }

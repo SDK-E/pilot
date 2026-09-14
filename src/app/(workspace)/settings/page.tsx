@@ -4,7 +4,11 @@ import { redirect } from "next/navigation";
 import { listAgents } from "@/agents/agent-repository";
 import {
   DefaultAgentSection,
+  DeleteWorkspaceSection,
+  DomainVerificationSection,
+  LocalDomainVerificationSection,
   ModelPolicySection,
+  WorkspaceNameSection,
 } from "@/components/settings/organization-sections";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +28,7 @@ import {
 } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PageHeader } from "@/components/workspace/page-header";
+import { listOrganizationDomains } from "@/organizations/local-domain-verification";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
 import {
   getWorkspaceSession,
@@ -59,21 +64,42 @@ const SHORTCUTS = [
 async function OrganizationSettings() {
   const session = await getWorkspaceSession();
   if (!isWorkspaceSession(session)) return null;
-  const [organization, agents] = await Promise.all([
+  const [organization, agents, domains] = await Promise.all([
     getOrganizationPreferences(session.organizationId),
     listAgents(session.organizationId),
+    session.kind === "local"
+      ? listOrganizationDomains(session.organizationId)
+      : Promise.resolve([]),
   ]);
   const isAdmin = ADMIN_ROLES.has(session.membership.role.slug);
+  const isOwner = session.membership.role.slug === "owner";
   return (
     <>
       <DefaultAgentSection
         agents={agents}
         defaultAgentId={organization.defaultWorkerId}
       />
+      {isAdmin && session.kind === "local" ? (
+        <WorkspaceNameSection
+          organizationName={session.membership.organizationName}
+        />
+      ) : null}
       {isAdmin ? (
-        <ModelPolicySection
-          primaryModelId={organization.primaryModelId}
-          retryEnabled={organization.retryEnabled}
+        <>
+          <ModelPolicySection
+            primaryModelId={organization.primaryModelId}
+            retryEnabled={organization.retryEnabled}
+          />
+          {session.kind === "workos" ? <DomainVerificationSection /> : null}
+          {session.kind === "local" ? (
+            <LocalDomainVerificationSection domains={domains} />
+          ) : null}
+        </>
+      ) : null}
+      {isOwner && session.kind === "local" ? (
+        <DeleteWorkspaceSection
+          organizationId={session.organizationId}
+          organizationName={session.membership.organizationName}
         />
       ) : null}
     </>

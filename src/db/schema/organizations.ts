@@ -8,11 +8,21 @@ import {
   text,
   timestamp,
   unique,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 export const organizations = pgTable("organizations", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  /**
+   * "workos" mirrors a real WorkOS Organization (SDK Enterprises today).
+   * "local" exists only in Pilot's own database — a self-serve workspace for
+   * anyone without an SDK membership, never created in WorkOS.
+   */
+  source: text("source")
+    .$type<"workos" | "local">()
+    .notNull()
+    .default("workos"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -42,6 +52,27 @@ export const members = pgTable(
     primaryKey({ columns: [table.organizationId, table.workosUserId] }),
     unique("members_workos_membership_id_unique").on(table.workosMembershipId),
   ],
+);
+
+export const organizationDomains = pgTable(
+  "organization_domains",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    domain: text("domain").notNull(),
+    status: text("status")
+      .$type<"pending" | "verified">()
+      .notNull()
+      .default("pending"),
+    verificationToken: text("verification_token").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  },
+  (table) => [unique("organization_domains_domain_unique").on(table.domain)],
 );
 
 export const userPreferences = pgTable("user_preferences", {

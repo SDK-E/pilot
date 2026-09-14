@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  RiAddLine,
   RiExpandUpDownLine,
   RiLogoutBoxRLine,
   RiSettings3Line,
@@ -8,7 +9,10 @@ import {
 import Link from "next/link";
 import { useTransition } from "react";
 
-import { selectOrganizationAction } from "@/app/(workspace)/actions";
+import {
+  selectLocalOrganizationAction,
+  selectOrganizationAction,
+} from "@/app/(workspace)/actions";
 import { signOutAction } from "@/app/auth/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -57,7 +61,10 @@ export function AccountMenu({
     if (organizationId === activeOrganizationId) return;
     const formData = new FormData();
     formData.set("organizationId", organizationId);
-    startTransition(() => void selectOrganizationAction(formData));
+    const action = organizationId.startsWith("local_")
+      ? selectLocalOrganizationAction
+      : selectOrganizationAction;
+    startTransition(() => void action(formData));
   }
 
   return (
@@ -108,6 +115,11 @@ export function AccountMenu({
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
+        <DropdownMenuItem asChild>
+          <Link href="/onboarding">
+            <RiAddLine aria-hidden="true" /> Create organization
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={() => {

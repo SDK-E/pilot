@@ -11,6 +11,7 @@ export default authkitProxy({
 export const config = {
   matcher: [
     "/",
+    "/onboarding/:path*",
     "/chat/:path*",
     "/work/:path*",
     "/code/:path*",
