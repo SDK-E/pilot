@@ -51,6 +51,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   console.error("[stream-diag] POST entered");
   try {
     const session = await getWorkspaceSession();
+    console.error("[stream-diag] session resolved");
     if (!isWorkspaceSession(session)) return sessionFailureResponse(session);
     const owner = {
       organizationId: session.organizationId,
@@ -64,12 +65,17 @@ export async function POST(request: Request, { params }: RouteContext) {
     if (!input.success) return error("A message is required.", 400);
 
     const conversation = await getConversation(owner, conversationId.data);
+    console.error("[stream-diag] conversation loaded", {
+      found: !!conversation,
+    });
     const agent = conversation
       ? await loadRuntimeAgent(owner.organizationId, conversation.agentId)
       : undefined;
+    console.error("[stream-diag] agent loaded", { found: !!agent });
     if (!conversation || !agent)
       return error("This conversation is unavailable.", 404);
 
+    console.error("[stream-diag] calling streamMessage");
     const stream = await streamMessage(
       {
         ...owner,
