@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 
 interface Option {
   label: string;
@@ -48,23 +49,69 @@ function MultiSelectOption({
 }
 
 /**
- * The choices of an Ask User question. Single select answers on click;
- * multi select collects checks and submits them as one message.
+ * A free-text answer inline with the option buttons, so replying with your
+ * own words doesn't mean leaving the question to find the main composer.
  */
-export function QuestionOptions({
-  options,
-  mode,
+function CustomAnswerField({
   disabled,
   onAnswer,
-}: QuestionOptionsProps) {
-  const [selected, setSelected] = useState<string[]>([]);
+}: {
+  disabled: boolean;
+  onAnswer: (text: string) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const id = useId();
 
-  if (mode === "single_select") {
-    return (
-      <div
-        aria-label="Select an answer, or write a reply"
-        className="mt-3 flex flex-wrap gap-2"
+  const submit = () => {
+    const text = draft.trim();
+    if (!text) return;
+    onAnswer(text);
+    setDraft("");
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <label className="sr-only" htmlFor={id}>
+        Write your own answer
+      </label>
+      <Input
+        disabled={disabled}
+        id={id}
+        onChange={(event) => {
+          setDraft(event.currentTarget.value);
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          submit();
+        }}
+        placeholder="Or write your own answer…"
+        value={draft}
+      />
+      <Button
+        disabled={disabled || !draft.trim()}
+        onClick={submit}
+        size="sm"
+        type="button"
+        variant="outline"
       >
+        Send
+      </Button>
+    </div>
+  );
+}
+
+function SingleSelectQuestion({
+  options,
+  disabled,
+  onAnswer,
+}: Omit<QuestionOptionsProps, "mode">) {
+  return (
+    <div
+      aria-label="Select an answer, or write your own"
+      className="mt-3 space-y-2"
+    >
+      <div className="flex flex-wrap gap-2">
         {options.map((option) => (
           <Button
             disabled={disabled}
@@ -81,8 +128,17 @@ export function QuestionOptions({
           </Button>
         ))}
       </div>
-    );
-  }
+      <CustomAnswerField disabled={disabled} onAnswer={onAnswer} />
+    </div>
+  );
+}
+
+function MultiSelectQuestion({
+  options,
+  disabled,
+  onAnswer,
+}: Omit<QuestionOptionsProps, "mode">) {
+  const [selected, setSelected] = useState<string[]>([]);
 
   const toggle = (label: string) => {
     setSelected((current) =>
@@ -95,7 +151,7 @@ export function QuestionOptions({
   return (
     <div className="mt-3 space-y-2">
       <p className="text-xs text-muted-foreground">
-        Select one or more answers, or write a reply.
+        Select one or more answers, or write your own below.
       </p>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => (
@@ -120,6 +176,37 @@ export function QuestionOptions({
       >
         Submit selected answers
       </Button>
+      <CustomAnswerField disabled={disabled} onAnswer={onAnswer} />
     </div>
+  );
+}
+
+/**
+ * The choices of an Ask User question. Single select answers on click;
+ * multi select collects checks and submits them as one message. Either mode
+ * also takes a free-text answer inline, so replying in your own words never
+ * requires leaving the question to find the composer.
+ */
+export function QuestionOptions({
+  options,
+  mode,
+  disabled,
+  onAnswer,
+}: QuestionOptionsProps) {
+  if (mode === "single_select") {
+    return (
+      <SingleSelectQuestion
+        disabled={disabled}
+        onAnswer={onAnswer}
+        options={options}
+      />
+    );
+  }
+  return (
+    <MultiSelectQuestion
+      disabled={disabled}
+      onAnswer={onAnswer}
+      options={options}
+    />
   );
 }
