@@ -167,6 +167,14 @@ export default defineConfig([
   },
 
   {
+    // A standalone ops script invoked directly by Vercel's build command
+    // (see `db:repair-conversation-plans` in package.json), not app code —
+    // its whole job is to report what it did to the build log.
+    files: ["repair-conversation-plans-table.mjs"],
+    rules: { "no-console": "off" },
+  },
+
+  {
     files: ["**/*.test.ts", "**/*.test.tsx", "tests/**", "server-tests/**"],
     rules: {
       "max-lines-per-function": "off",
