@@ -1,12 +1,16 @@
 "use client";
 
-import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
+import {
+  RiExpandUpDownLine,
+  RiLogoutBoxRLine,
+  RiSettings3Line,
+} from "@remixicon/react";
 import Link from "next/link";
 import { useTransition } from "react";
 
 import { selectOrganizationAction } from "@/app/(workspace)/actions";
 import { signOutAction } from "@/app/auth/actions";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { SidebarMenuButton } from "@/components/ui/sidebar";
 
 import type { UserOrganization } from "@/organizations/user-organizations";
 
@@ -26,18 +31,27 @@ interface AccountMenuProps {
   user: { email: string; name?: string | null };
 }
 
+function initialsOf(user: AccountMenuProps["user"]) {
+  return (
+    (user.name ?? user.email)
+      .split(/\s+|@/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((value) => value[0]?.toUpperCase())
+      .join("") || "P"
+  );
+}
+
+/**
+ * The account block at the bottom of the sidebar: who is signed in, which
+ * organization is active, and sign out.
+ */
 export function AccountMenu({
   activeOrganizationId,
   organizations,
   user,
 }: AccountMenuProps) {
   const [isPending, startTransition] = useTransition();
-  const initials = (user.name ?? user.email)
-    .split(/\s+|@/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((value) => value[0]?.toUpperCase())
-    .join("");
 
   function switchOrganization(organizationId: string) {
     if (organizationId === activeOrganizationId) return;
@@ -49,42 +63,34 @@ export function AccountMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
+        <SidebarMenuButton
           aria-label="Account menu"
-          className="w-full justify-start gap-2 rounded-xl px-2 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
           disabled={isPending}
-          variant="ghost"
+          size="lg"
         >
-          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-primary/15 text-xs font-semibold text-primary">
-            {initials || "P"}
-          </span>
-          <span className="min-w-0 flex-1 text-left group-data-[collapsible=icon]:hidden">
-            <span className="block truncate text-sm font-medium">
+          <Avatar className="size-6">
+            <AvatarFallback>{initialsOf(user)}</AvatarFallback>
+          </Avatar>
+          <span className="grid min-w-0 flex-1 leading-tight">
+            <span className="truncate font-medium">
               {user.name ?? "Account"}
             </span>
-            <span className="block truncate text-xs text-muted-foreground">
-              {user.email}
-            </span>
+            <span className="truncate text-muted-foreground">{user.email}</span>
           </span>
-          <ChevronsUpDown
-            aria-hidden="true"
-            className="size-3.5 text-muted-foreground group-data-[collapsible=icon]:hidden"
-          />
-        </Button>
+          <RiExpandUpDownLine aria-hidden="true" className="ml-auto" />
+        </SidebarMenuButton>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-72">
-        <DropdownMenuLabel>
-          <span className="block truncate font-medium">
-            {user.name ?? "Account"}
-          </span>
-          <span className="mt-0.5 block truncate font-normal">
+      <DropdownMenuContent align="start" className="w-64" side="top">
+        <DropdownMenuLabel className="grid leading-tight">
+          <span className="truncate">{user.name ?? "Account"}</span>
+          <span className="truncate font-normal text-muted-foreground">
             {user.email}
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/settings">
-            <Settings aria-hidden="true" /> Settings
+            <RiSettings3Line aria-hidden="true" /> Settings
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -98,9 +104,7 @@ export function AccountMenu({
               key={organization.id}
               value={organization.id}
             >
-              <span className="min-w-0 flex-1 truncate">
-                {organization.name}
-              </span>
+              <span className="truncate">{organization.name}</span>
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
@@ -111,7 +115,7 @@ export function AccountMenu({
           }}
           variant="destructive"
         >
-          <LogOut aria-hidden="true" /> Log out
+          <RiLogoutBoxRLine aria-hidden="true" /> Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

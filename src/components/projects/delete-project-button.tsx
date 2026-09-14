@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { RiDeleteBinLine } from "@remixicon/react";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 
@@ -37,7 +37,7 @@ export function DeleteProjectButton({ projectId }: { projectId: string }) {
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button size="sm" type="button" variant="outline">
-          <Trash2 aria-hidden="true" /> Delete project
+          <RiDeleteBinLine aria-hidden="true" /> Delete project
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

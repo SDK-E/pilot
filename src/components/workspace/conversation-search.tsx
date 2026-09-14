@@ -1,11 +1,10 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { RiSearchLine } from "@remixicon/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { AGENT_KINDS, modeHref } from "@/agents/agent-kinds";
-import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandDialog,
@@ -14,8 +13,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandShortcut,
 } from "@/components/ui/command";
+import { Kbd } from "@/components/ui/kbd";
+import { SidebarMenuButton } from "@/components/ui/sidebar";
 import { ModeIcon } from "@/components/workspace/mode-icon";
 
 import type { RecentConversation } from "@/components/workspace/workspace-shell";
@@ -29,19 +29,15 @@ export function ConversationSearch({
   conversations: RecentConversation[];
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!(
-        (event.metaKey || event.ctrlKey) &&
-        event.key.toLowerCase() === "k"
-      )) {
-        return;
-      }
-
+      const isShortcut =
+        (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k";
+      if (!isShortcut) return;
       event.preventDefault();
-      setOpen((value) => !value);
+      setIsOpen((value) => !value);
     };
     addEventListener("keydown", onKeyDown);
     return () => {
@@ -49,29 +45,27 @@ export function ConversationSearch({
     };
   }, []);
 
-  const open_ = (href: string) => {
-    setOpen(false);
+  const go = (href: string) => {
+    setIsOpen(false);
     router.push(href);
   };
 
   return (
     <>
-      <Button
-        className="w-full justify-start"
+      <SidebarMenuButton
         onClick={() => {
-          setOpen(true);
+          setIsOpen(true);
         }}
-        size="sm"
-        type="button"
-        variant="ghost"
+        tooltip="Search"
       >
-        <Search aria-hidden="true" />
-        Search<CommandShortcut>⌘K</CommandShortcut>
-      </Button>
+        <RiSearchLine aria-hidden="true" />
+        <span>Search</span>
+        <Kbd className="ml-auto">⌘K</Kbd>
+      </SidebarMenuButton>
       <CommandDialog
         description="Search your conversations."
-        onOpenChange={setOpen}
-        open={open}
+        onOpenChange={setIsOpen}
+        open={isOpen}
         title="Search"
       >
         <Command>
@@ -83,7 +77,7 @@ export function ConversationSearch({
                 <CommandItem
                   key={kind.id}
                   onSelect={() => {
-                    open_(modeHref(kind.id));
+                    go(modeHref(kind.id));
                   }}
                 >
                   <ModeIcon kind={kind.id} />
@@ -96,16 +90,16 @@ export function ConversationSearch({
                 <CommandItem
                   key={conversation.id}
                   onSelect={() => {
-                    open_(modeHref(conversation.kind, conversation.id));
+                    go(modeHref(conversation.kind, conversation.id));
                   }}
                   value={`${conversation.title ?? ""} ${conversation.agentName} ${conversation.preview ?? ""}`}
                 >
                   <ModeIcon kind={conversation.kind} />
-                  <span className="min-w-0">
-                    <span className="block truncate">
+                  <span className="grid min-w-0 leading-tight">
+                    <span className="truncate">
                       {conversation.title ?? "New conversation"}
                     </span>
-                    <span className="block truncate text-xs text-muted-foreground">
+                    <span className="truncate text-muted-foreground">
                       {conversation.preview ?? conversation.agentName}
                     </span>
                   </span>

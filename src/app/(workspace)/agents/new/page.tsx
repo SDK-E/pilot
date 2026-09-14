@@ -1,5 +1,6 @@
 import { isAgentKindId } from "@/agents/agent-kinds";
 import { AgentForm } from "@/components/agents/agent-form";
+import { PageHeader } from "@/components/workspace/page-header";
 import { requireWorkspaceSession } from "@/organizations/workspace-session";
 
 import type { Metadata } from "next";
@@ -14,13 +15,8 @@ export default async function NewAgentPage({
   await requireWorkspaceSession();
   const { kind } = await searchParams;
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-6 px-5 py-8 sm:px-8 sm:py-10">
-      <header>
-        <p className="text-sm text-muted-foreground">Agents</p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-          New agent
-        </h1>
-      </header>
+    <main className="mx-auto w-full max-w-3xl space-y-6 p-6">
+      <PageHeader eyebrow="Agents" title="New agent" />
       <AgentForm defaultKind={isAgentKindId(kind) ? kind : "chat"} />
     </main>
   );

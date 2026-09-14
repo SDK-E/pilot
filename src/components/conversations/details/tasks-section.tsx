@@ -1,6 +1,6 @@
 "use client";
 
-import { ListTodo, Plus } from "lucide-react";
+import { RiAddLine, RiListCheck3 } from "@remixicon/react";
 import {
   startTransition,
   useActionState,
@@ -23,7 +23,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
 import { Textarea } from "@/components/ui/textarea";
 
 const initialState: ActionState = { status: "idle" };
@@ -55,7 +63,7 @@ function CreateTaskDialog({
     <Dialog onOpenChange={setIsOpen} open={isOpen}>
       <DialogTrigger asChild>
         <Button size="sm" variant="ghost">
-          <Plus aria-hidden="true" className="size-3.5" /> Create task
+          <RiAddLine aria-hidden="true" /> Create task
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -66,42 +74,41 @@ function CreateTaskDialog({
             visible. Creating it does not start an external action.
           </DialogDescription>
         </DialogHeader>
-        <form action={action} className="space-y-4" ref={formRef}>
+        <form action={action} ref={formRef}>
           <input name="conversationId" type="hidden" value={conversationId} />
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="task-title">
-              Task name
-            </label>
-            <Input
-              id="task-title"
-              maxLength={200}
-              name="title"
-              placeholder="For example, compare three approaches"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="task-instructions">
-              What should this task produce?
-            </label>
-            <Textarea
-              className="min-h-28"
-              id="task-instructions"
-              maxLength={10_000}
-              name="instructions"
-              placeholder="Describe the expected result and any useful constraints."
-              required
-              rows={4}
-            />
-          </div>
-          {state.status === "error" ? (
-            <p aria-live="polite" className="text-sm text-destructive">
-              {state.message}
-            </p>
-          ) : null}
-          <DialogFooter>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="task-title">Task name</FieldLabel>
+              <Input
+                id="task-title"
+                maxLength={200}
+                name="title"
+                placeholder="For example, compare three approaches"
+                required
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="task-instructions">
+                What should this task produce?
+              </FieldLabel>
+              <Textarea
+                id="task-instructions"
+                maxLength={10_000}
+                name="instructions"
+                placeholder="Describe the expected result and any useful constraints."
+                required
+                rows={4}
+              />
+            </Field>
+            {state.status === "error" ? (
+              <p aria-live="polite" className="text-xs text-destructive">
+                {state.message}
+              </p>
+            ) : null}
+          </FieldGroup>
+          <DialogFooter className="mt-4">
             <Button disabled={isPending} type="submit">
-              <ListTodo aria-hidden="true" />
+              <RiListCheck3 aria-hidden="true" />
               {isPending ? "Creating…" : "Create task"}
             </Button>
           </DialogFooter>
@@ -124,30 +131,29 @@ export function TasksSection({
   onTaskCreated: () => void;
 }) {
   return (
-    <section>
+    <section className="space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-medium">Tasks</h2>
+        <h2 className="text-xs font-medium">Tasks</h2>
         <CreateTaskDialog
           conversationId={conversationId}
           onCreated={onTaskCreated}
         />
       </div>
       {tasks.length > 0 ? (
-        <ul className="mt-3 space-y-2">
+        <ItemGroup>
           {tasks.map((task) => (
-            <li
-              className="rounded-xl border border-border bg-card/60 px-3 py-2"
-              key={task.id}
-            >
-              <p className="text-sm font-medium">{task.title}</p>
-              <p className="mt-1 text-xs capitalize text-muted-foreground">
-                {task.status}
-              </p>
-            </li>
+            <Item key={task.id} size="sm" variant="outline">
+              <ItemContent>
+                <ItemTitle>{task.title}</ItemTitle>
+                <ItemDescription className="capitalize">
+                  {task.status}
+                </ItemDescription>
+              </ItemContent>
+            </Item>
           ))}
-        </ul>
+        </ItemGroup>
       ) : (
-        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Create a task when you want its outcome and status to stay visible in
           this chat.
         </p>

@@ -7,12 +7,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans:
-    "JetBrains Mono", "JetBrains Mono Fallback", ui-monospace, monospace;
+  --font-sans: var(--font-sans);
   --font-mono:
     "JetBrains Mono", "JetBrains Mono Fallback", ui-monospace, monospace;
-  --font-heading:
-    "JetBrains Mono", "JetBrains Mono Fallback", ui-monospace, monospace;
+  --font-heading: var(--font-sans);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -62,10 +60,10 @@
     @apply border-border outline-ring/50;
   }
   html {
-    @apply font-sans min-h-[100dvh];
+    @apply min-h-[100dvh] font-sans;
   }
   body {
-    @apply bg-background text-foreground min-h-[100dvh];
+    @apply min-h-[100dvh] bg-background text-foreground;
     font-feature-settings:
       "rlig" 1,
       "calt" 1;
@@ -166,8 +164,6 @@
 
 /* shadcn preset b2pR8pzoh: lime primary on a neutral zinc scale. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.141 0.005 285.823);
   --popover: oklch(1 0 0);
@@ -198,6 +194,8 @@
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
 }
 
 .dark {

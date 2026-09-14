@@ -7,6 +7,14 @@ import {
   type ActionState,
 } from "@/app/(workspace)/[mode]/[conversationId]/actions";
 import { Button } from "@/components/ui/button";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemFooter,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
 
 import type { AgentKindId } from "@/agents/agent-kinds";
 
@@ -37,62 +45,69 @@ export function ApprovalsSection({
   }, [state.status, onDecided]);
 
   return (
-    <section>
-      <h2 className="text-sm font-medium">Needs your approval</h2>
-      <p className="mt-1 text-xs leading-5 text-muted-foreground">
-        Pilot pauses here before an action that needs your decision.
-      </p>
+    <section className="space-y-2">
+      <div>
+        <h2 className="text-xs font-medium">Needs your approval</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Pilot pauses here before an action that needs your decision.
+        </p>
+      </div>
       {approvals.length > 0 ? (
-        <ul className="mt-3 space-y-2">
+        <ItemGroup>
           {approvals.map((approval) => (
-            <li
-              className="rounded-xl border border-border bg-card/60 px-3 py-2"
-              key={approval.id}
-            >
-              <p className="text-sm font-medium">{approval.summary}</p>
-              <p className="mt-1 text-xs capitalize text-muted-foreground">
-                {approval.status}
-              </p>
+            <Item key={approval.id} size="sm" variant="outline">
+              <ItemContent>
+                <ItemTitle>{approval.summary}</ItemTitle>
+                <ItemDescription className="capitalize">
+                  {approval.status}
+                </ItemDescription>
+              </ItemContent>
               {approval.status === "pending" ? (
-                <form action={action} className="mt-3 flex gap-2">
-                  <input name="mode" type="hidden" value={kind} />
-                  <input
-                    name="conversationId"
-                    type="hidden"
-                    value={conversationId}
-                  />
-                  <input name="approvalId" type="hidden" value={approval.id} />
-                  <Button
-                    disabled={isPending}
-                    name="decision"
-                    size="sm"
-                    type="submit"
-                    value="approve"
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    disabled={isPending}
-                    name="decision"
-                    size="sm"
-                    type="submit"
-                    value="reject"
-                    variant="outline"
-                  >
-                    Decline
-                  </Button>
-                </form>
+                <ItemFooter>
+                  <form action={action} className="flex gap-2">
+                    <input name="mode" type="hidden" value={kind} />
+                    <input
+                      name="conversationId"
+                      type="hidden"
+                      value={conversationId}
+                    />
+                    <input
+                      name="approvalId"
+                      type="hidden"
+                      value={approval.id}
+                    />
+                    <Button
+                      disabled={isPending}
+                      name="decision"
+                      size="sm"
+                      type="submit"
+                      value="approve"
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      disabled={isPending}
+                      name="decision"
+                      size="sm"
+                      type="submit"
+                      value="reject"
+                      variant="outline"
+                    >
+                      Decline
+                    </Button>
+                  </form>
+                </ItemFooter>
               ) : null}
-            </li>
+            </Item>
           ))}
-        </ul>
+        </ItemGroup>
       ) : (
-        <p className="mt-2 text-xs leading-5 text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Approval cards appear only when an action needs your decision.
         </p>
       )}
       {state.status === "error" ? (
-        <p aria-live="polite" className="mt-2 text-xs text-destructive">
+        <p aria-live="polite" className="text-xs text-destructive">
           {state.message}
         </p>
       ) : null}

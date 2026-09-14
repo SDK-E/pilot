@@ -3,11 +3,31 @@ import {
   updateModelPolicyAction,
 } from "@/app/(workspace)/settings/actions";
 import { Button } from "@/components/ui/button";
-
-export const settingsSectionClass =
-  "rounded-2xl border border-border bg-card/50 p-5";
-export const settingsSelectClass =
-  "h-9 min-w-52 rounded-xl border border-border bg-background px-3 text-sm";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldTitle,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 /**
  * Which agent is preselected when a member starts a conversation.
@@ -20,38 +40,50 @@ export function DefaultAgentSection({
   agents: { id: string; name: string }[];
 }) {
   return (
-    <section className={settingsSectionClass}>
-      <h2 className="font-medium">Default agent</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Preselected when someone in the organization starts a conversation in
-        that agent&apos;s mode.
-      </p>
-      {agents.length > 0 ? (
-        <form
-          action={updateDefaultAgentAction}
-          className="mt-4 flex flex-wrap gap-3"
-        >
-          <select
-            className={settingsSelectClass}
-            defaultValue={defaultAgentId ?? agents[0]?.id}
-            name="agentId"
-          >
-            {agents.map((agent) => (
-              <option key={agent.id} value={agent.id}>
-                {agent.name}
-              </option>
-            ))}
-          </select>
-          <Button type="submit" variant="outline">
-            Save default agent
-          </Button>
-        </form>
-      ) : (
-        <p className="mt-4 text-sm text-muted-foreground">
-          Agents are created the first time each mode is used.
-        </p>
-      )}
-    </section>
+    <Card>
+      <form action={updateDefaultAgentAction}>
+        <CardHeader>
+          <CardTitle>Default agent</CardTitle>
+          <CardDescription>
+            Preselected when someone in the organization starts a conversation
+            in that agent&apos;s mode.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {agents.length > 0 ? (
+            <Field>
+              <FieldLabel htmlFor="default-agent">Agent</FieldLabel>
+              <Select
+                defaultValue={defaultAgentId ?? agents[0]?.id}
+                name="agentId"
+              >
+                <SelectTrigger className="w-64" id="default-agent">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents.map((agent) => (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {agent.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Agents are created the first time each mode is used.
+            </p>
+          )}
+        </CardContent>
+        {agents.length > 0 ? (
+          <CardFooter className="pt-4">
+            <Button type="submit" variant="outline">
+              Save default agent
+            </Button>
+          </CardFooter>
+        ) : null}
+      </form>
+    </Card>
   );
 }
 
@@ -66,32 +98,50 @@ export function ModelPolicySection({
   retryEnabled: boolean;
 }) {
   return (
-    <section className={settingsSectionClass}>
-      <h2 className="font-medium">Model policy</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        The primary Kilo Gateway model. Pilot can retry a failed reply once with{" "}
-        <code>kilo-auto/free</code>.
-      </p>
-      <form action={updateModelPolicyAction} className="mt-4 space-y-3">
-        <input
-          className="h-9 w-full rounded-xl border border-input bg-background px-3 text-sm"
-          defaultValue={primaryModelId}
-          name="primaryModelId"
-          required
-        />
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            defaultChecked={retryEnabled}
-            name="retryEnabled"
-            type="checkbox"
-            value="true"
-          />
-          Retry once with Free
-        </label>
-        <Button type="submit" variant="outline">
-          Save model policy
-        </Button>
+    <Card>
+      <form action={updateModelPolicyAction}>
+        <CardHeader>
+          <CardTitle>Model policy</CardTitle>
+          <CardDescription>
+            The primary Kilo Gateway model. Pilot can retry a failed reply once
+            with the free model.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="primary-model">Primary model</FieldLabel>
+              <Input
+                className="font-mono"
+                defaultValue={primaryModelId}
+                id="primary-model"
+                name="primaryModelId"
+                required
+              />
+            </Field>
+            <Field orientation="horizontal">
+              <FieldContent>
+                <FieldTitle>Retry once with the free model</FieldTitle>
+                <FieldDescription>
+                  When the primary model fails, send the message again through
+                  kilo-auto/free before reporting an error.
+                </FieldDescription>
+              </FieldContent>
+              <Switch
+                aria-label="Retry once with the free model"
+                defaultChecked={retryEnabled}
+                name="retryEnabled"
+                value="true"
+              />
+            </Field>
+          </FieldGroup>
+        </CardContent>
+        <CardFooter className="pt-4">
+          <Button type="submit" variant="outline">
+            Save model policy
+          </Button>
+        </CardFooter>
       </form>
-    </section>
+    </Card>
   );
 }

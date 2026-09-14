@@ -1,18 +1,22 @@
-import { Briefcase, Code2, MessageSquare } from "lucide-react";
+import {
+  RiBriefcaseLine,
+  RiChat1Line,
+  RiCodeSSlashLine,
+  type RemixiconComponentType,
+} from "@remixicon/react";
 
 import type { AgentKindId } from "@/agents/agent-kinds";
-import type { LucideProps } from "lucide-react";
 
-const ICONS = {
-  chat: MessageSquare,
-  work: Briefcase,
-  code: Code2,
-} satisfies Record<AgentKindId, React.ComponentType<LucideProps>>;
+const ICONS: Record<AgentKindId, RemixiconComponentType> = {
+  chat: RiChat1Line,
+  work: RiBriefcaseLine,
+  code: RiCodeSSlashLine,
+};
 
 export function ModeIcon({
   kind,
   ...props
-}: LucideProps & { kind: AgentKindId }) {
+}: React.ComponentProps<RemixiconComponentType> & { kind: AgentKindId }) {
   const Icon = ICONS[kind];
   return <Icon aria-hidden="true" {...props} />;
 }

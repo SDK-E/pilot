@@ -1,8 +1,8 @@
+import { RiLoader4Line } from "@remixicon/react";
 import {
   CheckCircle2,
   CircleAlert,
   FileText,
-  LoaderCircle,
   Search,
   Wrench,
 } from "lucide-react";
@@ -25,6 +25,9 @@ function stepStatus(type: ActivityEventType): "active" | "complete" {
     : "complete";
 }
 
+// ChainOfThoughtStep (a vendored AI Elements component) requires a
+// LucideIcon component specifically, so its step icons stay on lucide-react
+// even though the rest of the app uses the shadcn preset's remixicon set.
 function stepIcon(type: ActivityEventType) {
   if (type === "skill.selected") return FileText;
   if (
@@ -63,19 +66,19 @@ export function LiveConversationActivity({
 
   return (
     <ChainOfThought
-      className="mt-3 max-w-xl rounded-2xl border border-border bg-muted/35 px-3 py-2"
+      className="mt-3 max-w-xl rounded-md border bg-muted/35 px-3 py-2"
       defaultOpen={false}
     >
       <ChainOfThoughtHeader className="text-foreground">
         <span className="flex items-center gap-2">
-          <LoaderCircle
+          <RiLoader4Line
             aria-hidden="true"
-            className="size-3.5 animate-spin text-primary"
+            className="animate-spin text-primary"
           />
           {summary}
         </span>
       </ChainOfThoughtHeader>
-      <ChainOfThoughtContent className="border-t border-border pt-3">
+      <ChainOfThoughtContent className="border-t pt-3">
         <p className="text-xs leading-5 text-muted-foreground">
           Verified steps for this response. Private model reasoning and tool
           data stay private.

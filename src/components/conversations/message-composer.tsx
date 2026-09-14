@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot } from "lucide-react";
+import { RiRobot2Line } from "@remixicon/react";
 import { useCallback, useId, useRef, useState } from "react";
 
 import {
@@ -177,7 +177,7 @@ export function MessageComposer({
     <div className="mx-auto w-full max-w-3xl">
       <PromptInput
         accept={ACCEPTED_FILES}
-        className="rounded-3xl border border-border bg-card p-2 shadow-lg shadow-foreground/[0.04] transition-shadow focus-within:shadow-xl focus-within:shadow-primary/[0.06]"
+        className="rounded-xl border bg-card p-2 shadow-sm transition-shadow focus-within:shadow-md"
         maxFileSize={MAX_FILE_BYTES}
         multiple
         onError={(event) => {
@@ -191,7 +191,7 @@ export function MessageComposer({
             aria-describedby={validationError ? errorId : undefined}
             aria-invalid={validationError ? true : undefined}
             aria-label={`Message ${agentName}`}
-            className="min-h-20 px-3 pt-3 text-[15px] leading-6 sm:min-h-24"
+            className="min-h-20 px-3 pt-3 text-sm leading-6 sm:min-h-24"
             disabled={isBusy}
             maxLength={10_000}
             onChange={(event) => {
@@ -218,7 +218,7 @@ export function MessageComposer({
               </PromptInputActionMenuContent>
             </PromptInputActionMenu>
             <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-              <Bot aria-hidden="true" className="size-3.5 text-primary" />
+              <RiRobot2Line aria-hidden="true" className="text-primary" />
               {agentName}
             </span>
           </PromptInputTools>

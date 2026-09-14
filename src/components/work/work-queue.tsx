@@ -1,10 +1,29 @@
-import { Check, CircleDotDashed, MessageSquareMore, X } from "lucide-react";
+import {
+  RiChat3Line,
+  RiCheckLine,
+  RiCloseLine,
+  RiTaskLine,
+} from "@remixicon/react";
 import Link from "next/link";
 
 import { modeHref } from "@/agents/agent-kinds";
 import { updateTaskStatusAction } from "@/app/(workspace)/work/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 
 interface WorkTask {
   id: string;
@@ -35,14 +54,14 @@ function TaskActions({ task }: { task: WorkTask }) {
         <input name="taskId" type="hidden" value={task.id} />
         <input name="status" type="hidden" value="completed" />
         <Button size="sm" type="submit" variant="secondary">
-          <Check aria-hidden="true" /> Done
+          <RiCheckLine aria-hidden="true" /> Done
         </Button>
       </form>
       <form action={updateTaskStatusAction}>
         <input name="taskId" type="hidden" value={task.id} />
         <input name="status" type="hidden" value="cancelled" />
         <Button size="sm" type="submit" variant="ghost">
-          <X aria-hidden="true" /> Cancel
+          <RiCloseLine aria-hidden="true" /> Cancel
         </Button>
       </form>
     </>
@@ -62,74 +81,81 @@ export function WorkQueue({
 }) {
   const pending = approvals.filter((approval) => approval.status === "pending");
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {pending.length > 0 ? (
-        <section aria-labelledby="approvals-heading">
-          <h2 className="mb-3 text-lg font-medium" id="approvals-heading">
+        <section aria-labelledby="approvals-heading" className="space-y-2">
+          <h2 className="text-sm font-medium" id="approvals-heading">
             Needs your approval
           </h2>
-          <ul className="space-y-2">
+          <ItemGroup>
             {pending.map((approval) => (
-              <li
-                className="flex items-center justify-between gap-3 rounded-2xl border border-primary/40 bg-primary/5 px-4 py-3 text-sm"
+              <Item
+                className="border-primary/40 bg-primary/5"
                 key={approval.id}
+                variant="outline"
               >
-                <span>{approval.summary}</span>
+                <ItemContent>
+                  <ItemTitle>{approval.summary}</ItemTitle>
+                </ItemContent>
                 {approval.conversationId ? (
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={modeHref("work", approval.conversationId)}>
-                      Decide in conversation
-                    </Link>
-                  </Button>
+                  <ItemActions>
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={modeHref("work", approval.conversationId)}>
+                        Decide in conversation
+                      </Link>
+                    </Button>
+                  </ItemActions>
                 ) : null}
-              </li>
+              </Item>
             ))}
-          </ul>
+          </ItemGroup>
         </section>
       ) : null}
 
-      <section aria-labelledby="tasks-heading">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium" id="tasks-heading">
+      <section aria-labelledby="tasks-heading" className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium" id="tasks-heading">
             Your work
           </h2>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {tasks.length} total
           </span>
         </div>
         {tasks.length > 0 ? (
-          <ul className="space-y-2">
+          <ItemGroup>
             {tasks.map((task) => (
-              <li
-                className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card/50 px-4 py-3"
-                key={task.id}
-              >
-                <CircleDotDashed
-                  className="size-4 shrink-0 text-primary"
-                  aria-hidden="true"
-                />
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                  {task.title}
-                </span>
-                <Badge variant={statusVariant(task.status)}>
-                  {task.status.replace("_", " ")}
-                </Badge>
-                {task.conversationId ? (
-                  <Button asChild size="sm" variant="ghost">
-                    <Link href={modeHref("work", task.conversationId)}>
-                      <MessageSquareMore aria-hidden="true" /> Open
-                    </Link>
-                  </Button>
-                ) : null}
-                <TaskActions task={task} />
-              </li>
+              <Item key={task.id} variant="outline">
+                <ItemMedia variant="icon">
+                  <RiTaskLine aria-hidden="true" />
+                </ItemMedia>
+                <ItemContent>
+                  <ItemTitle className="truncate">{task.title}</ItemTitle>
+                </ItemContent>
+                <ItemActions>
+                  <Badge variant={statusVariant(task.status)}>
+                    {task.status.replace("_", " ")}
+                  </Badge>
+                  {task.conversationId ? (
+                    <Button asChild size="sm" variant="ghost">
+                      <Link href={modeHref("work", task.conversationId)}>
+                        <RiChat3Line aria-hidden="true" /> Open
+                      </Link>
+                    </Button>
+                  ) : null}
+                  <TaskActions task={task} />
+                </ItemActions>
+              </Item>
             ))}
-          </ul>
+          </ItemGroup>
         ) : (
-          <p className="rounded-2xl border border-dashed border-border p-6 text-sm text-muted-foreground">
-            No work yet. Describe a task above, or add one from any
-            conversation.
-          </p>
+          <Empty className="border">
+            <EmptyHeader>
+              <EmptyTitle>No work yet</EmptyTitle>
+              <EmptyDescription>
+                Describe a task above, or add one from any conversation.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         )}
       </section>
     </div>

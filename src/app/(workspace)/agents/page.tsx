@@ -1,11 +1,18 @@
-import { Plus } from "lucide-react";
+import { RiAddLine } from "@remixicon/react";
 import Link from "next/link";
 
 import { AGENT_KIND_IDS, AGENT_KINDS } from "@/agents/agent-kinds";
 import { listAgents } from "@/agents/agent-repository";
 import { AgentCard } from "@/components/agents/agent-card";
 import { Button } from "@/components/ui/button";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import { ModeIcon } from "@/components/workspace/mode-icon";
+import { PageHeader } from "@/components/workspace/page-header";
 import { requireWorkspaceSession } from "@/organizations/workspace-session";
 
 import type { Metadata } from "next";
@@ -21,18 +28,12 @@ export default async function AgentsPage() {
   const agents = await listAgents(organizationId);
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-10 px-5 py-8 sm:px-8 sm:py-10">
-      <header>
-        <p className="text-sm text-muted-foreground">
-          {membership.organizationName}
-        </p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Agents</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Give each mode the agents your team needs: a name, instructions, and
-          which tools it may use. Pilot creates a default agent the first time a
-          mode is used.
-        </p>
-      </header>
+    <main className="mx-auto w-full max-w-5xl space-y-8 p-6">
+      <PageHeader
+        description="Give each mode the agents your team needs: a name, instructions, and which tools it may use. Pilot creates a default agent the first time a mode is used."
+        eyebrow={membership.organizationName}
+        title="Agents"
+      />
 
       {AGENT_KIND_IDS.map((kindId) => {
         const kind = AGENT_KINDS[kindId];
@@ -40,18 +41,25 @@ export default async function AgentsPage() {
           (agent) => agent.baseAgentId === kindId,
         );
         return (
-          <section key={kindId} aria-labelledby={`agents-${kindId}`}>
-            <div className="mb-3 flex items-center justify-between gap-3">
+          <section
+            aria-labelledby={`agents-${kindId}`}
+            className="space-y-3"
+            key={kindId}
+          >
+            <div className="flex items-center justify-between gap-3">
               <h2
-                className="flex items-center gap-2 text-lg font-medium"
+                className="flex items-center gap-2 text-sm font-medium"
                 id={`agents-${kindId}`}
               >
-                <ModeIcon className="size-4 text-primary" kind={kindId} />
+                <ModeIcon
+                  className="size-4 text-muted-foreground"
+                  kind={kindId}
+                />
                 {kind.name}
               </h2>
               <Button asChild size="sm" variant="outline">
                 <Link href={`/agents/new?kind=${kindId}`}>
-                  <Plus aria-hidden="true" /> New {kind.name} agent
+                  <RiAddLine aria-hidden="true" /> New agent
                 </Link>
               </Button>
             </div>
@@ -64,10 +72,14 @@ export default async function AgentsPage() {
                 ))}
               </ul>
             ) : (
-              <p className="rounded-2xl border border-dashed border-border p-5 text-sm text-muted-foreground">
-                No {kind.name} agents yet. {kind.defaultAgent.name} is created
-                on first use.
-              </p>
+              <Empty className="border">
+                <EmptyHeader>
+                  <EmptyTitle>No {kind.name} agents yet</EmptyTitle>
+                  <EmptyDescription>
+                    {kind.defaultAgent.name} is created on first use.
+                  </EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             )}
           </section>
         );

@@ -1,6 +1,6 @@
 "use client";
 
-import { CopyPlus } from "lucide-react";
+import { RiFileCopyLine } from "@remixicon/react";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 
@@ -38,7 +38,7 @@ export function DuplicateAgentButton({
         type="submit"
         variant="ghost"
       >
-        <CopyPlus className="size-4" />
+        <RiFileCopyLine />
       </Button>
       <span aria-live="polite" className="sr-only">
         {state.message}

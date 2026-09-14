@@ -1,12 +1,13 @@
 "use client";
 
-import { Bot, FolderKanban, Settings } from "lucide-react";
+import { RiFolder3Line, RiRobot2Line, RiSettings3Line } from "@remixicon/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { AGENT_KIND_IDS, AGENT_KINDS, modeHref } from "@/agents/agent-kinds";
 import { PilotWordmark } from "@/components/brand/pilot-wordmark";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
+import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -46,8 +47,8 @@ interface WorkspaceShellProps {
 }
 
 const SECONDARY_LINKS = [
-  { href: "/projects", label: "Projects", icon: FolderKanban },
-  { href: "/agents", label: "Agents", icon: Bot },
+  { href: "/projects", label: "Projects", icon: RiFolder3Line },
+  { href: "/agents", label: "Agents", icon: RiRobot2Line },
 ] as const;
 
 function currentMode(pathname: string): AgentKindId | undefined {
@@ -58,12 +59,11 @@ function currentMode(pathname: string): AgentKindId | undefined {
 function ModeNav({ pathname }: { pathname: string }) {
   const active = currentMode(pathname);
   return (
-    <SidebarMenu className="gap-1">
+    <SidebarMenu>
       {AGENT_KIND_IDS.map((kind) => (
         <SidebarMenuItem key={kind}>
           <SidebarMenuButton
             asChild
-            className="h-10"
             isActive={active === kind}
             tooltip={AGENT_KINDS[kind].name}
           >
@@ -87,36 +87,28 @@ function RecentList({
 }) {
   if (conversations.length === 0) {
     return (
-      <p className="px-2 py-3 text-xs leading-5 text-sidebar-foreground/55">
+      <p className="px-2 py-2 text-xs text-muted-foreground">
         Your conversations will appear here.
       </p>
     );
   }
   return (
-    <SidebarMenu className="gap-0.5 px-0.5">
+    <SidebarMenu>
       {conversations.map((conversation) => {
         const href = modeHref(conversation.kind, conversation.id);
         return (
           <SidebarMenuItem key={conversation.id}>
             <SidebarMenuButton
               asChild
-              className="h-auto min-h-9 items-start px-2.5 py-1.5 text-[13px] font-normal"
               isActive={pathname === href}
               tooltip={conversation.title ?? "New conversation"}
             >
               <Link href={href}>
                 <ModeIcon
-                  className="mt-0.5 size-3.5 opacity-70"
+                  className="text-muted-foreground"
                   kind={conversation.kind}
                 />
-                <span className="min-w-0 leading-4">
-                  <span className="block truncate">
-                    {conversation.title ?? "New conversation"}
-                  </span>
-                  <span className="block truncate text-[11px] text-sidebar-foreground/55">
-                    {conversation.agentName}
-                  </span>
-                </span>
+                <span>{conversation.title ?? "New conversation"}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -142,26 +134,32 @@ export function WorkspaceShell({
 
   return (
     <SidebarProvider>
-      <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-        <SidebarHeader className="h-16 justify-center border-b border-sidebar-border px-3">
-          <Link
-            href="/chat"
-            aria-label="Pilot home"
-            className="flex h-10 items-center rounded-xl px-2 text-lg font-semibold tracking-tight outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-          >
-            <PilotWordmark className="group-data-[collapsible=icon]:hidden" />
-            <PilotWordmark
-              compact
-              className="hidden group-data-[collapsible=icon]:inline-flex"
-            />
-          </Link>
+      <Sidebar collapsible="icon">
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Pilot home">
+                <Link href="/chat">
+                  <PilotWordmark className="group-data-[collapsible=icon]:hidden" />
+                  <PilotWordmark
+                    compact
+                    className="hidden group-data-[collapsible=icon]:inline-flex"
+                  />
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent className="gap-0 py-3">
-          <SidebarGroup className="px-3 py-0">
+        <SidebarContent>
+          <SidebarGroup>
             <SidebarGroupContent>
               <ModeNav pathname={pathname} />
-              <SidebarMenu className="mt-3 gap-1">
+            </SidebarGroupContent>
+          </SidebarGroup>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
                 {SECONDARY_LINKS.map(({ href, label, icon: Icon }) => (
                   <SidebarMenuItem key={href}>
                     <SidebarMenuButton
@@ -182,12 +180,9 @@ export function WorkspaceShell({
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-
-          <SidebarGroup className="min-h-0 flex-1 px-3 pb-0 pt-5 group-data-[collapsible=icon]:hidden">
-            <SidebarGroupLabel className="px-2 text-[11px] uppercase tracking-[0.12em] text-sidebar-foreground/55">
-              Recent
-            </SidebarGroupLabel>
-            <SidebarGroupContent className="min-h-0 flex-1 overflow-y-auto scrollbar-thin">
+          <SidebarGroup className="min-h-0 flex-1 group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel>Recent</SidebarGroupLabel>
+            <SidebarGroupContent className="min-h-0 flex-1 overflow-y-auto">
               <RecentList
                 conversations={recentConversations}
                 pathname={pathname}
@@ -196,7 +191,7 @@ export function WorkspaceShell({
           </SidebarGroup>
         </SidebarContent>
 
-        <SidebarFooter className="gap-3 border-t border-sidebar-border p-3">
+        <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -205,27 +200,31 @@ export function WorkspaceShell({
                 tooltip="Settings"
               >
                 <Link href="/settings">
-                  <Settings aria-hidden="true" />
+                  <RiSettings3Line aria-hidden="true" />
                   <span>Settings</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <AccountMenu
+                activeOrganizationId={activeOrganizationId}
+                organizations={organizations}
+                user={user}
+              />
+            </SidebarMenuItem>
           </SidebarMenu>
-          <AccountMenu
-            activeOrganizationId={activeOrganizationId}
-            organizations={organizations}
-            user={user}
-          />
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className="min-w-0 bg-background">
-        <header className="flex h-16 shrink-0 items-center border-b border-border bg-background/80 px-4 backdrop-blur sm:px-5">
-          <SidebarTrigger className="-ml-2" />
-          <span className="ml-2 flex items-center gap-2 text-sm font-medium tracking-tight">
-            {mode ? (
-              <ModeIcon className="size-4 text-primary" kind={mode} />
-            ) : null}
+      <SidebarInset>
+        <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator
+            className="mr-1 data-[orientation=vertical]:h-4"
+            orientation="vertical"
+          />
+          <span className="flex items-center gap-2 text-sm font-medium">
+            {mode ? <ModeIcon className="size-4" kind={mode} /> : null}
             {mode ? AGENT_KINDS[mode].name : "Workspace"}
           </span>
           <div className="ml-auto">

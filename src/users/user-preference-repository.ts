@@ -14,7 +14,6 @@ export type { SendMessageShortcut } from "@/users/user-preferences";
 
 const selectedColumns = {
   sendMessageShortcut: userPreferences.sendMessageShortcut,
-  uiLocale: userPreferences.uiLocale,
   conversationPanelLayout: userPreferences.conversationPanelLayout,
 };
 
@@ -27,12 +26,10 @@ export async function getUserPreferences(workosUserId: string) {
   return preferences ?? defaultUserPreferences;
 }
 
-export async function updateUserPreferences(
-  input: {
-    workosUserId: string;
-    sendMessageShortcut: SendMessageShortcut;
-  } & ({ uiLocale: string | null } | { uiLocale?: undefined }),
-) {
+export async function updateUserPreferences(input: {
+  workosUserId: string;
+  sendMessageShortcut: SendMessageShortcut;
+}) {
   const [preferences] = await db
     .insert(userPreferences)
     .values(input)
@@ -40,7 +37,6 @@ export async function updateUserPreferences(
       target: userPreferences.workosUserId,
       set: {
         sendMessageShortcut: input.sendMessageShortcut,
-        uiLocale: "uiLocale" in input ? input.uiLocale : undefined,
         updatedAt: new Date(),
       },
     })

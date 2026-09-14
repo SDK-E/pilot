@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderKanban, X } from "lucide-react";
+import { RiCloseLine, RiFolder3Line } from "@remixicon/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
@@ -63,7 +63,7 @@ export function ConversationProjectPicker({
             size="sm"
             variant="ghost"
           >
-            <FolderKanban aria-hidden="true" className="size-3.5" />
+            <RiFolder3Line aria-hidden="true" />
             <span className="hidden sm:inline">
               {currentProject?.name ?? "Choose project"}
             </span>
@@ -92,7 +92,7 @@ export function ConversationProjectPicker({
                 }}
                 variant="destructive"
               >
-                <X aria-hidden="true" /> Remove from project
+                <RiCloseLine aria-hidden="true" /> Remove from project
               </DropdownMenuItem>
             </>
           ) : null}

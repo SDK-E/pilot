@@ -50,7 +50,6 @@ export const userPreferences = pgTable("user_preferences", {
     .$type<"enter" | "mod_enter">()
     .notNull()
     .default("mod_enter"),
-  uiLocale: text("ui_locale").$type<string | null>(),
   conversationPanelLayout: jsonb("conversation_panel_layout").$type<{
     conversation: number;
     details: number;

@@ -1,4 +1,4 @@
-import { Download, FileText } from "lucide-react";
+import { RiDownloadLine, RiFileTextLine } from "@remixicon/react";
 
 import { Button } from "@/components/ui/button";
 
@@ -13,12 +13,12 @@ export function ConversationExportLinks({
     <div className="flex items-center gap-1">
       <Button asChild size="sm" type="button" variant="ghost">
         <a href={href("md")}>
-          <Download aria-hidden="true" className="size-3.5" /> Markdown
+          <RiDownloadLine aria-hidden="true" /> Markdown
         </a>
       </Button>
       <Button asChild size="sm" type="button" variant="ghost">
         <a href={href("pdf")}>
-          <FileText aria-hidden="true" className="size-3.5" /> PDF
+          <RiFileTextLine aria-hidden="true" /> PDF
         </a>
       </Button>
     </div>

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { FieldLabel } from "@/components/ui/field";
 
 interface Option {
   label: string;
@@ -14,6 +16,35 @@ interface QuestionOptionsProps {
   mode: "single_select" | "multi_select";
   disabled: boolean;
   onAnswer: (text: string) => void;
+}
+
+function MultiSelectOption({
+  option,
+  isSelected,
+  disabled,
+  onToggle,
+}: {
+  option: Option;
+  isSelected: boolean;
+  disabled: boolean;
+  onToggle: () => void;
+}) {
+  const id = useId();
+  return (
+    <FieldLabel
+      className="inline-flex w-fit rounded-md border px-2 py-1.5"
+      htmlFor={id}
+      title={option.description}
+    >
+      <Checkbox
+        checked={isSelected}
+        disabled={disabled}
+        id={id}
+        onCheckedChange={onToggle}
+      />
+      {option.label}
+    </FieldLabel>
+  );
 }
 
 /**
@@ -62,27 +93,21 @@ export function QuestionOptions({
   };
 
   return (
-    <fieldset className="mt-3 space-y-2" disabled={disabled}>
-      <legend className="text-xs text-muted-foreground">
+    <div className="mt-3 space-y-2">
+      <p className="text-xs text-muted-foreground">
         Select one or more answers, or write a reply.
-      </legend>
+      </p>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => (
-          <label
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+          <MultiSelectOption
+            disabled={disabled}
+            isSelected={selected.includes(option.label)}
             key={option.label}
-            title={option.description}
-          >
-            <input
-              checked={selected.includes(option.label)}
-              className="size-4 accent-primary"
-              onChange={() => {
-                toggle(option.label);
-              }}
-              type="checkbox"
-            />
-            {option.label}
-          </label>
+            onToggle={() => {
+              toggle(option.label);
+            }}
+            option={option}
+          />
         ))}
       </div>
       <Button
@@ -95,6 +120,6 @@ export function QuestionOptions({
       >
         Submit selected answers
       </Button>
-    </fieldset>
+    </div>
   );
 }

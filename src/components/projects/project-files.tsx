@@ -1,15 +1,89 @@
 "use client";
 
-import { FileText, Paperclip, Trash2 } from "lucide-react";
+import {
+  RiAttachment2,
+  RiDeleteBinLine,
+  RiFileTextLine,
+} from "@remixicon/react";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 
 interface ProjectFile {
   id: string;
   filename: string;
   contentType: string;
   byteSize: number;
+}
+
+const ACCEPTED = ".pdf,.txt,.md,.csv,.docx,.xlsx,.jpg,.jpeg,.png,.webp";
+
+function useProjectFileActions(projectId: string) {
+  const [error, setError] = useState<string>();
+  const [isUploading, setIsUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string>();
+
+  async function upload(file: File) {
+    setError(undefined);
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.set("file", file);
+      const response = await fetch(`/api/projects/${projectId}/files`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) throw new Error("Pilot could not upload this file.");
+      location.reload();
+    } catch (error_) {
+      setError(
+        error_ instanceof Error
+          ? error_.message
+          : "Pilot could not upload this file.",
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  async function remove(file: ProjectFile) {
+    setError(undefined);
+    setDeletingId(file.id);
+    try {
+      const response = await fetch(`/api/project-files/${file.id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Pilot could not delete this file.");
+      location.reload();
+    } catch (error_) {
+      setError(
+        error_ instanceof Error
+          ? error_.message
+          : "Pilot could not delete this file.",
+      );
+    } finally {
+      setDeletingId(undefined);
+    }
+  }
+
+  return { error, isUploading, deletingId, upload, remove };
 }
 
 export function ProjectFiles({
@@ -20,127 +94,87 @@ export function ProjectFiles({
   files: ProjectFile[];
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string>();
-  const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState<string>();
-
-  async function upload(file: File) {
-    setError(undefined);
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.set("file", file);
-      const response = await fetch(`/api/projects/${projectId}/files`, {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok)
-        throw new Error("Pilot could not upload this project file.");
-      location.reload();
-    } catch (error_) {
-      setError(
-        error_ instanceof Error
-          ? error_.message
-          : "Pilot could not upload this project file.",
-      );
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  async function remove(file: ProjectFile) {
-    setError(undefined);
-    setDeleting(file.id);
-    try {
-      const response = await fetch(`/api/project-files/${file.id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok)
-        throw new Error("Pilot could not delete this project file.");
-      location.reload();
-    } catch (error_) {
-      setError(
-        error_ instanceof Error
-          ? error_.message
-          : "Pilot could not delete this project file.",
-      );
-    } finally {
-      setDeleting(undefined);
-    }
-  }
+  const actions = useProjectFileActions(projectId);
 
   return (
-    <section className="rounded-2xl border border-border bg-card/50 p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="font-medium">Project files</h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Add reference files for chats in this private Project. Text, CSV,
-            PDF, and DOCX files are provided to the agent as bounded untrusted
-            context. Images and spreadsheets can be stored and opened here but
-            are not analyzed yet.
+    <Card>
+      <CardHeader>
+        <CardTitle>Project files</CardTitle>
+        <CardDescription>
+          Reference files for chats in this project. Text, CSV, PDF, and DOCX
+          are given to the agent as bounded untrusted context. Images and
+          spreadsheets are stored but not analyzed yet.
+        </CardDescription>
+        <CardAction>
+          <input
+            accept={ACCEPTED}
+            className="sr-only"
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = "";
+              if (file) void actions.upload(file);
+            }}
+            ref={inputRef}
+            type="file"
+          />
+          <Button
+            disabled={actions.isUploading}
+            onClick={() => inputRef.current?.click()}
+            type="button"
+            variant="outline"
+          >
+            <RiAttachment2 aria-hidden="true" />
+            {actions.isUploading ? "Uploading…" : "Upload file"}
+          </Button>
+        </CardAction>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-4">
+        {actions.error ? (
+          <p aria-live="polite" className="text-xs text-destructive">
+            {actions.error}
           </p>
-        </div>
-        <input
-          accept=".pdf,.txt,.md,.csv,.docx,.xlsx,.jpg,.jpeg,.png,.webp"
-          className="sr-only"
-          onChange={(event) => {
-            const file = event.currentTarget.files?.[0];
-            event.currentTarget.value = "";
-            if (file) void upload(file);
-          }}
-          ref={inputRef}
-          type="file"
-        />
-        <Button
-          disabled={uploading}
-          onClick={() => inputRef.current?.click()}
-          type="button"
-          variant="outline"
-        >
-          <Paperclip aria-hidden="true" />
-          {uploading ? "Uploading…" : "Upload file"}
-        </Button>
-      </div>
-      {error ? (
-        <p aria-live="polite" className="mt-3 text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
-      {files.length > 0 ? (
-        <ul className="mt-4 divide-y divide-border rounded-xl border border-border">
-          {files.map((file) => (
-            <li className="flex items-center gap-3 px-3 py-2" key={file.id}>
-              <FileText aria-hidden="true" className="size-4 text-primary" />
-              <a
-                className="min-w-0 flex-1 truncate text-sm hover:text-primary"
-                href={`/api/project-files/${file.id}`}
-                rel="noreferrer"
-                target="_blank"
-              >
-                {file.filename}
-              </a>
-              <span className="text-xs text-muted-foreground">
-                {Math.ceil(file.byteSize / 1024)} KB
-              </span>
-              <Button
-                aria-label={`Delete ${file.filename}`}
-                disabled={deleting === file.id}
-                onClick={() => void remove(file)}
-                size="icon-xs"
-                type="button"
-                variant="ghost"
-              >
-                <Trash2 aria-hidden="true" />
-              </Button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-4 text-sm text-muted-foreground">
-          No Project files yet.
-        </p>
-      )}
-    </section>
+        ) : null}
+        {files.length > 0 ? (
+          <ItemGroup>
+            {files.map((file) => (
+              <Item key={file.id} size="sm" variant="outline">
+                <ItemMedia variant="icon">
+                  <RiFileTextLine aria-hidden="true" />
+                </ItemMedia>
+                <ItemContent>
+                  <ItemTitle>
+                    <a
+                      className="truncate hover:underline"
+                      href={`/api/project-files/${file.id}`}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {file.filename}
+                    </a>
+                  </ItemTitle>
+                  <ItemDescription>
+                    {Math.ceil(file.byteSize / 1024)} KB
+                  </ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <Button
+                    aria-label={`Delete ${file.filename}`}
+                    disabled={actions.deletingId === file.id}
+                    onClick={() => void actions.remove(file)}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <RiDeleteBinLine aria-hidden="true" />
+                  </Button>
+                </ItemActions>
+              </Item>
+            ))}
+          </ItemGroup>
+        ) : (
+          <p className="text-xs text-muted-foreground">No project files yet.</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

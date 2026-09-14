@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { RiDeleteBinLine } from "@remixicon/react";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect } from "react";
 
@@ -41,7 +41,7 @@ export function DeleteAgentButton({
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button aria-label={`Delete ${name}`} size="icon" variant="ghost">
-          <Trash2 className="size-4 text-destructive" />
+          <RiDeleteBinLine className="text-destructive" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

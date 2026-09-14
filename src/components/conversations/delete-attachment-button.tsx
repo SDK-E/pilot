@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { RiDeleteBinLine } from "@remixicon/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -71,12 +71,12 @@ export function DeleteAttachmentButton({
       <AlertDialogTrigger asChild>
         <Button
           aria-label={`Delete ${filename}`}
-          className="size-6 text-muted-foreground hover:text-destructive"
+          className="text-muted-foreground hover:text-destructive"
           size="icon-xs"
           type="button"
           variant="ghost"
         >
-          <Trash2 aria-hidden="true" className="size-3" />
+          <RiDeleteBinLine aria-hidden="true" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>

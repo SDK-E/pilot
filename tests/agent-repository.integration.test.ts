@@ -121,7 +121,6 @@ test("preferences default and update per user and organization", async () => {
   assert.ok(agent);
   assert.deepEqual(await getUserPreferences(userId), {
     sendMessageShortcut: "mod_enter",
-    uiLocale: null,
     conversationPanelLayout: null,
   });
   await updateUserPreferences({

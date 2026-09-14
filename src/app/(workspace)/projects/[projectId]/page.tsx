@@ -2,10 +2,30 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
-import { modeHref } from "@/agents/agent-kinds";
 import { DeleteProjectButton } from "@/components/projects/delete-project-button";
+import { ProjectConversations } from "@/components/projects/project-conversations";
 import { ProjectFiles } from "@/components/projects/project-files";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldTitle,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { PageHeader } from "@/components/workspace/page-header";
 import { listConversations } from "@/conversations/conversation-repository";
 import { requireWorkspaceSession } from "@/organizations/workspace-session";
 import { listProjectFiles } from "@/projects/project-file-repository";
@@ -14,11 +34,7 @@ import {
   listProjectConversations,
 } from "@/projects/project-repository";
 
-import {
-  addProjectConversationAction,
-  removeProjectConversationAction,
-  updateProjectAction,
-} from "../actions";
+import { updateProjectAction } from "../actions";
 
 export default async function ProjectPage({
   params,
@@ -34,128 +50,84 @@ export default async function ProjectPage({
     listProjectFiles(owner),
   ]);
   if (!project) notFound();
-  const contained = new Set(projectChats.map((chat) => chat.id));
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 sm:py-10">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <Link
-            className="text-sm text-muted-foreground hover:text-foreground"
-            href="/projects"
-          >
+    <main className="mx-auto w-full max-w-5xl space-y-8 p-6">
+      <PageHeader
+        actions={<DeleteProjectButton projectId={project.id} />}
+        eyebrow={
+          <Link className="hover:text-foreground" href="/projects">
             Projects
           </Link>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-            {project.name}
-          </h1>
-        </div>
-        <DeleteProjectButton projectId={project.id} />
-      </header>
-      <section className="rounded-2xl border border-border bg-card/50 p-5">
-        <h2 className="font-medium">Project settings</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Project instructions apply to conversations in this project. Shared
-          memory is opt-in and stays scoped to your private project chats.
-        </p>
-        <form action={updateProjectAction} className="mt-4 space-y-3">
+        }
+        title={project.name}
+      />
+
+      <Card>
+        <form action={updateProjectAction}>
           <input name="projectId" type="hidden" value={project.id} />
-          <input
-            className="h-9 w-full rounded-xl border border-border bg-background px-3 text-sm"
-            defaultValue={project.name}
-            maxLength={100}
-            name="name"
-            required
-          />
-          <textarea
-            className="min-h-24 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            defaultValue={project.instructions ?? ""}
-            maxLength={10_000}
-            name="instructions"
-            placeholder="Instructions for work in this project"
-          />
-          <label className="flex items-start gap-3 rounded-xl border border-border p-3 text-sm">
-            <input
-              className="mt-0.5 size-4 accent-primary"
-              defaultChecked={project.sharedMemoryEnabled}
-              name="sharedMemoryEnabled"
-              type="checkbox"
-            />
-            <span>
-              <span className="block font-medium">Shared project memory</span>
-              <span className="text-muted-foreground">
-                Let this project&apos;s conversations contribute context to one
-                another. Disable it to keep each conversation separate.
-              </span>
-            </span>
-          </label>
-          <Button type="submit" variant="outline">
-            Save settings
-          </Button>
-        </form>
-      </section>
-      <ProjectFiles files={files} projectId={project.id} />
-      <section className="rounded-2xl border border-border bg-card/50 p-5">
-        <h2 className="font-medium">Conversations</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Only your private conversations can be added. Moving a conversation
-          here removes it from its previous project.
-        </p>
-        {chats.some((chat) => !contained.has(chat.id)) ? (
-          <form
-            action={addProjectConversationAction}
-            className="mt-4 flex flex-wrap gap-2"
-          >
-            <input name="projectId" type="hidden" value={project.id} />
-            <select
-              className="h-9 min-w-56 rounded-xl border border-border bg-background px-3 text-sm"
-              name="conversationId"
-            >
-              {chats
-                .filter((chat) => !contained.has(chat.id))
-                .map((chat) => (
-                  <option key={chat.id} value={chat.id}>
-                    {chat.title ?? "New conversation"} · {chat.agentName}
-                  </option>
-                ))}
-            </select>
+          <CardHeader>
+            <CardTitle>Project settings</CardTitle>
+            <CardDescription>
+              Project instructions apply to conversations in this project.
+              Shared memory is opt-in and stays scoped to your private project
+              chats.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="project-name">Name</FieldLabel>
+                <Input
+                  defaultValue={project.name}
+                  id="project-name"
+                  maxLength={100}
+                  name="name"
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="project-instructions">
+                  Instructions
+                </FieldLabel>
+                <Textarea
+                  defaultValue={project.instructions ?? ""}
+                  id="project-instructions"
+                  maxLength={10_000}
+                  name="instructions"
+                  placeholder="Instructions for work in this project"
+                />
+              </Field>
+              <Field orientation="horizontal">
+                <FieldContent>
+                  <FieldTitle>Shared project memory</FieldTitle>
+                  <FieldDescription>
+                    Let this project&apos;s conversations contribute context to
+                    one another. Off keeps each conversation separate.
+                  </FieldDescription>
+                </FieldContent>
+                <Switch
+                  aria-label="Shared project memory"
+                  defaultChecked={project.sharedMemoryEnabled}
+                  name="sharedMemoryEnabled"
+                />
+              </Field>
+            </FieldGroup>
+          </CardContent>
+          <CardFooter className="pt-4">
             <Button type="submit" variant="outline">
-              Add conversation
+              Save settings
             </Button>
-          </form>
-        ) : null}
-        {projectChats.length > 0 ? (
-          <ul className="mt-4 space-y-2">
-            {projectChats.map((chat) => (
-              <li
-                className="flex items-center gap-3 rounded-xl border border-border px-4 py-3"
-                key={chat.id}
-              >
-                <Link
-                  className="min-w-0 flex-1 text-sm hover:text-primary"
-                  href={modeHref(chat.kind, chat.id)}
-                >
-                  {chat.title ?? "New conversation"}{" "}
-                  <span className="text-muted-foreground">
-                    · {chat.agentName}
-                  </span>
-                </Link>
-                <form action={removeProjectConversationAction}>
-                  <input name="projectId" type="hidden" value={project.id} />
-                  <input name="conversationId" type="hidden" value={chat.id} />
-                  <Button size="sm" type="submit" variant="ghost">
-                    Remove
-                  </Button>
-                </form>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Add a conversation to start organizing this project.
-          </p>
-        )}
-      </section>
+          </CardFooter>
+        </form>
+      </Card>
+
+      <ProjectFiles files={files} projectId={project.id} />
+      <ProjectConversations
+        candidates={chats}
+        members={projectChats}
+        projectId={project.id}
+      />
     </main>
   );
 }

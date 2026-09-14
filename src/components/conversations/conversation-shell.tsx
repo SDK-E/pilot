@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { RiArrowLeftLine } from "@remixicon/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -57,7 +57,7 @@ function AttachmentChips({
     >
       {attachments.map((attachment) => (
         <li
-          className="flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1 text-xs"
+          className="flex items-center gap-1 rounded-md border bg-card px-2 py-1 text-xs"
           key={attachment.id}
         >
           <a
@@ -94,13 +94,13 @@ export function ConversationShell(props: ConversationShellProps) {
   const backHref = modeHref(kind);
 
   return (
-    <main className="flex h-[calc(100svh-4rem)] flex-col overflow-hidden bg-background">
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4 sm:px-6">
+    <main className="flex h-[calc(100svh-3rem)] flex-col overflow-hidden bg-background">
+      <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b px-4">
         <Link
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          className="inline-flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
           href={backHref}
         >
-          <ArrowLeft aria-hidden="true" className="size-4" />
+          <RiArrowLeftLine aria-hidden="true" />
           <span className="hidden sm:inline">
             New {AGENT_KINDS[kind].name.toLowerCase()}
           </span>
@@ -108,7 +108,7 @@ export function ConversationShell(props: ConversationShellProps) {
         <div className="flex min-w-0 items-center gap-2 text-center">
           <AgentAvatar name={agent.name} />
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{agent.name}</p>
+            <p className="truncate text-xs font-medium">{agent.name}</p>
             {project ? (
               <Link
                 className="block truncate text-xs text-primary hover:underline"
@@ -168,7 +168,7 @@ export function ConversationShell(props: ConversationShellProps) {
                 streamActivities={stream.currentStreamActivities}
                 transientTurns={stream.transientTurns}
               />
-              <footer className="shrink-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur-xl sm:px-6 sm:pb-5 safe-bottom">
+              <footer className="shrink-0 border-t bg-background/95 px-4 py-3 backdrop-blur-xl safe-bottom">
                 <AttachmentChips attachments={props.attachments} />
                 {props.runtimeConfigured ? (
                   <MessageComposer
@@ -185,7 +185,7 @@ export function ConversationShell(props: ConversationShellProps) {
                     timeoutError={stream.timeoutError}
                   />
                 ) : (
-                  <p className="mx-auto max-w-3xl rounded-xl border border-border bg-muted/40 px-4 py-3 text-center text-sm text-muted-foreground">
+                  <p className="mx-auto max-w-3xl rounded-md border bg-muted/40 px-4 py-3 text-center text-xs text-muted-foreground">
                     Messaging becomes available after this environment is
                     connected to Pilot AI.
                   </p>

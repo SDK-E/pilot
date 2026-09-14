@@ -145,7 +145,7 @@ export function NewConversationForm({
   return (
     <div className="space-y-4">
       <PromptInput
-        className="rounded-3xl border-border bg-card p-2 shadow-xl shadow-foreground/[0.04]"
+        className="rounded-xl border bg-card p-2 shadow-sm"
         onSubmit={(message: PromptInputMessage) => void start(message.text)}
       >
         <PromptInputBody>
@@ -153,7 +153,7 @@ export function NewConversationForm({
             aria-describedby={error ? errorId : undefined}
             aria-invalid={error ? true : undefined}
             aria-label={`Message ${agentName}`}
-            className="min-h-32 px-3 pt-3 text-[15px] leading-6"
+            className="min-h-32 px-3 pt-3 text-sm leading-6"
             disabled={isStarting}
             id={textareaId}
             ref={textareaRef}
@@ -194,7 +194,7 @@ export function NewConversationForm({
       {error ? (
         <p
           aria-live="assertive"
-          className="px-2 text-sm text-destructive"
+          className="px-2 text-xs text-destructive"
           id={errorId}
           role="alert"
         >

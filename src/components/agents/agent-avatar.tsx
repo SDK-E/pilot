@@ -22,7 +22,7 @@ export function AgentAvatar({
 }) {
   return (
     <Avatar className={cn("size-6", className)}>
-      <AvatarFallback className="bg-primary/15 text-[10px] font-semibold text-primary">
+      <AvatarFallback className="bg-primary/15 text-primary">
         {initials(name)}
       </AvatarFallback>
     </Avatar>

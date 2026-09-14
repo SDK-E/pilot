@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, Check, Copy } from "lucide-react";
+import { RiCheckLine, RiFileCopyLine, RiRobot2Line } from "@remixicon/react";
 import { useCallback, useState } from "react";
 
 import {
@@ -81,9 +81,9 @@ function AssistantMessage({
           tooltip={isCopied ? "Copied" : "Copy"}
         >
           {isCopied ? (
-            <Check aria-hidden="true" className="size-3.5" />
+            <RiCheckLine aria-hidden="true" />
           ) : (
-            <Copy aria-hidden="true" className="size-3.5" />
+            <RiFileCopyLine aria-hidden="true" />
           )}
         </MessageAction>
       </MessageActions>
@@ -137,7 +137,7 @@ export function MessageList({
           <ConversationEmptyState
             className="min-h-[min(52svh,34rem)]"
             description={`Start with a clear objective, context, or question for ${agentName}.`}
-            icon={<Bot className="size-7" aria-hidden="true" />}
+            icon={<RiRobot2Line aria-hidden="true" className="size-7" />}
             title={`How can ${agentName} help?`}
           />
         ) : null}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil } from "lucide-react";
+import { RiPencilLine } from "@remixicon/react";
 import {
   startTransition,
   useActionState,
@@ -61,7 +61,7 @@ export function RenameConversationForm({
           type="button"
           variant="ghost"
         >
-          <Pencil aria-hidden="true" className="size-4" />
+          <RiPencilLine aria-hidden="true" />
         </Button>
       </DialogTrigger>
       <DialogContent>

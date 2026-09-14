@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { getAgent } from "@/agents/agent-repository";
-import { optionalText } from "@/lib/form-data";
 import {
   updateOrganizationDefaultWorker,
   updateOrganizationModelPolicy,
@@ -21,20 +20,6 @@ export async function updateMessageShortcutAction(formData: FormData) {
   const { user } = await withAuth({ ensureSignedIn: true });
   await updateUserPreferences({ workosUserId: user.id, ...input.data });
   revalidatePath("/", "layout");
-}
-
-export async function updateLocaleAction(formData: FormData) {
-  const input = z
-    .object({ uiLocale: z.string().nullable() })
-    .safeParse({ uiLocale: optionalText(formData, "uiLocale") ?? null });
-  if (!input.success) return;
-  const { user } = await withAuth({ ensureSignedIn: true });
-  await updateUserPreferences({
-    workosUserId: user.id,
-    sendMessageShortcut: "mod_enter",
-    uiLocale: input.data.uiLocale,
-  });
-  revalidatePath("/settings");
 }
 
 export async function updateDefaultAgentAction(formData: FormData) {

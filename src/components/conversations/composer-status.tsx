@@ -1,4 +1,4 @@
-import { Bot } from "lucide-react";
+import { RiRobot2Line } from "@remixicon/react";
 
 import { Button } from "@/components/ui/button";
 
@@ -28,7 +28,7 @@ export function ComposerStatus({
       {validationError ? (
         <p
           aria-live="assertive"
-          className="mt-2 px-2 text-sm text-destructive"
+          className="mt-2 px-2 text-xs text-destructive"
           id={errorId}
           role="alert"
         >
@@ -39,7 +39,7 @@ export function ComposerStatus({
         <div className="mt-2 space-y-2 px-2">
           <p
             aria-live="assertive"
-            className="text-sm text-destructive"
+            className="text-xs text-destructive"
             role="alert"
           >
             {errorMessage}
@@ -65,7 +65,7 @@ export function ComposerStatus({
         aria-live="polite"
         className="mt-2 inline-flex items-center gap-2 px-2 text-xs text-muted-foreground"
       >
-        <Bot className="size-3.5 text-primary" aria-hidden="true" />
+        <RiRobot2Line aria-hidden="true" className="text-primary" />
         {isLoading
           ? "Pilot is working…"
           : "Pilot can make mistakes. Check important work."}
