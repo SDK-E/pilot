@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, lt } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import { activityEvents, conversations, executions } from "@/db/schema";
@@ -18,6 +18,52 @@ function isUniqueViolation(error: unknown) {
   );
 }
 
+// Comfortably longer than the stream route's own abort timer
+// (STREAM_TIMEOUT_MS = 90s in conversation-turn.ts, including its one
+// fallback-model retry) so this never races a turn that is still legitimately
+// in flight - only one abandoned by a crash or a killed function before its
+// own finishExecution ever ran.
+const STALE_EXECUTION_MS = 5 * 60 * 1000;
+
+/**
+ * Closes any execution for this conversation that has sat in
+ * running/awaiting_approval well past how long a turn could legitimately
+ * take. Without this, a turn abandoned mid-flight (a crash, a killed
+ * function) never reaches finishExecution, and
+ * executions_conversation_active_unique then blocks that conversation from
+ * starting a new turn forever.
+ */
+async function reapStaleExecutions(input: {
+  organizationId: string;
+  conversationId: string;
+}) {
+  const staleBefore = new Date(Date.now() - STALE_EXECUTION_MS);
+  const reaped = await db
+    .update(executions)
+    .set({
+      status: "failed",
+      errorMessage: "Closed by the stale-execution reaper: abandoned mid-turn.",
+      completedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(executions.organizationId, input.organizationId),
+        eq(executions.conversationId, input.conversationId),
+        inArray(executions.status, ["running", "awaiting_approval"]),
+        lt(executions.startedAt, staleBefore),
+      ),
+    )
+    .returning({ id: executions.id });
+  for (const execution of reaped) {
+    await db.insert(activityEvents).values({
+      organizationId: input.organizationId,
+      executionId: execution.id,
+      type: "execution.failed",
+      summary: "Response failed",
+    });
+  }
+}
+
 /**
  * Opens an execution for a conversation, or returns undefined if one is
  * already running or awaiting approval there (executions_conversation_active_unique).
@@ -29,6 +75,7 @@ export async function startExecution(input: {
   workerId: string;
   conversationId: string;
 }) {
+  await reapStaleExecutions(input);
   let execution;
   try {
     [execution] = await db
