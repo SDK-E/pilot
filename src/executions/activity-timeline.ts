@@ -1,4 +1,7 @@
-import type { ActivityEventType } from "@/executions/activity-event";
+import {
+  EXECUTION_BOOKEND_TYPES,
+  type ActivityEventType,
+} from "@/executions/activity-event";
 
 export interface TimelineActivity {
   id: string;
@@ -6,6 +9,7 @@ export interface TimelineActivity {
   summary: string;
   type: ActivityEventType;
   toolId?: string | null;
+  toolCallId?: string | null;
   createdAt?: string | Date;
 }
 
@@ -58,6 +62,7 @@ export function groupActivityTimeline(
 export interface GroupedActivity {
   id: string;
   type: ActivityEventType;
+  toolId?: string | null;
   summary: string;
   count: number;
 }
@@ -80,10 +85,94 @@ export function groupConsecutiveActivity(
       grouped.push({
         id: event.id,
         type: event.type,
+        toolId: event.toolId,
         summary: event.summary,
         count: 1,
       });
     }
   }
   return grouped;
+}
+
+type ActivityStepStatus =
+  "active" | "complete" | "failed" | "awaiting_approval";
+
+export interface ActivityStep {
+  id: string;
+  kind: "tool" | "skill";
+  toolId?: string | null;
+  status: ActivityStepStatus;
+  summary: string;
+  count: number;
+}
+
+const TOOL_OUTCOME_STATUS: Partial<
+  Record<ActivityEventType, ActivityStepStatus>
+> = {
+  "tool.completed": "complete",
+  "tool.failed": "failed",
+  "tool.awaiting_approval": "awaiting_approval",
+};
+
+/**
+Folds a tool's terminal event onto its still-open "started" entry in
+`paired` (matched by toolCallId), in place, so the pair becomes one entry.
+Returns false when there was nothing open to fold onto.
+*/
+function didFoldToolOutcome(
+  paired: TimelineActivity[],
+  openIndexByCallId: Map<string, number>,
+  event: TimelineActivity,
+): boolean {
+  if (!event.toolCallId) return false;
+  const openIndex = openIndexByCallId.get(event.toolCallId);
+  if (openIndex === undefined) return false;
+  const started = paired[openIndex];
+  if (!started) return false;
+  paired[openIndex] = { ...started, type: event.type, summary: event.summary };
+  openIndexByCallId.delete(event.toolCallId);
+  return true;
+}
+
+function pairToolEvents(events: TimelineActivity[]): TimelineActivity[] {
+  const paired: TimelineActivity[] = [];
+  const openIndexByCallId = new Map<string, number>();
+
+  for (const event of events) {
+    if (EXECUTION_BOOKEND_TYPES.includes(event.type)) continue;
+    if (event.type === "tool.started") {
+      if (event.toolCallId)
+        openIndexByCallId.set(event.toolCallId, paired.length);
+      paired.push(event);
+      continue;
+    }
+    if (!didFoldToolOutcome(paired, openIndexByCallId, event))
+      paired.push(event);
+  }
+
+  return paired;
+}
+
+function activityStepStatus(type: ActivityEventType): ActivityStepStatus {
+  if (type === "skill.selected") return "complete";
+  return TOOL_OUTCOME_STATUS[type] ?? "active";
+}
+
+/**
+Turns a run's raw events into display-ready steps: a tool call's start and
+its outcome (matched by toolCallId) become one step that moves from
+"active" to its result in place, rather than two separate lines for
+"running" and "ran". A call with no toolCallId (or no matching start) still
+renders, just without that merge. Repeated identical outcomes still
+collapse into one counted step via groupConsecutiveActivity.
+*/
+export function buildActivitySteps(events: TimelineActivity[]): ActivityStep[] {
+  return groupConsecutiveActivity(pairToolEvents(events)).map((step) => ({
+    id: step.id,
+    kind: step.type === "skill.selected" ? "skill" : "tool",
+    toolId: step.toolId,
+    status: activityStepStatus(step.type),
+    summary: step.summary,
+    count: step.count,
+  }));
 }

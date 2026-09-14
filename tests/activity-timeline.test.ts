@@ -6,6 +6,7 @@ import {
   isSafeSkillId,
 } from "@/executions/activity-event";
 import {
+  buildActivitySteps,
   groupActivityTimeline,
   groupConsecutiveActivity,
 } from "@/executions/activity-timeline";
@@ -110,4 +111,69 @@ test("runtime skills retain only a bounded safe display label", () => {
     type: "skill.selected",
     summary: "Loaded Research Helper skill",
   });
+});
+
+test("a tool's start and outcome merge into one step instead of two", () => {
+  const steps = buildActivitySteps([
+    {
+      id: "event-1",
+      executionId: "execution-a",
+      summary: "Searching the web…",
+      type: "tool.started",
+      toolId: "web-search",
+      toolCallId: "call-1",
+    },
+    {
+      id: "event-2",
+      executionId: "execution-a",
+      summary: "Searching the web completed",
+      type: "tool.completed",
+      toolId: "web-search",
+      toolCallId: "call-1",
+    },
+  ]);
+
+  const [step] = steps;
+  assert.ok(step);
+  assert.equal(steps.length, 1);
+  assert.equal(step.id, "event-1");
+  assert.equal(step.status, "complete");
+  assert.equal(step.kind, "tool");
+});
+
+test("a still-running tool call stays a single active step with no outcome yet", () => {
+  const steps = buildActivitySteps([
+    {
+      id: "event-1",
+      executionId: "execution-a",
+      summary: "Searching the web…",
+      type: "tool.started",
+      toolId: "web-search",
+      toolCallId: "call-1",
+    },
+  ]);
+
+  const [step] = steps;
+  assert.ok(step);
+  assert.equal(steps.length, 1);
+  assert.equal(step.status, "active");
+});
+
+test("execution bookends never surface as their own step", () => {
+  const steps = buildActivitySteps([
+    {
+      id: "event-1",
+      executionId: "execution-a",
+      summary: "Generating a response",
+      type: "execution.started",
+    },
+    {
+      id: "event-2",
+      executionId: "execution-a",
+      summary: "Response completed",
+      type: "execution.completed",
+    },
+  ]);
+
+  assert.deepEqual(steps, []);
 });

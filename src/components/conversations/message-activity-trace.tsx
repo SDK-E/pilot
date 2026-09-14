@@ -1,55 +1,22 @@
 import {
-  CheckCircle2,
-  CircleAlert,
-  FileText,
-  Search,
-  Wrench,
-} from "lucide-react";
-
-import {
   ChainOfThought,
   ChainOfThoughtContent,
   ChainOfThoughtHeader,
   ChainOfThoughtStep,
 } from "@/components/ai-elements/chain-of-thought";
-import {
-  EXECUTION_BOOKEND_TYPES,
-  type ActivityEventType,
-} from "@/executions/activity-event";
-import { groupConsecutiveActivity } from "@/executions/activity-timeline";
+import { buildActivitySteps } from "@/executions/activity-timeline";
+
+import { describeActivityStep } from "./activity-step-presentation";
 
 import type { PersistedActivity } from "./conversation-types";
-
-// ChainOfThoughtStep (a vendored AI Elements component) requires a
-// LucideIcon component specifically, so its step icons stay on lucide-react
-// even though the rest of the app uses the shadcn preset's remixicon set.
-function stepIcon(type: ActivityEventType) {
-  if (type === "skill.selected") return FileText;
-  if (
-    ["tool.started", "tool.completed", "tool.awaiting_approval"].includes(type)
-  )
-    return Search;
-  if (["tool.failed", "execution.failed"].includes(type)) return CircleAlert;
-  if (type === "execution.completed") return CheckCircle2;
-  return Wrench;
-}
-
-const stepDescriptions: Record<ActivityEventType, string> = {
-  "skill.selected": "Selected safe guidance for this response",
-  "execution.started": "Preparing this chat response",
-  "tool.started": "Used an enabled capability",
-  "tool.completed": "Capability result received",
-  "tool.failed": "Capability did not complete",
-  "tool.awaiting_approval": "Waited for your approval",
-  "execution.completed": "Response completed",
-  "execution.failed": "Response failed",
-};
 
 /**
  * A per-response trace of Pilot's verified, sanitized steps — collapsed by
  * default and independent per message, so a long conversation reads as many
  * small disclosures rather than one growing chain-of-thought log. Every
- * event here already finished, so nothing in this trace ever spins.
+ * step here already finished, so nothing in this trace ever spins. A tool
+ * call's start and outcome are one merged step (see buildActivitySteps),
+ * not two separate "running" and "ran" lines.
  */
 export function MessageActivityTrace({
   events,
@@ -57,9 +24,7 @@ export function MessageActivityTrace({
   events: PersistedActivity[];
 }) {
   const isFailed = events.some((event) => event.type === "execution.failed");
-  const steps = groupConsecutiveActivity(
-    events.filter((event) => !EXECUTION_BOOKEND_TYPES.includes(event.type)),
-  );
+  const steps = buildActivitySteps(events);
   // A plain, successful reply has nothing worth disclosing beyond the
   // "started"/"completed" bookends, so skip the trace entirely rather than
   // showing an empty collapsible for every message.
@@ -79,21 +44,21 @@ export function MessageActivityTrace({
         {headerLabel}
       </ChainOfThoughtHeader>
       <ChainOfThoughtContent className="border-t pt-3">
-        <div className="space-y-3">
+        <div className="space-y-2">
           {steps.length > 0 ? (
-            steps.map((step) => (
-              <ChainOfThoughtStep
-                description={stepDescriptions[step.type]}
-                icon={stepIcon(step.type)}
-                key={step.id}
-                label={
-                  step.count > 1
-                    ? `${step.summary} ×${String(step.count)}`
-                    : step.summary
-                }
-                status="complete"
-              />
-            ))
+            steps.map((step) => {
+              const { label, icon } = describeActivityStep(step);
+              return (
+                <ChainOfThoughtStep
+                  icon={icon}
+                  key={step.id}
+                  label={
+                    step.count > 1 ? `${label} ×${String(step.count)}` : label
+                  }
+                  status={step.status === "active" ? "active" : "complete"}
+                />
+              );
+            })
           ) : (
             <p className="text-xs text-muted-foreground">
               No additional steps were recorded before this failed.

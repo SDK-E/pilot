@@ -1,11 +1,5 @@
 import { RiLoader4Line } from "@remixicon/react";
-import {
-  CheckCircle2,
-  CircleAlert,
-  FileText,
-  Search,
-  Wrench,
-} from "lucide-react";
+import { FileText } from "lucide-react";
 
 import {
   ChainOfThought,
@@ -13,56 +7,30 @@ import {
   ChainOfThoughtHeader,
   ChainOfThoughtStep,
 } from "@/components/ai-elements/chain-of-thought";
+import { buildActivitySteps } from "@/executions/activity-timeline";
 
-import type { ActivityEventType } from "@/executions/activity-event";
+import { describeActivityStep } from "./activity-step-presentation";
+
 import type { TimelineActivity } from "@/executions/activity-timeline";
-
-type Activity = TimelineActivity;
-
-function stepStatus(type: ActivityEventType): "active" | "complete" {
-  return type === "execution.started" || type === "tool.started"
-    ? "active"
-    : "complete";
-}
-
-// ChainOfThoughtStep (a vendored AI Elements component) requires a
-// LucideIcon component specifically, so its step icons stay on lucide-react
-// even though the rest of the app uses the shadcn preset's remixicon set.
-function stepIcon(type: ActivityEventType) {
-  if (type === "skill.selected") return FileText;
-  if (
-    ["tool.started", "tool.completed", "tool.awaiting_approval"].includes(type)
-  )
-    return Search;
-  if (["tool.failed", "execution.failed"].includes(type)) return CircleAlert;
-  if (type === "execution.completed") return CheckCircle2;
-  return Wrench;
-}
-
-const stepDescriptions: Record<ActivityEventType, string> = {
-  "skill.selected": "Selected safe guidance for this response",
-  "execution.started": "Preparing this chat response",
-  "tool.started": "Using an enabled capability",
-  "tool.completed": "Capability result received",
-  "tool.failed": "Capability did not complete",
-  "tool.awaiting_approval": "Waiting for your approval",
-  "execution.completed": "Response completed",
-  "execution.failed": "Response failed",
-};
 
 /**
  * A readable activity trace backed only by Pilot's sanitized server events.
  * It deliberately excludes private model reasoning, prompts, tool inputs,
- * outputs, URLs, errors, and credentials.
+ * outputs, URLs, errors, and credentials. A tool call's start and outcome
+ * render as one step that moves from "active" to its result in place
+ * (see buildActivitySteps), instead of a new line appearing for each.
  */
 export function LiveConversationActivity({
   events = [],
 }: {
-  events?: Activity[];
+  events?: TimelineActivity[];
 }) {
-  const latest = events.at(-1);
-  const summary = latest?.summary ?? "Pilot is responding…";
-  const hasActiveTool = latest?.type === "tool.started";
+  const steps = buildActivitySteps(events);
+  const lastStep = steps.at(-1);
+  const isStepActive = lastStep?.status === "active";
+  const header = lastStep
+    ? describeActivityStep(lastStep).label
+    : "Pilot is responding…";
 
   return (
     <ChainOfThought
@@ -75,7 +43,7 @@ export function LiveConversationActivity({
             aria-hidden="true"
             className="animate-spin text-primary"
           />
-          {summary}
+          {header}
         </span>
       </ChainOfThoughtHeader>
       <ChainOfThoughtContent className="border-t pt-3">
@@ -83,25 +51,28 @@ export function LiveConversationActivity({
           Verified steps for this response. Private model reasoning and tool
           data stay private.
         </p>
-        <div className="space-y-3">
-          {events.map((event, index) => (
-            <ChainOfThoughtStep
-              className={
-                hasActiveTool && index === events.length - 1
-                  ? "[&>div:first-child>div]:hidden"
-                  : undefined
-              }
-              description={stepDescriptions[event.type]}
-              icon={stepIcon(event.type)}
-              key={event.id}
-              label={event.summary}
-              status={stepStatus(event.type)}
-            />
-          ))}
-          {hasActiveTool ? null : (
+        <div className="space-y-2">
+          {steps.map((step) => {
+            const { label, icon } = describeActivityStep(step);
+            return (
+              <ChainOfThoughtStep
+                className={
+                  step.status === "active"
+                    ? "[&>div:first-child>div]:hidden"
+                    : undefined
+                }
+                icon={icon}
+                key={step.id}
+                label={
+                  step.count > 1 ? `${label} ×${String(step.count)}` : label
+                }
+                status={step.status === "active" ? "active" : "complete"}
+              />
+            );
+          })}
+          {isStepActive ? null : (
             <ChainOfThoughtStep
               className="[&>div:first-child>div]:hidden"
-              description="Streaming the answer into this chat"
               icon={FileText}
               label="Writing response"
               status="active"
