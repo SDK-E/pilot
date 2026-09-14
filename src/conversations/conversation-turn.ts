@@ -212,10 +212,15 @@ async function runStreamingTurn(
   for (const [attempt, modelId] of models.entries()) {
     const request = await runtimeRequest(input, turn.execution.id, modelId);
     const isUsesWeb = request.allowedToolIds.includes("web-search");
-    // Web-enabled replies are checked for pseudo tool syntax before anything
-    // reaches the transcript, so they are buffered rather than streamed live.
+    const isLastAttempt = attempt === models.length - 1;
+    // An attempt that could still be retried must not leak its text into the
+    // response stream: the fallback model's text would land right after it,
+    // duplicating content the client already rendered. Only the final
+    // possible attempt streams live; an earlier one that succeeds sends its
+    // already-complete text in one write instead.
+    const canStreamLive = !isUsesWeb && isLastAttempt;
     const result = await streamAttempt(request, signal, (text) => {
-      if (!isUsesWeb) write(text);
+      if (canStreamLive) write(text);
     });
     if (result.event.type === "suspended") return;
     if (result.event.type === "user_input_required") {
@@ -229,10 +234,9 @@ async function runStreamingTurn(
         { ...result.event, text: result.text },
         isUsesWeb,
       );
-      if (isUsesWeb) write(saved.text);
+      if (isUsesWeb || !canStreamLive) write(saved.text);
       return;
     } catch (error) {
-      const isLastAttempt = attempt === models.length - 1;
       if (isLastAttempt) throw error;
     }
   }
