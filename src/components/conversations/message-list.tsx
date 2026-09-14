@@ -1,6 +1,6 @@
 "use client";
 
-import { RiCheckLine, RiFileCopyLine, RiRobot2Line } from "@remixicon/react";
+import { RiCheckLine, RiFileCopyLine } from "@remixicon/react";
 import { useCallback, useState } from "react";
 
 import {
@@ -179,7 +179,6 @@ export function MessageList({
           <ConversationEmptyState
             className="min-h-[min(52svh,34rem)]"
             description={`Start with a clear objective, context, or question for ${agentName}.`}
-            icon={<RiRobot2Line aria-hidden="true" className="size-7" />}
             title={`How can ${agentName} help?`}
           />
         ) : null}

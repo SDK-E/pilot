@@ -3,10 +3,7 @@ import Link from "next/link";
 
 import { AGENT_KINDS, type AgentKindId } from "@/agents/agent-kinds";
 import { AgentAvatar } from "@/components/agents/agent-avatar";
-import { ConversationExportLinks } from "@/components/conversations/conversation-export-links";
-import { ConversationProjectPicker } from "@/components/conversations/conversation-project-picker";
-import { DeleteConversationButton } from "@/components/conversations/delete-conversation-button";
-import { RenameConversationForm } from "@/components/conversations/rename-conversation-form";
+import { ConversationActionsMenu } from "@/components/conversations/conversation-actions-menu";
 
 interface ConversationHeaderProps {
   kind: AgentKindId;
@@ -62,19 +59,12 @@ export function ConversationHeader({
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1">
-        <RenameConversationForm
-          conversationId={conversation.id}
-          title={conversation.title}
-        />
-        <DeleteConversationButton conversationId={conversation.id} />
-        <ConversationExportLinks conversationId={conversation.id} />
-        <ConversationProjectPicker
-          conversationId={conversation.id}
-          currentProject={project}
-          projects={projects}
-        />
-      </div>
+      <ConversationActionsMenu
+        conversationId={conversation.id}
+        project={project}
+        projects={projects}
+        title={conversation.title}
+      />
     </header>
   );
 }

@@ -1,5 +1,3 @@
-import { RiRobot2Line } from "@remixicon/react";
-
 import { Button } from "@/components/ui/button";
 
 /**
@@ -61,11 +59,7 @@ export function ComposerStatus({
           ) : null}
         </div>
       ) : null}
-      <p
-        aria-live="polite"
-        className="mt-2 inline-flex items-center gap-2 px-2 text-xs text-muted-foreground"
-      >
-        <RiRobot2Line aria-hidden="true" className="text-primary" />
+      <p aria-live="polite" className="mt-2 px-2 text-xs text-muted-foreground">
         {isLoading
           ? "Pilot is working…"
           : "Pilot can make mistakes. Check important work."}

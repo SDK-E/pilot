@@ -46,10 +46,22 @@ function OptionText({ option }: { option: Option }) {
 /**
  * Arrow-key roving focus across a list of option rows, so the question
  * behaves like a real listbox instead of a row of disconnected buttons.
+ * Overriding role="radio"/checkbox semantics on a plain element drops the
+ * browser's own Enter/Space activation, so each row's activation key is
+ * handled explicitly via `onActivate` rather than assumed from the DOM tag.
  */
 function useRovingFocus(count: number) {
   const rowRefs = useRef<(HTMLElement | null)[]>([]);
-  const onKeyDown = (event: React.KeyboardEvent, index: number) => {
+  const onKeyDown = (
+    event: React.KeyboardEvent,
+    index: number,
+    onActivate: () => void,
+  ) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onActivate();
+      return;
+    }
     let delta = 0;
     if (event.key === "ArrowDown") delta = 1;
     else if (event.key === "ArrowUp") delta = -1;
@@ -134,7 +146,9 @@ function SingleSelectQuestion({
               onAnswer(option.label);
             }}
             onKeyDown={(event) => {
-              onKeyDown(event, index);
+              onKeyDown(event, index, () => {
+                onAnswer(option.label);
+              });
             }}
             ref={(el) => {
               rowRefs.current[index] = el;
@@ -173,7 +187,11 @@ function MultiSelectRow({
   disabled: boolean;
   onToggle: () => void;
   rowRef: (el: HTMLElement | null) => void;
-  onKeyDown: (event: React.KeyboardEvent, index: number) => void;
+  onKeyDown: (
+    event: React.KeyboardEvent,
+    index: number,
+    onActivate: () => void,
+  ) => void;
 }) {
   const id = useId();
   return (
@@ -184,7 +202,7 @@ function MultiSelectRow({
       tabIndex={index === 0 ? 0 : -1}
       title={option.description}
       onKeyDown={(event: React.KeyboardEvent) => {
-        onKeyDown(event, index);
+        onKeyDown(event, index, onToggle);
       }}
     >
       <Checkbox

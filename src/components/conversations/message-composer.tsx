@@ -1,6 +1,5 @@
 "use client";
 
-import { RiRobot2Line } from "@remixicon/react";
 import { useCallback, useId, useRef, useState } from "react";
 
 import {
@@ -217,8 +216,7 @@ export function MessageComposer({
                 <PromptInputActionAddAttachments label="Add files" />
               </PromptInputActionMenuContent>
             </PromptInputActionMenu>
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-              <RiRobot2Line aria-hidden="true" className="text-primary" />
+            <span className="px-1 text-xs text-muted-foreground">
               {agentName}
             </span>
           </PromptInputTools>
