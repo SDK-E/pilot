@@ -6,8 +6,8 @@ import { useActionState, useEffect } from "react";
 
 import {
   deleteConversationAction,
-  type DeleteConversationState,
-} from "@/app/workspace/chats/actions";
+  type ActionState,
+} from "@/app/(workspace)/[mode]/[conversationId]/actions";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -20,16 +20,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
-const initialState: DeleteConversationState = { status: "idle" };
+const initialState: ActionState = { status: "idle" };
 
 export function DeleteConversationButton({
-  workerId,
   conversationId,
   redirectHref,
 }: {
-  workerId: string;
   conversationId: string;
-  redirectHref?: string;
+  redirectHref: string;
 }) {
   const router = useRouter();
   const [state, action, pending] = useActionState(
@@ -37,8 +35,7 @@ export function DeleteConversationButton({
     initialState,
   );
   useEffect(() => {
-    if (state.status === "success" && redirectHref)
-      router.replace(redirectHref);
+    if (state.status === "success") router.replace(redirectHref);
   }, [redirectHref, router, state.status]);
 
   return (
@@ -64,7 +61,6 @@ export function DeleteConversationButton({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
           <form action={action}>
-            <input name="workerId" type="hidden" value={workerId} />
             <input name="conversationId" type="hidden" value={conversationId} />
             <Button disabled={pending} type="submit" variant="destructive">
               {pending ? "Deleting…" : "Delete conversation"}

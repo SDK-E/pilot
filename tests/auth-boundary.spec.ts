@@ -1,12 +1,16 @@
 import { expect, test } from "@playwright/test";
 
+import { redirectTarget } from "./helpers/redirect-target";
+
 test("public page renders with usable mobile navigation", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("pageerror", (error) => {
+    errors.push(error.message);
+  });
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Give your team a place to think",
+    "Give your team a place to chat",
   );
   await expect(
     page.getByRole("link", { name: "Sign in to Pilot" }),
@@ -22,7 +26,7 @@ test("public page renders with usable mobile navigation", async ({ page }) => {
 test("sign-in sets PKCE state and redirects to WorkOS", async ({ request }) => {
   const response = await request.get("/sign-in", { maxRedirects: 0 });
   expect(response.status()).toBe(307);
-  const destination = new URL(response.headers().location);
+  const destination = new URL(redirectTarget(response));
   expect(destination.hostname).toBe("api.workos.com");
   expect(destination.searchParams.get("code_challenge_method")).toBe("S256");
   expect(destination.searchParams.get("state")).toBeTruthy();
@@ -33,9 +37,9 @@ test("anonymous and forged sessions cannot access workspace routes", async ({
   request,
 }) => {
   for (const path of [
-    "/workspace",
-    "/workspace/workers/forged-worker",
-    "/workspace/workers/forged-worker/conversations/00000000-0000-4000-8000-000000000000",
+    "/chat",
+    "/agents/forged-agent",
+    "/work/00000000-0000-4000-8000-000000000000",
   ]) {
     for (const cookie of ["", "wos-session=forged-session"]) {
       const response = await request.get(path, {
@@ -43,9 +47,7 @@ test("anonymous and forged sessions cannot access workspace routes", async ({
         headers: { cookie },
       });
       expect(response.status()).toBe(307);
-      expect(new URL(response.headers().location).hostname).toBe(
-        "api.workos.com",
-      );
+      expect(new URL(redirectTarget(response)).hostname).toBe("api.workos.com");
     }
   }
 });
@@ -82,9 +84,7 @@ test("anonymous and forged sessions cannot access the conversation stream", asyn
         },
       });
       expect(response.status()).toBe(303);
-      expect(new URL(response.headers().location).hostname).toBe(
-        "api.workos.com",
-      );
+      expect(new URL(redirectTarget(response)).hostname).toBe("api.workos.com");
     }
 });
 
@@ -100,9 +100,7 @@ test("anonymous and forged sessions cannot read conversation activity", async ({
     });
     expect(response.status()).toBeGreaterThanOrEqual(300);
     expect(response.status()).toBeLessThan(400);
-    expect(new URL(response.headers().location).hostname).toBe(
-      "api.workos.com",
-    );
+    expect(new URL(redirectTarget(response)).hostname).toBe("api.workos.com");
   }
 });
 
@@ -123,9 +121,7 @@ test("anonymous and forged sessions cannot access private attachments", async ({
       });
       expect(response.status()).toBeGreaterThanOrEqual(300);
       expect(response.status()).toBeLessThan(400);
-      expect(new URL(response.headers().location).hostname).toBe(
-        "api.workos.com",
-      );
+      expect(new URL(redirectTarget(response)).hostname).toBe("api.workos.com");
     }
   }
 });
@@ -147,9 +143,7 @@ test("anonymous and forged sessions cannot access private Project files", async 
       });
       expect(response.status()).toBeGreaterThanOrEqual(300);
       expect(response.status()).toBeLessThan(400);
-      expect(new URL(response.headers().location).hostname).toBe(
-        "api.workos.com",
-      );
+      expect(new URL(redirectTarget(response)).hostname).toBe("api.workos.com");
     }
   }
 });

@@ -3,6 +3,7 @@ import "server-only";
 import { and, desc, eq } from "drizzle-orm";
 
 import { db } from "@/db/client";
+import { firstRow } from "@/db/first-row";
 import {
   conversations,
   projectConversations,
@@ -22,7 +23,7 @@ export async function createProject(
     sharedMemoryEnabled?: boolean;
   },
 ) {
-  const [project] = await db
+  const created = await db
     .insert(projects)
     .values({
       organizationId: input.organizationId,
@@ -32,7 +33,7 @@ export async function createProject(
       sharedMemoryEnabled: input.sharedMemoryEnabled ?? false,
     })
     .returning({ id: projects.id });
-  return project;
+  return firstRow(created);
 }
 
 export function listProjects(input: ProjectOwner) {
@@ -173,6 +174,7 @@ export function listProjectConversations(
     .select({
       id: conversations.id,
       workerId: conversations.workerId,
+      kind: workers.baseAgentId,
       title: conversations.title,
       agentName: workers.name,
       updatedAt: conversations.updatedAt,

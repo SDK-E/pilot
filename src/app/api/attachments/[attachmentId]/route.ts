@@ -1,61 +1,59 @@
-import { del, get } from "@vercel/blob";
-import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
 
 import {
   deleteConversationAttachment,
   getConversationAttachment,
 } from "@/conversations/attachment-repository";
-import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import {
+  deletePrivateFile,
+  privateFileResponse,
+} from "@/files/private-file-response";
+import {
+  getWorkspaceSession,
+  isWorkspaceSession,
+} from "@/organizations/workspace-session";
 
 export const runtime = "nodejs";
+
 interface RouteContext {
   params: Promise<{ attachmentId: string }>;
 }
 
+/**
+ * The attachment only if the caller is a member and created its chat.
+ */
 async function authorizedAttachment(params: RouteContext["params"]) {
-  const { user, organizationId } = await withAuth({ ensureSignedIn: true });
-  const attachmentId = z.uuid().safeParse((await params).attachmentId);
-  if (!organizationId || !attachmentId.success) return;
-  if (!(await getActiveOrganizationMembership(user.id, organizationId))) return;
+  const session = await getWorkspaceSession();
+  const { attachmentId: rawAttachmentId } = await params;
+  const attachmentId = z.uuid().safeParse(rawAttachmentId);
+  if (!isWorkspaceSession(session) || !attachmentId.success) return;
+  const owner = {
+    organizationId: session.organizationId,
+    userId: session.user.id,
+  };
   const attachment = await getConversationAttachment({
-    organizationId,
+    ...owner,
     attachmentId: attachmentId.data,
-    userId: user.id,
   });
-  return attachment ? { attachment, organizationId, user } : undefined;
+  return attachment ? { attachment, owner } : undefined;
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
   const authorized = await authorizedAttachment(params);
   if (!authorized) return new Response("Not found", { status: 404 });
-  const blob = await get(authorized.attachment.pathname, { access: "private" });
-  if (!blob) return new Response("Not found", { status: 404 });
-  return new Response(blob.stream, {
-    headers: {
-      "content-type": authorized.attachment.contentType,
-      "content-disposition": `inline; filename*=UTF-8''${encodeURIComponent(authorized.attachment.filename)}`,
-      "cache-control": "private, no-store",
-      "x-content-type-options": "nosniff",
-    },
-  });
+  return privateFileResponse(authorized.attachment);
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const authorized = await authorizedAttachment(params);
   if (!authorized) return new Response("Not found", { status: 404 });
-  try {
-    await del(authorized.attachment.pathname);
-    await deleteConversationAttachment({
-      organizationId: authorized.organizationId,
-      attachmentId: authorized.attachment.id,
-      userId: authorized.user.id,
-    });
-    return new Response(null, { status: 204 });
-  } catch {
-    return Response.json(
-      { error: "Pilot could not delete this file." },
-      { status: 500 },
-    );
-  }
+  return deletePrivateFile(
+    authorized.attachment,
+    () =>
+      deleteConversationAttachment({
+        ...authorized.owner,
+        attachmentId: authorized.attachment.id,
+      }),
+    "Pilot could not delete this file.",
+  );
 }

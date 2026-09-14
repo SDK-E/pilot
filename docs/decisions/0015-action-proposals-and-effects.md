@@ -1,6 +1,6 @@
 # ActionProposals et effets externes idempotents
 
-Status: proposed — en attente d'implémentation Plan 10.
+Status: retired by [0016](0016-three-agent-kinds.md); its tables were never used and were dropped in migration 0028.
 
 ## Contexte
 

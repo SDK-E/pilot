@@ -42,6 +42,4 @@ export async function extractAttachmentText(input: {
     });
     return result.value;
   }
-
-  return;
 }

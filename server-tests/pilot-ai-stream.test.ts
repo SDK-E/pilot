@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseConversationRuntimeStream } from "@/ai/pilot-ai-client";
+import { parseRuntimeStream } from "@/ai/runtime-stream";
 
 const encoder = new TextEncoder();
 
@@ -23,7 +23,7 @@ test("Pilot accepts streamed text only after a terminal usage event", async () =
   ];
 
   assert.deepEqual(
-    await Array.fromAsync(parseConversationRuntimeStream(streamOf(...chunks))),
+    await Array.fromAsync(parseRuntimeStream(streamOf(...chunks))),
     [
       { type: "text", text: "Hello" },
       {
@@ -40,14 +40,14 @@ test("Pilot accepts streamed text only after a terminal usage event", async () =
 test("Pilot rejects a stream without terminal usage", async () => {
   await assert.rejects(
     Array.fromAsync(
-      parseConversationRuntimeStream(
+      parseRuntimeStream(
         streamOf(
           'data: {"id":"chatcmpl_run-1","object":"chat.completion.chunk","model":"kilo/kilo-auto/free","choices":[{"delta":{"content":"Partial"},"finish_reason":null}]}\n\n',
           "data: [DONE]\n\n",
         ),
       ),
     ),
-    /ended before completing the response/,
+    /ended before completing/,
   );
 });
 
@@ -57,7 +57,7 @@ test("Pilot recognizes a runtime approval suspension without accepting a partial
     "data: [DONE]\n\n",
   ];
   assert.deepEqual(
-    await Array.fromAsync(parseConversationRuntimeStream(streamOf(...events))),
+    await Array.fromAsync(parseRuntimeStream(streamOf(...events))),
     [
       {
         type: "suspended",
@@ -75,7 +75,7 @@ test("Pilot recognizes a bounded Ask User suspension", async () => {
     "data: [DONE]\n\n",
   ];
   assert.deepEqual(
-    await Array.fromAsync(parseConversationRuntimeStream(streamOf(...events))),
+    await Array.fromAsync(parseRuntimeStream(streamOf(...events))),
     [
       {
         type: "user_input_required",

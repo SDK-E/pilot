@@ -1,15 +1,8 @@
-export type TextDirection = "ltr" | "rtl" | "auto";
-
-export type Coverage = "complete" | "partial" | "minimal" | "none";
-export type LocaleStatus = "stable" | "beta" | "experimental" | "deprecated";
-
 export interface LocaleDefinition {
+  /**
+  BCP 47 tag.
+  */
   tag: string;
   nativeName: string;
-  englishName: string;
-  direction: TextDirection;
-  fallback: string | null;
-  status: LocaleStatus;
-  coverage: Coverage;
-  available: boolean;
+  direction: "ltr" | "rtl";
 }

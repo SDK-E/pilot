@@ -197,6 +197,20 @@
       "when": 1789370006000,
       "tag": "0020_lifecycle_operations",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1789370007000,
+      "tag": "0027_agent_kinds",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1789348370032,
+      "tag": "0028_drop_unused_tables",
+      "breakpoints": true
     }
   ]
 }

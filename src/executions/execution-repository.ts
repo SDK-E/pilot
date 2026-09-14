@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import { activityEvents, conversations, executions } from "@/db/schema";
@@ -159,18 +159,4 @@ export async function listConversationActivity(
       ),
     )
     .orderBy(asc(activityEvents.createdAt));
-}
-
-export async function getOrganizationExecutionMetrics(organizationId: string) {
-  const [running] = await db
-    .select({ value: count() })
-    .from(executions)
-    .where(
-      and(
-        eq(executions.organizationId, organizationId),
-        eq(executions.status, "running"),
-      ),
-    );
-
-  return { running: running?.value ?? 0 };
 }

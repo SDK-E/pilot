@@ -7,9 +7,9 @@ import { approvals, conversations, executions, tasks } from "@/db/schema";
 
 const approvalToolCopy = {
   "web-search": {
-    taskTitle: "Approve public web research",
+    taskTitle: "Approve web search",
     taskInstructions:
-      "Pilot requested access to its protected public-web research capability.",
+      "Pilot requested access to its protected public-web search capability.",
     summary: "Allow Pilot to search and read public web sources?",
   },
   scratchpad: {
@@ -29,6 +29,7 @@ export async function listApprovals(input: {
       id: approvals.id,
       summary: approvals.summary,
       status: approvals.status,
+      conversationId: tasks.conversationId,
       createdAt: approvals.createdAt,
     })
     .from(approvals)
@@ -68,66 +69,78 @@ export async function listConversationApprovals(input: {
     .orderBy(desc(approvals.createdAt));
 }
 
-/**
- * Called only by Pilot AI's OIDC-authenticated callback. The callback carries
- * no model-controlled content; this derives the task from the owned execution.
- */
-export async function createRuntimeToolApproval(input: {
+interface RuntimeApprovalInput {
   organizationId: string;
   executionId: string;
   runtimeRunId: string;
   toolCallId: string;
   toolId: keyof typeof approvalToolCopy;
-}) {
+}
+
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * The approval already recorded for this exact tool call, if the runtime
+ * delivered the callback more than once.
+ */
+async function findExistingApproval(
+  tx: Transaction,
+  input: RuntimeApprovalInput,
+) {
+  const [existing] = await tx
+    .select({ id: approvals.id })
+    .from(approvals)
+    .where(
+      and(
+        eq(approvals.organizationId, input.organizationId),
+        eq(approvals.executionId, input.executionId),
+        eq(approvals.runtimeRunId, input.runtimeRunId),
+        eq(approvals.toolCallId, input.toolCallId),
+      ),
+    )
+    .limit(1);
+  return existing;
+}
+
+/**
+ * Moves the running execution into `awaiting_approval` and returns the
+ * ownership details the approval task inherits from it.
+ */
+async function pauseRunningExecution(
+  tx: Transaction,
+  input: RuntimeApprovalInput,
+) {
+  const [execution] = await tx
+    .update(executions)
+    .set({ status: "awaiting_approval", runtimeRunId: input.runtimeRunId })
+    .where(
+      and(
+        eq(executions.organizationId, input.organizationId),
+        eq(executions.id, input.executionId),
+        eq(executions.status, "running"),
+      ),
+    )
+    .returning({
+      id: executions.id,
+      conversationId: executions.conversationId,
+      workerId: executions.workerId,
+    });
+  return execution;
+}
+
+/**
+ * Called only by Pilot AI's OIDC-authenticated callback. The callback carries
+ * no model-controlled content; this derives the task from the owned execution.
+ */
+export async function createRuntimeToolApproval(input: RuntimeApprovalInput) {
   return db.transaction(async (tx) => {
-    const [existing] = await tx
-      .select({ id: approvals.id })
-      .from(approvals)
-      .where(
-        and(
-          eq(approvals.organizationId, input.organizationId),
-          eq(approvals.executionId, input.executionId),
-          eq(approvals.runtimeRunId, input.runtimeRunId),
-          eq(approvals.toolCallId, input.toolCallId),
-        ),
-      )
-      .limit(1);
+    const existing = await findExistingApproval(tx, input);
     if (existing) return existing;
 
-    const [execution] = await tx
-      .update(executions)
-      .set({
-        status: "awaiting_approval",
-        runtimeRunId: input.runtimeRunId,
-      })
-      .where(
-        and(
-          eq(executions.organizationId, input.organizationId),
-          eq(executions.id, input.executionId),
-          eq(executions.status, "running"),
-        ),
-      )
-      .returning({
-        id: executions.id,
-        conversationId: executions.conversationId,
-        workerId: executions.workerId,
-      });
-
-    if (!execution) {
-      const [created] = await tx
-        .select({ id: approvals.id })
-        .from(approvals)
-        .where(
-          and(
-            eq(approvals.organizationId, input.organizationId),
-            eq(approvals.executionId, input.executionId),
-            eq(approvals.runtimeRunId, input.runtimeRunId),
-            eq(approvals.toolCallId, input.toolCallId),
-          ),
-        )
-        .limit(1);
-      return created;
-    }
+    const execution = await pauseRunningExecution(tx, input);
+    // A second callback can race the first past the lookup above; the
+    // execution is then already paused and the first approval wins.
+    if (!execution) return findExistingApproval(tx, input);
 
     const copy = approvalToolCopy[input.toolId];
     const [task] = await tx

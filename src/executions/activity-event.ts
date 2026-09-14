@@ -58,6 +58,13 @@ const toolLabels: Record<ToolActivityToolId, string> = {
   "ask-user": "Waiting for your input",
 };
 
+const toolStateSuffix: Record<ToolActivityState, string> = {
+  started: "…",
+  completed: " completed",
+  awaiting_approval: " needs approval",
+  failed: " failed",
+};
+
 /**
  * Converts a known capability identifier into the only detail persisted for a
  * tool event. Model-provided input, output, URLs, prompts, and errors are not
@@ -73,13 +80,6 @@ export function createToolActivity(input: {
     type: `tool.${input.state}` as const,
     toolId: input.toolId,
     toolCallId: input.toolCallId,
-    summary:
-      input.state === "started"
-        ? `${label}…`
-        : input.state === "completed"
-          ? `${label} completed`
-          : input.state === "awaiting_approval"
-            ? `${label} needs approval`
-            : `${label} failed`,
+    summary: `${label}${toolStateSuffix[input.state]}`,
   };
 }

@@ -1,8 +1,11 @@
-import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
 
 import { listConversationActivity } from "@/executions/execution-repository";
-import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import {
+  getWorkspaceSession,
+  isWorkspaceSession,
+  sessionFailureResponse,
+} from "@/organizations/workspace-session";
 
 export const runtime = "nodejs";
 
@@ -11,30 +14,18 @@ interface RouteContext {
 }
 
 export async function GET(_request: Request, { params }: RouteContext) {
-  const { user, organizationId } = await withAuth({ ensureSignedIn: true });
-  if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId)) {
-    return Response.json(
-      { error: "Choose an organization first." },
-      { status: 403 },
-    );
-  }
+  const session = await getWorkspaceSession();
+  if (!isWorkspaceSession(session)) return sessionFailureResponse(session);
 
-  const { conversationId } = await params;
-  const parsedConversationId = z.uuid().safeParse(conversationId);
-  if (!parsedConversationId.success) {
+  const { conversationId: rawConversationId } = await params;
+  const conversationId = z.uuid().safeParse(rawConversationId);
+  if (!conversationId.success) {
     return Response.json({ error: "Conversation not found." }, { status: 404 });
   }
-  if (!(await getActiveOrganizationMembership(user.id, organizationId))) {
-    return Response.json(
-      { error: "Your organization access is no longer active." },
-      { status: 403 },
-    );
-  }
-
   const activities = await listConversationActivity(
-    organizationId,
-    parsedConversationId.data,
-    user.id,
+    session.organizationId,
+    conversationId.data,
+    session.user.id,
   );
   return Response.json(
     { activities },

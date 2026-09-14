@@ -1,10 +1,10 @@
 # Chat workspace interface
 
-Status: accepted for the first production interface slice.
+Status: superseded by [0016](0016-three-agent-kinds.md); the `/workspace` layout became the `/chat`, `/work`, and `/code` modes.
 
 Pilot's primary product surface is a conversation workspace. The interface uses
 the existing shadcn responsive sidebar and AI Elements conversation/message
-primitives. Its applied shadcn `b2qMYtuMc` preset defines both the light
+primitives. Its applied shadcn `b2pR8pzoh` preset defines both the light
 `:root` and dark `.dark` color tokens; JetBrains Mono is the interface font.
 The maintained `next-themes` provider defaults to the operating system setting,
 persists a user choice, and exposes System, Light, and Dark controls on the

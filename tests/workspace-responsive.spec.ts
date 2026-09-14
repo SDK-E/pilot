@@ -10,11 +10,13 @@ for (const viewport of [
   }) => {
     await page.setViewportSize(viewport);
     const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("pageerror", (error) => {
+      errors.push(error.message);
+    });
 
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      "Give your team a place to think",
+      "Give your team a place to chat",
     );
     expect(
       await page.evaluate(
@@ -51,11 +53,4 @@ test("public keyboard navigation reaches the sign-in action", async ({
 
   await signIn.focus();
   await expect(signIn).toBeFocused();
-});
-
-test("back navigation preserves a draft in an authenticated conversation", () => {
-  test.skip(
-    true,
-    "BLOCKED: requires a provisioned WorkOS browser fixture and a persisted conversation.",
-  );
 });

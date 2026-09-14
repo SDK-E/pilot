@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import {
+  createSkillActivity,
+  isSafeSkillId,
+} from "@/executions/activity-event";
 import { groupActivityTimeline } from "@/executions/activity-timeline";
 
 test("activity timeline keeps intermediate steps grouped by response run", () => {
@@ -31,13 +35,15 @@ test("activity timeline keeps intermediate steps grouped by response run", () =>
     },
   ]);
 
-  assert.equal(runs.length, 2);
+  const [first, second] = runs;
+  assert.ok(first);
+  assert.ok(second);
   assert.deepEqual(
-    runs[0]?.events.map((event) => event.id),
+    first.events.map((event) => event.id),
     ["event-1", "event-2", "event-4"],
   );
-  assert.equal(runs[0]?.isComplete, true);
-  assert.equal(runs[1]?.isComplete, false);
+  assert.equal(first.isComplete, true);
+  assert.equal(second.isComplete, false);
 });
 
 test("activity timeline retains safe selected-skill milestones", () => {
@@ -50,14 +56,11 @@ test("activity timeline retains safe selected-skill milestones", () => {
     },
   ]);
 
-  assert.equal(run?.events[0]?.type, "skill.selected");
-  assert.equal(run?.events[0]?.summary.includes("Loaded"), true);
+  const [event] = run?.events ?? [];
+  assert.ok(event);
+  assert.equal(event.type, "skill.selected");
+  assert.equal(event.summary.includes("Loaded"), true);
 });
-import {
-  createSkillActivity,
-  isSafeSkillId,
-} from "@/executions/activity-event";
-
 test("runtime skills retain only a bounded safe display label", () => {
   assert.equal(isSafeSkillId("acme/research-helper"), true);
   assert.equal(isSafeSkillId("https://example.test/secret"), false);

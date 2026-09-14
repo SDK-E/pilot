@@ -1,30 +1,26 @@
 import "server-only";
 
 import {
-  isToolAvailableToBaseAgent,
-  type ConfigurableToolId,
-} from "@/agents/agent-configuration";
+  grantedToolIds,
+  type AgentToolConfiguration,
+} from "@/agents/agent-tools";
 
-const productionToolIds = ["web-search", "scratchpad", "ask-user"] as const;
-export type ProductionToolId = (typeof productionToolIds)[number];
+import type { ToolId } from "@/agents/agent-kinds";
 
-function isProductionToolId(value: string): value is ProductionToolId {
-  return productionToolIds.includes(value as ProductionToolId);
+/**
+ * Public web search reaches the runtime only when this environment enables
+ * it; pilot-ai enforces the same flag on its side.
+ */
+function isWebSearchEnabled(): boolean {
+  return process.env.PILOT_ENABLE_WEB_SEARCH === "true";
 }
 
-export function allowedProductionToolIds(input: {
-  baseAgentId: "conversational" | "research";
-  enabledToolIds: string[];
-  approvalRules: Record<string, string>;
-}): ProductionToolId[] {
-  return input.enabledToolIds.filter(
-    (toolId): toolId is ProductionToolId =>
-      isProductionToolId(toolId) &&
-      isToolAvailableToBaseAgent(
-        toolId as ConfigurableToolId,
-        input.baseAgentId,
-      ) &&
-      (input.approvalRules[toolId] === "allow" ||
-        input.approvalRules[toolId] === "ask"),
-  );
+/**
+ * Tools this environment lets the runtime register for the agent.
+ */
+export function allowedToolIds(agent: AgentToolConfiguration): ToolId[] {
+  const granted = grantedToolIds(agent);
+  return isWebSearchEnabled()
+    ? granted
+    : granted.filter((toolId) => toolId !== "web-search");
 }

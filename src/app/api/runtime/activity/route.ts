@@ -1,10 +1,11 @@
 import { z } from "zod";
 
-import { verifyPilotRuntimeCallback } from "@/ai/pilot-runtime-oidc";
+import { isVerifiedRuntimeCallback } from "@/ai/pilot-runtime-oidc";
 import {
   isSafeSkillId,
   toolActivityToolIds,
 } from "@/executions/activity-event";
+import { readJsonBody } from "@/lib/http";
 
 export const runtime = "nodejs";
 
@@ -34,12 +35,11 @@ const skillInputSchema = z
 const inputSchema = z.union([toolInputSchema, skillInputSchema]);
 
 export async function POST(request: Request) {
-  if (!(await verifyPilotRuntimeCallback(request))) {
+  if (!(await isVerifiedRuntimeCallback(request))) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const body = await request.json().catch(() => {});
-  const input = inputSchema.safeParse(body);
+  const input = inputSchema.safeParse(await readJsonBody(request));
   if (!input.success) {
     return Response.json({ error: "Invalid activity event." }, { status: 400 });
   }

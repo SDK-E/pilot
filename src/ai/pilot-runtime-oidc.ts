@@ -29,7 +29,7 @@ function deploymentEnvironment(): "preview" | "production" | undefined {
  * activity callback. The endpoint has no browser session and accepts no user
  * supplied organization identity.
  */
-export async function verifyPilotRuntimeCallback(request: Request) {
+export async function isVerifiedRuntimeCallback(request: Request) {
   const token = request.headers.get(tokenHeader);
   const environment = deploymentEnvironment();
   if (!token || !environment) return false;

@@ -28,28 +28,24 @@ function stepStatus(type: ActivityEventType): "active" | "complete" {
 function stepIcon(type: ActivityEventType) {
   if (type === "skill.selected") return FileText;
   if (
-    type === "tool.started" ||
-    type === "tool.completed" ||
-    type === "tool.awaiting_approval"
+    ["tool.started", "tool.completed", "tool.awaiting_approval"].includes(type)
   )
     return Search;
-  if (type === "tool.failed" || type === "execution.failed") return CircleAlert;
+  if (["tool.failed", "execution.failed"].includes(type)) return CircleAlert;
   if (type === "execution.completed") return CheckCircle2;
   return Wrench;
 }
 
-function stepDescription(type: ActivityEventType) {
-  if (type === "skill.selected")
-    return "Selected safe guidance for this response";
-  if (type === "execution.started") return "Preparing this chat response";
-  if (type === "tool.started") return "Using an enabled capability";
-  if (type === "tool.completed") return "Capability result received";
-  if (type === "tool.failed") return "Capability did not complete";
-  if (type === "tool.awaiting_approval") return "Waiting for your approval";
-  if (type === "execution.completed") return "Response completed";
-  if (type === "execution.failed") return "Response failed";
-  return "Response execution";
-}
+const stepDescriptions: Record<ActivityEventType, string> = {
+  "skill.selected": "Selected safe guidance for this response",
+  "execution.started": "Preparing this chat response",
+  "tool.started": "Using an enabled capability",
+  "tool.completed": "Capability result received",
+  "tool.failed": "Capability did not complete",
+  "tool.awaiting_approval": "Waiting for your approval",
+  "execution.completed": "Response completed",
+  "execution.failed": "Response failed",
+};
 
 /**
  * A readable activity trace backed only by Pilot's sanitized server events.
@@ -61,18 +57,7 @@ export function LiveConversationActivity({
 }: {
   events?: Activity[];
 }) {
-  const currentEvents = events.filter(
-    (event) =>
-      event.type === "execution.started" ||
-      event.type === "skill.selected" ||
-      event.type === "tool.started" ||
-      event.type === "tool.completed" ||
-      event.type === "tool.failed" ||
-      event.type === "tool.awaiting_approval" ||
-      event.type === "execution.completed" ||
-      event.type === "execution.failed",
-  );
-  const latest = currentEvents.at(-1);
+  const latest = events.at(-1);
   const summary = latest?.summary ?? "Pilot is responding…";
   const hasActiveTool = latest?.type === "tool.started";
 
@@ -96,14 +81,14 @@ export function LiveConversationActivity({
           data stay private.
         </p>
         <div className="space-y-3">
-          {currentEvents.map((event, index) => (
+          {events.map((event, index) => (
             <ChainOfThoughtStep
               className={
-                index === currentEvents.length - 1 && hasActiveTool
+                hasActiveTool && index === events.length - 1
                   ? "[&>div:first-child>div]:hidden"
                   : undefined
               }
-              description={stepDescription(event.type)}
+              description={stepDescriptions[event.type]}
               icon={stepIcon(event.type)}
               key={event.id}
               label={event.summary}

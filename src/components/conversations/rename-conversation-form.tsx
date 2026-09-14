@@ -11,8 +11,8 @@ import {
 
 import {
   renameConversationAction,
-  type RenameConversationState,
-} from "@/app/workspace/chats/actions";
+  type ActionState,
+} from "@/app/(workspace)/[mode]/[conversationId]/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,16 +25,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-const initialState: RenameConversationState = { status: "idle" };
+const initialState: ActionState = { status: "idle" };
 
 export function RenameConversationForm({
   conversationId,
   title,
-  workerId,
 }: {
   conversationId: string;
   title: string;
-  workerId: string;
 }) {
   const form = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
@@ -74,7 +72,6 @@ export function RenameConversationForm({
           </DialogDescription>
         </DialogHeader>
         <form action={action} className="space-y-4" ref={form}>
-          <input name="workerId" type="hidden" value={workerId} />
           <input name="conversationId" type="hidden" value={conversationId} />
           <Input
             aria-label="Conversation title"

@@ -4,7 +4,7 @@ import { FolderKanban, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { setConversationProjectAction } from "@/app/workspace/projects/actions";
+import { setConversationProjectAction } from "@/app/(workspace)/projects/actions";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -38,7 +38,7 @@ export function ConversationProjectPicker({
   const [error, setError] = useState<string>();
 
   function setProject(projectId: string | null) {
-    if (projectId === currentProject?.id) return;
+    if (projectId === (currentProject?.id ?? null)) return;
     setError(undefined);
     startTransition(async () => {
       const result = await setConversationProjectAction({

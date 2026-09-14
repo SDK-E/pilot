@@ -16,6 +16,25 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
+const FALLBACK_MESSAGE = "Pilot could not delete this file.";
+
+async function readErrorMessage(response: Response) {
+  try {
+    const payload: unknown = await response.json();
+    if (
+      typeof payload === "object" &&
+      payload !== null &&
+      "error" in payload &&
+      typeof payload.error === "string"
+    ) {
+      return payload.error;
+    }
+  } catch {
+    // A non-JSON body falls through to the fallback message.
+  }
+  return FALLBACK_MESSAGE;
+}
+
 export function DeleteAttachmentButton({
   attachmentId,
   filename,
@@ -36,22 +55,12 @@ export function DeleteAttachmentButton({
         method: "DELETE",
       });
       if (!response.ok) {
-        const payload = (await response.json().catch(() => {})) as
-          { error?: unknown } | undefined;
-        throw new Error(
-          typeof payload?.error === "string"
-            ? payload.error
-            : "Pilot could not delete this file.",
-        );
+        throw new Error(await readErrorMessage(response));
       }
       setOpen(false);
       router.refresh();
     } catch (error_) {
-      setError(
-        error_ instanceof Error
-          ? error_.message
-          : "Pilot could not delete this file.",
-      );
+      setError(error_ instanceof Error ? error_.message : FALLBACK_MESSAGE);
     } finally {
       setDeleting(false);
     }

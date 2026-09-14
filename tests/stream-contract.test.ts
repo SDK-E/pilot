@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseConversationRuntimeStream } from "@/ai/pilot-ai-client";
+import { parseRuntimeStream } from "@/ai/runtime-stream";
 
 const encoder = new TextEncoder();
 
@@ -53,17 +53,16 @@ test("AC-08-02: UTF-8 split mid-character does not produce false completion", as
     "data: [DONE]\n\n",
   );
 
-  const events = await Array.fromAsync(parseConversationRuntimeStream(stream));
+  const events = await Array.fromAsync(parseRuntimeStream(stream));
   const textEvents = events.filter((e) => e.type === "text");
-  assert.equal(textEvents.length, 2);
-  assert.equal(textEvents[0].text, firstHalf);
-  assert.equal(textEvents[1].text, secondHalf);
+  assert.deepEqual(
+    textEvents.map((event) => event.text),
+    [firstHalf, secondHalf],
+  );
 
   const completed = events.find((e) => e.type === "completed");
   assert.ok(completed, "should complete normally");
-  if (completed) {
-    assert.equal(completed.finishReason, "stop");
-  }
+  assert.equal(completed.finishReason, "stop");
 });
 
 test("AC-08-02: unknown event type does not produce false success", async () => {
@@ -84,7 +83,7 @@ test("AC-08-02: unknown event type does not produce false success", async () => 
   );
 
   await assert.rejects(
-    Array.fromAsync(parseConversationRuntimeStream(stream)),
+    Array.fromAsync(parseRuntimeStream(stream)),
     /Invalid input|expected/,
     "unknown event should reject, not produce false success",
   );
@@ -114,7 +113,7 @@ test("AC-08-02: invalid event ordering (usage before text) does not produce fals
     "data: [DONE]\n\n",
   );
 
-  const events = await Array.fromAsync(parseConversationRuntimeStream(stream));
+  const events = await Array.fromAsync(parseRuntimeStream(stream));
   const textEvents = events.filter((e) => e.type === "text");
   assert.ok(textEvents.length > 0, "should still yield text events");
   const completed = events.find((e) => e.type === "completed");
@@ -138,8 +137,8 @@ test("AC-08-02: stream without terminal event does not produce false success", a
   );
 
   await assert.rejects(
-    Array.fromAsync(parseConversationRuntimeStream(stream)),
-    /ended before completing the response/,
+    Array.fromAsync(parseRuntimeStream(stream)),
+    /ended before completing/,
     "should reject without false success",
   );
 });
@@ -148,8 +147,8 @@ test("AC-08-02: [DONE] without any events does not produce false success", async
   const stream = streamOf("data: [DONE]\n\n");
 
   await assert.rejects(
-    Array.fromAsync(parseConversationRuntimeStream(stream)),
-    /ended before completing the response/,
+    Array.fromAsync(parseRuntimeStream(stream)),
+    /ended before completing/,
     "should reject without false success",
   );
 });
@@ -162,8 +161,8 @@ test("AC-08-02: empty stream does not produce false success", async () => {
   });
 
   await assert.rejects(
-    Array.fromAsync(parseConversationRuntimeStream(stream)),
-    /ended before completing the response/,
+    Array.fromAsync(parseRuntimeStream(stream)),
+    /ended before completing/,
     "should reject without false success",
   );
 });
@@ -181,7 +180,7 @@ test("AC-08-02: malformed JSON line is rejected without false success", async ()
   );
 
   await assert.rejects(
-    Array.fromAsync(parseConversationRuntimeStream(stream)),
+    Array.fromAsync(parseRuntimeStream(stream)),
     /JSON|Expected property name/,
     "malformed JSON should reject, not produce false success",
   );
@@ -217,7 +216,7 @@ test("AC-08-02: repeated finish_reason events handled safely", async () => {
     "data: [DONE]\n\n",
   );
 
-  const events = await Array.fromAsync(parseConversationRuntimeStream(stream));
+  const events = await Array.fromAsync(parseRuntimeStream(stream));
   const textEvents = events.filter((e) => e.type === "text");
   assert.equal(textEvents.length, 1);
 });

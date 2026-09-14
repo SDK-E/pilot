@@ -38,5 +38,5 @@ export function groupActivityTimeline(
     current.isWaitingForApproval ||= activity.type === "tool.awaiting_approval";
     runs.set(activity.executionId, current);
   }
-  return [...runs.values()];
+  return runs.values().toArray();
 }

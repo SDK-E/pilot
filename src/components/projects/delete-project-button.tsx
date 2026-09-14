@@ -7,7 +7,7 @@ import { useActionState, useEffect } from "react";
 import {
   deleteProjectAction,
   type DeleteProjectState,
-} from "@/app/workspace/projects/actions";
+} from "@/app/(workspace)/projects/actions";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -30,7 +30,7 @@ export function DeleteProjectButton({ projectId }: { projectId: string }) {
   );
 
   useEffect(() => {
-    if (state.status === "success") router.replace("/workspace/projects");
+    if (state.status === "success") router.replace("/projects");
   }, [router, state.status]);
 
   return (

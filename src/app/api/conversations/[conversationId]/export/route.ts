@@ -1,89 +1,73 @@
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer";
-import { withAuth } from "@workos-inc/authkit-nextjs";
 import { createElement, type ReactElement } from "react";
 import { z } from "zod";
 
-import { ResearchExportDocument } from "@/components/conversations/research-export-document";
+import { ConversationExportDocument } from "@/components/conversations/conversation-export-document";
+import { exportMarkdown } from "@/conversations/conversation-export";
+import { listConversationMessages } from "@/conversations/conversation-repository";
+import { listMessageSources } from "@/conversations/message-sources";
 import {
-  getConversation,
-  listConversationMessages,
-} from "@/conversations/conversation-repository";
-import { listMessageSources } from "@/conversations/research-evidence";
-import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+  getWorkspaceSession,
+  isWorkspaceSession,
+  sessionFailureResponse,
+} from "@/organizations/workspace-session";
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ conversationId: string }> },
-) {
-  const { user, organizationId } = await withAuth({ ensureSignedIn: true });
-  const { conversationId } = await params;
-  const workerId = new URL(request.url).searchParams.get("workerId");
+interface RouteContext {
+  params: Promise<{ conversationId: string }>;
+}
+
+function notFound() {
+  return Response.json({ error: "Conversation not found." }, { status: 404 });
+}
+
+/**
+ * Downloads the owner's transcript as Markdown or PDF (`?format=md|pdf`).
+ */
+export async function GET(request: Request, { params }: RouteContext) {
+  const session = await getWorkspaceSession();
+  if (!isWorkspaceSession(session)) return sessionFailureResponse(session);
+  const owner = {
+    organizationId: session.organizationId,
+    userId: session.user.id,
+  };
+
+  const { conversationId: rawConversationId } = await params;
+  const conversationId = z.uuid().safeParse(rawConversationId);
+  if (!conversationId.success) return notFound();
   const format = new URL(request.url).searchParams.get("format");
-  if (
-    !organizationId ||
-    !z.uuid().safeParse(conversationId).success ||
-    !z.uuid().safeParse(workerId).success ||
-    !(await getActiveOrganizationMembership(user.id, organizationId))
-  )
-    return Response.json({ error: "Conversation not found." }, { status: 404 });
-  const conversation = await getConversation(
-    organizationId,
-    workerId!,
-    conversationId,
-    user.id,
-  );
-  const messages = conversation
-    ? await listConversationMessages(
-        organizationId,
-        workerId!,
-        conversationId,
-        user.id,
-      )
-    : undefined;
-  if (!messages)
-    return Response.json({ error: "Conversation not found." }, { status: 404 });
-  const sources = await listMessageSources({
-    organizationId,
-    conversationId,
-    userId: user.id,
-  });
-  const markdown = messages
-    .map((message) =>
-      [
-        `## ${message.role === "user" ? "You" : "Pilot"}`,
-        "",
-        message.content,
-        ...sources
-          .filter((source) => source.messageId === message.id)
-          .map(
-            (source) =>
-              `- [${source.title}](${source.url}) — ${source.summary}`,
-          ),
-        "",
-      ].join("\n"),
-    )
-    .join("\n");
-  if (format === "md")
-    return new Response(markdown, {
-      headers: {
-        "content-type": "text/markdown; charset=utf-8",
-        "content-disposition": `attachment; filename="pilot-research-${conversationId}.md"`,
-      },
-    });
-  if (format !== "pdf") {
+  if (format !== "md" && format !== "pdf") {
     return Response.json(
       { error: "Choose Markdown or PDF export." },
       { status: 400 },
     );
   }
-  const document = createElement(ResearchExportDocument, { messages, sources });
+
+  const messages = await listConversationMessages(owner, conversationId.data);
+  if (!messages) return notFound();
+  const sources = await listMessageSources({
+    ...owner,
+    conversationId: conversationId.data,
+  });
+
+  if (format === "md") {
+    return new Response(exportMarkdown(messages, sources), {
+      headers: {
+        "content-type": "text/markdown; charset=utf-8",
+        "content-disposition": `attachment; filename="pilot-conversation-${conversationId.data}.md"`,
+      },
+    });
+  }
+  const document = createElement(ConversationExportDocument, {
+    messages,
+    sources,
+  });
   const pdf = await renderToBuffer(
     document as unknown as ReactElement<DocumentProps>,
   );
   return new Response(new Uint8Array(pdf), {
     headers: {
       "content-type": "application/pdf",
-      "content-disposition": `attachment; filename="pilot-conversation-${conversationId}.pdf"`,
+      "content-disposition": `attachment; filename="pilot-conversation-${conversationId.data}.pdf"`,
       "cache-control": "private, no-store",
     },
   });

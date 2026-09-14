@@ -24,14 +24,14 @@ export default async function Home() {
             AI workspace
           </p>
           <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-            Give your team a place to think, research, and move work forward.
+            Give your team a place to chat, work, and code with AI.
           </h1>
           <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
             Pilot brings your organization&apos;s conversations and configured
             agents into one focused workspace.
           </p>
           <Button asChild size="lg" className="h-12 px-6">
-            <a href={user ? "/workspace" : "/sign-in"}>
+            <a href={user ? "/chat" : "/sign-in"}>
               {user ? "Open workspace" : "Sign in to Pilot"}
               <ArrowUpRight aria-hidden="true" />
             </a>

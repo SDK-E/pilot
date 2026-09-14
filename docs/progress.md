@@ -1,6 +1,48 @@
 # Pilot implementation status
 
-Updated 2026-09-13. This is an implementation record, not a completion claim.
+Updated 2026-09-14. This is an implementation record, not a completion claim.
+
+## Current state (2026-09-14)
+
+Pilot was restructured around three agent kinds, **Chat**, **Work**, and
+**Code** ([ADR-0016](decisions/0016-three-agent-kinds.md)). Everything below
+this section is history and may still use the older "persona", "Research",
+and `/workspace` vocabulary.
+
+Implemented:
+
+- Modes `/chat`, `/work`, `/code` (start screen) and `/[mode]/[conversationId]`
+  (open conversation); `/projects`, `/agents`, `/settings`. `/workspace`
+  redirects to `/chat`. Kinds and their tool allowlists live in
+  `src/agents/agent-kinds.ts` and `src/agents/agent-tools.ts`.
+- Default agents "Pilot Chat", "Pilot Work", and "Pilot Code" are created on
+  first use by `ensureDefaultAgent` with web search and scratchpad set to
+  `ask`. Custom agents are created, edited, duplicated, and archived under
+  `/agents`.
+- The research persona, evidence pipeline, and `auto-classifier` rule were
+  removed. Web-search sanitizing and source extraction now apply to any agent
+  whose rules grant `web-search` (`src/conversations/message-sources.ts`).
+- Every page, action, and API route authorizes through
+  `getWorkspaceSession()` (`src/organizations/workspace-session.ts`).
+- Schema is split by domain under `src/db/schema/`. Migration 0027 maps old
+  kinds to `chat`; migration 0028 drops the unused goals, action proposal,
+  effect intent, lifecycle operation, and durable-execution tables.
+- The shadcn preset `b2pR8pzoh` supplies the colour tokens in
+  `src/app/globals.css`.
+
+Verified on 2026-09-14 (local): `tsc --noEmit`, `eslint .` (0 problems),
+`knip`, `prettier --check`, `pnpm build`, `pnpm test` (24 Playwright checks),
+`pnpm test:server` (32), and `pnpm test:db` (5, after `pnpm db:migrate` on
+the development Neon database).
+
+Not yet available:
+
+- Authenticated browser tests. They need a provisioned WorkOS fixture and a
+  test membership; the previous skipped placeholders were removed.
+- A shared contracts package ([ADR-0013](decisions/0013-shared-contracts-package.md));
+  `src/ai/runtime-contract.ts` mirrors pilot-ai's contract by hand.
+- Production deployment of this restructure. Production is not live; the
+  first production build will run migrations 0027 and 0028.
 
 ## Verification repairs
 

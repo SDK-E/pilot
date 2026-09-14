@@ -1,6 +1,6 @@
 # Agent fleet experience
 
-Status: accepted product direction; implementation proceeds in narrow, verified slices.
+Status: superseded by [0016](0016-three-agent-kinds.md); the Conversational/Research persona split is replaced by the Chat, Work, and Code kinds.
 
 Pilot opens on a conversational chat. A collapsible sidebar provides New chat,
 Chats, Agent fleet, Personas, Dashboard, and Settings. Its collapsed mark is

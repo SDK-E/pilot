@@ -81,6 +81,15 @@ export default defineConfig([
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      // Numbers read unambiguously inside a template; the default only
+      // allows strings, which forces noisy String() wrappers.
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        { allowNumber: true },
+      ],
+      // React never lets a component mutate its props, so wrapping every
+      // props type in Readonly<> adds noise without adding safety.
+      "sonarjs/prefer-read-only-props": "off",
 
       complexity: ["error", 10],
       "max-depth": ["error", 3],
@@ -128,11 +137,58 @@ export default defineConfig([
   },
 
   {
+    // The plugins export their flat configs as default-export members; this
+    // is the documented import shape, not an accidental named/default mix.
+    files: ["eslint.config.mjs"],
+    rules: {
+      "import-x/no-named-as-default": "off",
+      "import-x/no-named-as-default-member": "off",
+    },
+  },
+
+  {
+    // JSX markup is counted as lines but carries no branching, and a React
+    // hook composes several effects and callbacks whose data flow is clearer
+    // in one place; `complexity` still bounds the logic in both.
+    files: ["**/*.tsx", "src/components/**/use-*.ts", "src/hooks/**"],
+    rules: {
+      "max-lines-per-function": [
+        "error",
+        { max: 150, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+
+  {
+    // The cookie secret here only signs cookies inside the local Playwright
+    // run and never reaches a deployment.
+    files: ["playwright.config.ts"],
+    rules: { "sonarjs/no-hardcoded-passwords": "off" },
+  },
+
+  {
     files: ["**/*.test.ts", "**/*.test.tsx", "tests/**", "server-tests/**"],
     rules: {
       "max-lines-per-function": "off",
       "max-lines": "off",
       "no-console": "off",
+      // `(await load()).field` keeps an assertion on one line; the readability
+      // cost the rule guards against does not apply to short test bodies.
+      "unicorn/no-await-expression-member": "off",
+      // node:test registers a test from the returned promise; awaiting it at
+      // the top level is not how the runner is used.
+      "@typescript-eslint/no-floating-promises": [
+        "error",
+        {
+          allowForKnownSafeCalls: [
+            {
+              from: "package",
+              name: ["test", "describe", "it"],
+              package: "node:test",
+            },
+          ],
+        },
+      ],
       // Fixtures deliberately hold private and link-local addresses to prove
       // network boundaries reject them.
       "sonarjs/no-hardcoded-ip": "off",

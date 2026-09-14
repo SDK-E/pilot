@@ -1,14 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+import { redirectTarget } from "./helpers/redirect-target";
+
 test("anonymous cannot access workspace routes (already in auth-boundary)", async ({
   request,
 }) => {
-  for (const path of ["/workspace", "/workspace/workers/forged-worker"]) {
+  for (const path of ["/chat", "/agents/forged-agent"]) {
     const response = await request.get(path, { maxRedirects: 0 });
     expect(response.status()).toBe(307);
-    expect(new URL(response.headers().location).hostname).toBe(
-      "api.workos.com",
-    );
+    expect(new URL(redirectTarget(response)).hostname).toBe("api.workos.com");
   }
 });
 
@@ -20,19 +20,18 @@ test("anonymous cannot access runtime API routes", async ({ request }) => {
     const response = await request[method](path, {
       maxRedirects: 0,
       headers: { "content-type": "application/json" },
-      data:
-        method === "post" && path.includes("activity")
-          ? {
-              organizationId: "org_forged",
-              executionId: "00000000-0000-4000-8000-000000000000",
-              toolId: "web-search",
-              state: "started",
-            }
-          : {
-              organizationId: "org_forged",
-              executionId: "00000000-0000-4000-8000-000000000000",
-              action: "read",
-            },
+      data: path.includes("activity")
+        ? {
+            organizationId: "org_forged",
+            executionId: "00000000-0000-4000-8000-000000000000",
+            toolId: "web-search",
+            state: "started",
+          }
+        : {
+            organizationId: "org_forged",
+            executionId: "00000000-0000-4000-8000-000000000000",
+            action: "read",
+          },
     });
     expect(response.status()).toBe(401);
   }
@@ -53,9 +52,7 @@ test("foreign resource access produces no mutation", async ({ request }) => {
       },
     );
     if (response.status() >= 300 && response.status() < 400) {
-      expect(new URL(response.headers().location).hostname).toBe(
-        "api.workos.com",
-      );
+      expect(new URL(redirectTarget(response)).hostname).toBe("api.workos.com");
     } else {
       expect(response.status()).toBeGreaterThanOrEqual(400);
     }
@@ -67,7 +64,7 @@ test("forged session cannot read another user's conversation activity", async ({
 }) => {
   const paths = [
     "/api/conversations/00000000-0000-4000-8000-000000000000/activity",
-    "/api/conversations/00000000-0000-4000-8000-000000000000/messages?workerId=00000000-0000-4000-8000-000000000000",
+    "/api/conversations/00000000-0000-4000-8000-000000000000/messages",
   ];
   for (const path of paths) {
     for (const cookie of ["", "wos-session=forged-session"]) {
@@ -77,9 +74,7 @@ test("forged session cannot read another user's conversation activity", async ({
       });
       expect(response.status()).toBeGreaterThanOrEqual(300);
       expect(response.status()).toBeLessThan(400);
-      expect(new URL(response.headers().location).hostname).toBe(
-        "api.workos.com",
-      );
+      expect(new URL(redirectTarget(response)).hostname).toBe("api.workos.com");
     }
   }
 });
@@ -102,5 +97,5 @@ test("anonymous POST to protected route produces no data creation", async ({
   );
   expect(response.status()).toBeGreaterThanOrEqual(300);
   expect(response.status()).toBeLessThan(400);
-  expect(new URL(response.headers().location).hostname).toBe("api.workos.com");
+  expect(new URL(redirectTarget(response)).hostname).toBe("api.workos.com");
 });

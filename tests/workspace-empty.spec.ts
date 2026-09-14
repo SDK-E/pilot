@@ -1,12 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+import { redirectTarget } from "./helpers/redirect-target";
+
 test("anonymous users are redirected before an empty workspace can render", async ({
   request,
 }) => {
-  const response = await request.get("/workspace", { maxRedirects: 0 });
+  const response = await request.get("/chat", { maxRedirects: 0 });
 
   expect(response.status()).toBe(307);
-  expect(new URL(response.headers().location).hostname).toBe("api.workos.com");
+  expect(new URL(redirectTarget(response)).hostname).toBe("api.workos.com");
 });
 
 test("public home does not prepopulate example organization data", async ({
@@ -15,7 +17,7 @@ test("public home does not prepopulate example organization data", async ({
   await page.goto("/");
 
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Give your team a place to think",
+    "Give your team a place to chat",
   );
   const content = await page.content();
   expect(content).not.toContain("sample data");

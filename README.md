@@ -1,14 +1,15 @@
 # Pilot by SDK Enterprises
 
-An open-source AI workforce platform in active development. The current
-application includes WorkOS authentication, organization access, configurable
-organization-scoped personas, protected streaming conversations, durable
-execution activity, private attachments and project files, the safe shared
-web-search, scratchpad, and Ask User capabilities, and a responsive chat
-workspace. Browser automation, external-write integrations, shared projects,
-and semantic knowledge retrieval remain unavailable. See
-[implementation status](docs/progress.md) and [architecture
-decisions](docs/decisions/0001-platform-boundaries.md).
+An open-source AI workforce platform in active development. Pilot offers
+three kinds of agent, **Chat**, **Work**, and **Code**, each with its own mode
+of the app. The application includes WorkOS authentication, organization
+access, configurable organization-scoped agents, protected streaming
+conversations, durable execution activity, private attachments and project
+files, and the web-search, scratchpad, and ask-user capabilities behind
+per-agent approval rules. Browser automation, external-write integrations,
+shared projects, and semantic knowledge retrieval remain unavailable. See
+[implementation status](docs/progress.md) and the
+[three agent kinds decision](docs/decisions/0016-three-agent-kinds.md).
 
 ## Run locally
 

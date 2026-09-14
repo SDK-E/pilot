@@ -12,10 +12,20 @@ const themes = [
   { id: "dark", label: "Dark", icon: Moon },
 ] as const;
 
+// Hydration never changes after the first client render, so there is
+// nothing to subscribe to; the store only distinguishes server from client.
+function subscribeToNothing() {
+  return unsubscribeFromNothing;
+}
+
+function unsubscribeFromNothing() {
+  // Nothing was subscribed, so there is nothing to release.
+}
+
 export function ThemeSwitcher() {
   const { setTheme, theme } = useTheme();
   const isHydrated = React.useSyncExternalStore(
-    () => () => {},
+    subscribeToNothing,
     () => true,
     () => false,
   );

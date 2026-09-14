@@ -1,53 +1,57 @@
-import { withAuth } from "@workos-inc/authkit-nextjs";
 import { z } from "zod";
 
-import { prepareConversation } from "@/conversations/start-chat";
-import { getActiveOrganizationMembership } from "@/organizations/active-membership";
+import { AGENT_KIND_IDS, modeHref } from "@/agents/agent-kinds";
+import { startConversation } from "@/conversations/start-conversation";
+import { readJsonBody } from "@/lib/http";
+import {
+  getWorkspaceSession,
+  isWorkspaceSession,
+  sessionFailureResponse,
+} from "@/organizations/workspace-session";
 
 export const runtime = "nodejs";
 
 const inputSchema = z.object({
+  kind: z.enum(AGENT_KIND_IDS),
   prompt: z.string().trim().min(1).max(10_000),
-  workerId: z.preprocess(
-    (value) => (value === "" ? undefined : value),
-    z.uuid().optional(),
-  ),
+  agentId: z.uuid().optional(),
 });
 
+/**
+ * Creates a conversation for a first message. The browser then opens it and
+ * streams that message through the conversation's stream route.
+ */
 export async function POST(request: Request) {
-  const { user, organizationId } = await withAuth({ ensureSignedIn: true });
-  if (!organizationId || !/^org_[a-zA-Z0-9]+$/.test(organizationId)) {
-    return Response.json(
-      { error: "Choose an organization before starting a chat." },
-      { status: 403 },
-    );
-  }
-  const membership = await getActiveOrganizationMembership(
-    user.id,
-    organizationId,
-  );
-  if (!membership) {
-    return Response.json(
-      { error: "Your organization access is no longer active." },
-      { status: 403 },
-    );
-  }
-  const input = inputSchema.safeParse(await request.json().catch(() => {}));
-  if (!input.success)
+  const session = await getWorkspaceSession();
+  if (!isWorkspaceSession(session)) return sessionFailureResponse(session);
+
+  const input = inputSchema.safeParse(await readJsonBody(request));
+  if (!input.success) {
     return Response.json({ error: "A message is required." }, { status: 400 });
-  const prepared = await prepareConversation({
-    organizationId,
-    membership,
-    user: { id: user.id, email: user.email },
+  }
+  const prepared = await startConversation({
+    context: {
+      organization: {
+        id: session.organizationId,
+        name: session.membership.organizationName,
+      },
+      member: {
+        id: session.membership.id,
+        roleSlug: session.membership.role.slug,
+      },
+      user: session.user,
+    },
+    kind: input.data.kind,
+    agentId: input.data.agentId,
     message: input.data.prompt,
-    workerId: input.data.workerId,
   });
-  if (!prepared.ok)
+  if (!prepared.ok) {
     return Response.json({ error: prepared.message }, { status: 400 });
+  }
   return Response.json(
     {
-      conversationId: prepared.conversation.id,
-      href: `/workspace/workers/${prepared.worker.id}/conversations/${prepared.conversation.id}`,
+      conversationId: prepared.conversationId,
+      href: modeHref(input.data.kind, prepared.conversationId),
     },
     { status: 201 },
   );
