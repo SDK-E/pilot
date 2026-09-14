@@ -167,16 +167,6 @@ export default defineConfig([
   },
 
   {
-    // TEMPORARY: diagnosing a production 500 (2026-09-14) that vercel logs
-    // won't otherwise surface. Revert alongside the diagnostic code in
-    // src/app/api/conversations/[conversationId]/stream/route.ts.
-    files: [
-      String.raw`src/app/api/conversations/\[conversationId\]/stream/route.ts`,
-    ],
-    rules: { "no-console": "off" },
-  },
-
-  {
     files: ["**/*.test.ts", "**/*.test.tsx", "tests/**", "server-tests/**"],
     rules: {
       "max-lines-per-function": "off",

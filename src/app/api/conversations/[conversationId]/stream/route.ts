@@ -1,11 +1,9 @@
 import { z } from "zod";
 
-import {
-  createConversationMessage,
-  getConversation,
-} from "@/conversations/conversation-repository";
+import { getConversation } from "@/conversations/conversation-repository";
+import { streamMessage } from "@/conversations/conversation-turn";
 import { loadRuntimeAgent } from "@/conversations/runtime-agent";
-import { startExecution } from "@/executions/execution-repository";
+import { errorResponse as error, readJsonBody } from "@/lib/http";
 import {
   getWorkspaceSession,
   isWorkspaceSession,
@@ -14,43 +12,63 @@ import {
 
 export const runtime = "nodejs";
 
+const inputSchema = z.object({ prompt: z.string().trim().min(1).max(10_000) });
+
 interface RouteContext {
   params: Promise<{ conversationId: string }>;
 }
 
-// TEMPORARY bisection: exercise the two writes beginTurn() performs
-// (createConversationMessage, startExecution) with no streamMessage/
-// ReadableStream involved, to see if the crash is in these DB writes.
-export async function POST(_request: Request, { params }: RouteContext) {
+export async function POST(request: Request, { params }: RouteContext) {
   const session = await getWorkspaceSession();
   if (!isWorkspaceSession(session)) return sessionFailureResponse(session);
   const owner = {
     organizationId: session.organizationId,
     userId: session.user.id,
   };
+
   const { conversationId: rawConversationId } = await params;
-  const conversationId = z.uuid().parse(rawConversationId);
-  const conversation = await getConversation(owner, conversationId);
+  const conversationId = z.uuid().safeParse(rawConversationId);
+  if (!conversationId.success) return error("Conversation not found.", 404);
+  const input = inputSchema.safeParse(await readJsonBody(request));
+  if (!input.success) return error("A message is required.", 400);
+
+  const conversation = await getConversation(owner, conversationId.data);
   const agent = conversation
     ? await loadRuntimeAgent(owner.organizationId, conversation.agentId)
     : undefined;
   if (!conversation || !agent)
-    return Response.json({ error: "no conversation/agent" }, { status: 404 });
+    return error("This conversation is unavailable.", 404);
 
-  const userMessage = await createConversationMessage(owner, {
-    conversationId,
-    role: "user",
-    content: "diag write bisect",
-  });
-  const execution = userMessage
-    ? await startExecution({
-        organizationId: owner.organizationId,
-        workerId: agent.id,
-        conversationId,
-      })
-    : undefined;
-  return Response.json({
-    messageWritten: !!userMessage,
-    executionWritten: !!execution,
+  let stream: ReadableStream<Uint8Array>;
+  try {
+    stream = await streamMessage(
+      {
+        ...owner,
+        agent,
+        conversationId: conversation.id,
+        message: input.data.prompt,
+      },
+      request.signal,
+    );
+  } catch (streamError) {
+    // TEMPORARY: diagnosing a production 500 on this route (2026-09-14).
+    // eslint-disable-next-line no-console -- temporary production diagnostic
+    console.error(
+      "[diag] streamMessage threw:",
+      streamError instanceof Error
+        ? {
+            name: streamError.name,
+            message: streamError.message,
+            stack: streamError.stack,
+          }
+        : streamError,
+    );
+    throw streamError;
+  }
+  return new Response(stream, {
+    headers: {
+      "cache-control": "no-cache, no-transform",
+      "content-type": "text/plain; charset=utf-8",
+    },
   });
 }
