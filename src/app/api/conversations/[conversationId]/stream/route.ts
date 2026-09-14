@@ -22,24 +22,33 @@ interface RouteContext {
 // logs does not surface this project's function stdout, so the detail is
 // returned in the body instead. Revert once root-caused.
 function diagResponse(streamError: unknown) {
-  return Response.json(
-    {
-      diagName:
-        streamError instanceof Error ? streamError.name : typeof streamError,
-      diagMessage:
-        streamError instanceof Error
-          ? streamError.message
-          : String(streamError),
-      diagStack:
-        streamError instanceof Error
-          ? streamError.stack?.slice(0, 2000)
-          : undefined,
-    },
-    { status: 500 },
-  );
+  console.error("[stream-diag] caught", streamError);
+  try {
+    return Response.json(
+      {
+        diagName:
+          streamError instanceof Error ? streamError.name : typeof streamError,
+        diagMessage:
+          streamError instanceof Error
+            ? streamError.message
+            : String(streamError),
+        diagStack:
+          streamError instanceof Error
+            ? streamError.stack?.slice(0, 2000)
+            : undefined,
+      },
+      { status: 500 },
+    );
+  } catch (buildError) {
+    console.error("[stream-diag] diagResponse itself threw", buildError);
+    return new Response("[stream-diag] diagResponse itself threw", {
+      status: 500,
+    });
+  }
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
+  console.error("[stream-diag] POST entered");
   try {
     const session = await getWorkspaceSession();
     if (!isWorkspaceSession(session)) return sessionFailureResponse(session);
