@@ -1,7 +1,7 @@
 allowBuilds:
   esbuild: true
-  sharp: false
-  unrs-resolver: false
+  sharp: true
+  unrs-resolver: true
 minimumReleaseAgeExclude:
   - "@playwright/test@1.63.0"
   - playwright-core@1.63.0
