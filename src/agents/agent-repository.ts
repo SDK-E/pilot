@@ -178,9 +178,37 @@ function isUniqueViolation(error: unknown) {
 }
 
 /**
+ * Un-archives the org's default agent for a mode when its reserved name
+ * (e.g. "Pilot Chat") already belongs to a row the user archived earlier.
+ * `workers_organization_name_unique` isn't scoped to non-archived rows, so
+ * that archived row is the only thing a fresh insert could have collided
+ * with — a concurrent creator's row would already be non-archived and found
+ * by `newestAgentOfKind`.
+ */
+async function reactivateArchivedDefaultAgent(
+  organizationId: string,
+  kind: AgentKindId,
+  name: string,
+) {
+  const [reactivated] = await db
+    .update(workers)
+    .set({ archived: false, updatedAt: new Date() })
+    .where(
+      and(
+        eq(workers.organizationId, organizationId),
+        eq(workers.baseAgentId, kind),
+        eq(workers.name, name),
+      ),
+    )
+    .returning(agentColumns);
+  return reactivated;
+}
+
+/**
  * The organization's agent for a mode, creating Pilot's built-in one on first
  * use. Two concurrent first messages race on the unique name; the loser reads
- * the winner's row.
+ * the winner's row. An archived default agent is reactivated instead of
+ * blocking creation forever.
  */
 export async function ensureDefaultAgent(
   context: OrganizationContext,
@@ -201,5 +229,11 @@ export async function ensureDefaultAgent(
   } catch (error) {
     if (!isUniqueViolation(error)) throw error;
   }
-  return newestAgentOfKind(context.organization.id, kind);
+  const created = await newestAgentOfKind(context.organization.id, kind);
+  if (created) return created;
+  return reactivateArchivedDefaultAgent(
+    context.organization.id,
+    kind,
+    defaultAgent.name,
+  );
 }
