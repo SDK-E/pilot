@@ -39,15 +39,32 @@ export async function POST(request: Request, { params }: RouteContext) {
   if (!conversation || !agent)
     return error("This conversation is unavailable.", 404);
 
-  const stream = await streamMessage(
-    {
-      ...owner,
-      agent,
-      conversationId: conversation.id,
-      message: input.data.prompt,
-    },
-    request.signal,
-  );
+  let stream: ReadableStream<Uint8Array>;
+  try {
+    stream = await streamMessage(
+      {
+        ...owner,
+        agent,
+        conversationId: conversation.id,
+        message: input.data.prompt,
+      },
+      request.signal,
+    );
+  } catch (streamError) {
+    // TEMPORARY: diagnosing a production 500 on this route (2026-09-14).
+    // eslint-disable-next-line no-console -- temporary production diagnostic
+    console.error(
+      "[diag] streamMessage threw:",
+      streamError instanceof Error
+        ? {
+            name: streamError.name,
+            message: streamError.message,
+            stack: streamError.stack,
+          }
+        : streamError,
+    );
+    throw streamError;
+  }
   return new Response(stream, {
     headers: {
       "cache-control": "no-cache, no-transform",
