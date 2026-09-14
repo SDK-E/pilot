@@ -1,8 +1,7 @@
 "use client";
 
 import { RiDeleteBinLine } from "@remixicon/react";
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import { useActionState } from "react";
 
 import {
   deleteConversationAction,
@@ -24,19 +23,13 @@ const initialState: ActionState = { status: "idle" };
 
 export function DeleteConversationButton({
   conversationId,
-  redirectHref,
 }: {
   conversationId: string;
-  redirectHref: string;
 }) {
-  const router = useRouter();
   const [state, action, pending] = useActionState(
     deleteConversationAction,
     initialState,
   );
-  useEffect(() => {
-    if (state.status === "success") router.replace(redirectHref);
-  }, [redirectHref, router, state.status]);
 
   return (
     <AlertDialog>

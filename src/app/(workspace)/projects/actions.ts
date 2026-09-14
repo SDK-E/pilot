@@ -123,7 +123,12 @@ export async function deleteProjectAction(
   }
 
   revalidatePath("/projects");
-  return { status: "success" };
+  // Redirecting here (rather than returning success for the client to
+  // navigate away on) avoids a race with this same route's own
+  // revalidation: once deleted, the project page 404s, and a client-side
+  // redirect issued after that render had already lost would leave the
+  // visitor stranded on a not-found page.
+  redirect("/projects");
 }
 
 async function moveConversationToProject(input: {

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { AGENT_KIND_IDS, TOOL_IDS } from "@/agents/agent-kinds";
@@ -220,5 +221,9 @@ export async function deleteAgentAction(
   const archived = await archiveAgent(session.organizationId, agentId.data);
   if (!archived) return error("This agent is unavailable.");
   revalidatePath("/", "layout");
-  return { status: "success", message: "Agent deleted.", href: "/agents" };
+  // Redirecting here (rather than returning a href for the client to
+  // navigate to) avoids a race with this same path's own revalidation: once
+  // archived, the agent's edit page 404s, and a client-side redirect issued
+  // after that render had already lost would leave the visitor stranded.
+  redirect("/agents");
 }

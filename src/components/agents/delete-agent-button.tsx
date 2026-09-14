@@ -1,8 +1,7 @@
 "use client";
 
 import { RiDeleteBinLine } from "@remixicon/react";
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import { useActionState } from "react";
 
 import { deleteAgentAction } from "@/app/(workspace)/agents/actions";
 import {
@@ -28,14 +27,10 @@ export function DeleteAgentButton({
   agentId: string;
   name: string;
 }) {
-  const router = useRouter();
   const [state, action, pending] = useActionState(
     deleteAgentAction,
     initialState,
   );
-  useEffect(() => {
-    if (state.status === "success" && state.href) router.replace(state.href);
-  }, [router, state.href, state.status]);
 
   return (
     <AlertDialog>

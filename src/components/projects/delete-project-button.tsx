@@ -1,8 +1,7 @@
 "use client";
 
 import { RiDeleteBinLine } from "@remixicon/react";
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import { useActionState } from "react";
 
 import {
   deleteProjectAction,
@@ -23,15 +22,10 @@ import { Button } from "@/components/ui/button";
 const initialState: DeleteProjectState = { status: "idle" };
 
 export function DeleteProjectButton({ projectId }: { projectId: string }) {
-  const router = useRouter();
   const [state, action, pending] = useActionState(
     deleteProjectAction,
     initialState,
   );
-
-  useEffect(() => {
-    if (state.status === "success") router.replace("/projects");
-  }, [router, state.status]);
 
   return (
     <AlertDialog>

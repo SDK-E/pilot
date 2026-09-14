@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { modeHref } from "@/agents/agent-kinds";
+import { getAgent } from "@/agents/agent-repository";
 import { deleteConversationMemory } from "@/ai/pilot-ai-client";
 import { resumeApproval } from "@/approvals/resume-approval";
 import {
@@ -74,6 +76,7 @@ export async function deleteConversationAction(
 
   const conversation = await getConversation(owner, input.data.conversationId);
   if (!conversation) return error("This conversation is unavailable.");
+  const agent = await getAgent(owner.organizationId, conversation.agentId);
   try {
     const project = await getProjectMemoryContextForConversation({
       ...owner,
@@ -93,7 +96,12 @@ export async function deleteConversationAction(
     return error("Pilot could not delete this conversation. Try again.");
   }
   revalidatePath("/", "layout");
-  return { status: "success", message: "Conversation deleted." };
+  // Redirecting here (rather than returning success for the client to
+  // navigate away on) avoids a race with this same route's own
+  // revalidation: once deleted, the conversation page 404s, and a
+  // client-side redirect issued after that render had already lost would
+  // leave the visitor stranded on a not-found page.
+  redirect(modeHref(agent?.baseAgentId ?? "chat"));
 }
 
 const taskSchema = z.object({
