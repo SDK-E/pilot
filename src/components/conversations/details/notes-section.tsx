@@ -18,7 +18,7 @@ export function NotesSection({ scratchpad }: { scratchpad: string }) {
         </p>
       </div>
       {scratchpad ? (
-        <Accordion type="single">
+        <Accordion collapsible type="single">
           <AccordionItem value="notes">
             <AccordionTrigger>View saved notes</AccordionTrigger>
             <AccordionContent>

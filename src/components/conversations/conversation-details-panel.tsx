@@ -51,10 +51,7 @@ export function ConversationDetailsPanel({
       )}
     >
       <div className="space-y-6">
-        <ActivitySection
-          activities={activities}
-          autoExpandLatestRun={fillHeight}
-        />
+        <ActivitySection activities={activities} collapsibleRuns={fillHeight} />
         <NotesSection scratchpad={scratchpad} />
         <TasksSection
           conversationId={conversationId}

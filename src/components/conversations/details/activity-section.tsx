@@ -59,52 +59,120 @@ function runStatusLabel(run: ActivityRun) {
   return "Pilot is working";
 }
 
-function ActivityRunItem({ run }: { run: ActivityRun }) {
+function RunStepList({ run }: { run: ActivityRun }) {
   const isRunFinished = run.isComplete || run.isFailed;
   const steps = groupConsecutiveActivity(runSteps(run));
+  if (steps.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        Pilot answered directly, without using any capability.
+      </p>
+    );
+  }
+  return (
+    <ol className="space-y-2 border-l pl-3">
+      {steps.map((step) => (
+        <li className="flex gap-2 text-muted-foreground" key={step.id}>
+          {activityIcon(step.type, isRunFinished)}
+          <span>
+            {step.summary}
+            {step.count > 1 ? ` ×${String(step.count)}` : null}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function runStepCount(run: ActivityRun) {
+  return groupConsecutiveActivity(runSteps(run)).length;
+}
+
+function ActivityRunItem({ run }: { run: ActivityRun }) {
+  const stepCount = runStepCount(run);
   return (
     <AccordionItem value={run.id}>
       <AccordionTrigger>
         <span>{runStatusLabel(run)}</span>
         <span className="text-muted-foreground">
-          {steps.length} {steps.length === 1 ? "step" : "steps"}
+          {stepCount} {stepCount === 1 ? "step" : "steps"}
         </span>
       </AccordionTrigger>
       <AccordionContent>
-        {steps.length > 0 ? (
-          <ol className="space-y-2 border-l pl-3">
-            {steps.map((step) => (
-              <li className="flex gap-2 text-muted-foreground" key={step.id}>
-                {activityIcon(step.type, isRunFinished)}
-                <span>
-                  {step.summary}
-                  {step.count > 1 ? ` ×${String(step.count)}` : null}
-                </span>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            Pilot answered directly, without using any capability.
-          </p>
-        )}
+        <RunStepList run={run} />
       </AccordionContent>
     </AccordionItem>
   );
 }
 
 /**
- * Verified server events grouped by response run. On its own (e.g. the
- * desktop side panel, already visible) the newest run opens by default; set
- * `autoExpandLatestRun={false}` where this mounts inside its own disclosure
- * (the mobile drawer) so opening that drawer doesn't also expand a run.
+ * A run rendered without Radix Accordion, for when this whole section is
+ * already nested inside another disclosure (the mobile drawer). Radix binds
+ * an inner AccordionContent's height to a CSS variable it measures on open;
+ * nested inside a second, still-animating Radix disclosure that measurement
+ * can capture a far larger box than the content needs, leaving a tall empty
+ * gap. Skipping the extra collapse level sidesteps that entirely — there's
+ * usually only one run to show once it's already behind the drawer's own
+ * toggle.
  */
+function StaticRunItem({ run }: { run: ActivityRun }) {
+  const stepCount = runStepCount(run);
+  return (
+    <div className="space-y-2 rounded-md border p-2">
+      <div className="flex items-center justify-between gap-2 text-xs font-medium">
+        <span>{runStatusLabel(run)}</span>
+        <span className="text-muted-foreground">
+          {stepCount} {stepCount === 1 ? "step" : "steps"}
+        </span>
+      </div>
+      <RunStepList run={run} />
+    </div>
+  );
+}
+
+/**
+ * Verified server events grouped by response run.
+ *
+ * On its own (e.g. the desktop side panel, already visible) each run is an
+ * accordion item with the newest one open by default. Pass
+ * `collapsibleRuns={false}` where this mounts inside its own disclosure (the
+ * mobile drawer): it renders runs as plain, always-visible blocks instead —
+ * both because a second nested toggle is rarely useful once the drawer
+ * itself already hid this, and because nesting Radix's Accordion inside
+ * another Radix disclosure can badly mis-measure the open height (see
+ * StaticRunItem).
+ */
+function ActivityRuns({
+  runs,
+  collapsibleRuns,
+}: {
+  runs: ActivityRun[];
+  collapsibleRuns: boolean;
+}) {
+  if (!collapsibleRuns) {
+    return (
+      <div className="space-y-2">
+        {runs.map((run) => (
+          <StaticRunItem key={run.id} run={run} />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <Accordion collapsible defaultValue={runs.at(-1)?.id} type="single">
+      {runs.map((run) => (
+        <ActivityRunItem key={run.id} run={run} />
+      ))}
+    </Accordion>
+  );
+}
+
 export function ActivitySection({
   activities,
-  autoExpandLatestRun = true,
+  collapsibleRuns = true,
 }: {
   activities: TimelineActivity[];
-  autoExpandLatestRun?: boolean;
+  collapsibleRuns?: boolean;
 }) {
   const runs = groupActivityTimeline(activities);
   return (
@@ -116,15 +184,7 @@ export function ActivitySection({
         </p>
       </div>
       {runs.length > 0 ? (
-        <Accordion
-          collapsible
-          defaultValue={autoExpandLatestRun ? runs.at(-1)?.id : undefined}
-          type="single"
-        >
-          {runs.map((run) => (
-            <ActivityRunItem key={run.id} run={run} />
-          ))}
-        </Accordion>
+        <ActivityRuns collapsibleRuns={collapsibleRuns} runs={runs} />
       ) : (
         <p className="text-xs text-muted-foreground">
           Activity appears here while Pilot uses a supported capability. Send a
