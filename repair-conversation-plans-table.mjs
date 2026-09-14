@@ -27,9 +27,12 @@ if (!wasTablePresent) {
     "utf8",
   );
   const statements = ddl
+    .split("\n")
+    .filter((line) => !line.trimStart().startsWith("--"))
+    .join("\n")
     .split(/;\s*\n/)
     .map((statement) => statement.trim())
-    .filter((statement) => statement.length > 0 && !statement.startsWith("--"));
+    .filter((statement) => statement.length > 0);
   for (const statement of statements) {
     console.log(`[repair] executing: ${statement.slice(0, 60)}...`);
     await sql.query(statement);
