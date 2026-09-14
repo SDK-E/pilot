@@ -11,7 +11,11 @@ import { AGENT_KIND_IDS, TOOL_IDS } from "@/agents/agent-kinds";
  */
 
 const toolIdSchema = z.enum(TOOL_IDS);
-export const approvableToolIdSchema = z.enum(["web-search", "scratchpad"]);
+export const approvableToolIdSchema = z.enum([
+  "web-search",
+  "scratchpad",
+  "code-sandbox",
+]);
 
 export const usageSchema = z.object({
   prompt_tokens: z.number().int().nonnegative(),
@@ -101,7 +105,7 @@ export const runtimeRequestSchema = z.object({
   conversationId: z.uuid(),
   message: z.string().min(1).max(10_000),
   executionId: z.uuid(),
-  allowedToolIds: z.array(toolIdSchema).max(4),
+  allowedToolIds: z.array(toolIdSchema).max(5),
   project: z
     .object({
       id: z.uuid(),

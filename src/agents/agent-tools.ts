@@ -53,6 +53,13 @@ export const TOOLS: Record<ToolId, ToolDefinition> = {
       "Keep a visible, step-by-step task list for this conversation so progress stays transparent as the agent works.",
     approvable: false,
   },
+  "code-sandbox": {
+    id: "code-sandbox",
+    name: "Code sandbox",
+    description:
+      "Run shell commands and scripts in a fresh, isolated sandbox with no access to Pilot's own systems or data, to actually execute and verify code instead of only describing it.",
+    approvable: true,
+  },
 };
 
 function isToolId(value: unknown): value is ToolId {

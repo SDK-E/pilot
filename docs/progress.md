@@ -29,6 +29,15 @@ Implemented:
   effect intent, lifecycle operation, and durable-execution tables.
 - The shadcn preset `b2pR8pzoh` supplies the colour tokens in
   `src/app/globals.css`.
+- A fifth tool, `code-sandbox`, runs shell commands in a fresh Vercel Sandbox
+  (`@vercel/sandbox`, isolated Linux microVM, no access to Pilot's own
+  systems, secrets, or data) so an agent can actually execute code instead of
+  only describing it. Approvable like web search; gated behind
+  `PILOT_ENABLE_CODE_SANDBOX` on both sides of the runtime boundary
+  (`src/conversations/tool-authorization.ts`, pilot-ai's
+  `runtime-selection.ts`). Requires `VERCEL_OIDC_TOKEN`, which Vercel injects
+  automatically for pilot-ai's own production deployment; there is no local
+  fallback (see the OIDC limitation below).
 
 Verified on 2026-09-14 (local): `tsc --noEmit`, `eslint .` (0 problems),
 `knip`, `prettier --check`, `pnpm build`, `pnpm test` (24 Playwright checks),

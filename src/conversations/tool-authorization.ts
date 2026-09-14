@@ -16,11 +16,22 @@ function isWebSearchEnabled(): boolean {
 }
 
 /**
+ * The sandbox runs real, model-chosen commands billed to the team's Vercel
+ * account, so — like web search — it stays opt-in per environment rather
+ * than on by default the moment an agent enables it.
+ */
+function isCodeSandboxEnabled(): boolean {
+  return process.env.PILOT_ENABLE_CODE_SANDBOX === "true";
+}
+
+/**
  * Tools this environment lets the runtime register for the agent.
  */
 export function allowedToolIds(agent: AgentToolConfiguration): ToolId[] {
   const granted = grantedToolIds(agent);
-  return isWebSearchEnabled()
-    ? granted
-    : granted.filter((toolId) => toolId !== "web-search");
+  return granted.filter((toolId) => {
+    if (toolId === "web-search") return isWebSearchEnabled();
+    if (toolId === "code-sandbox") return isCodeSandboxEnabled();
+    return true;
+  });
 }

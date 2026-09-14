@@ -61,7 +61,8 @@ export async function POST(request: Request) {
       await import("@/approvals/approval-repository");
     if (
       input.data.toolId !== "web-search" &&
-      input.data.toolId !== "scratchpad"
+      input.data.toolId !== "scratchpad" &&
+      input.data.toolId !== "code-sandbox"
     ) {
       return Response.json(
         { error: "Unsupported approval tool." },

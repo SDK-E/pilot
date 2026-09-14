@@ -15,7 +15,7 @@ Read `docs/progress.md` ("Current state"), `docs/decisions/0016-three-agent-kind
 ### Product model
 
 - Three agent kinds, **Chat**, **Work**, and **Code**, defined once in `src/agents/agent-kinds.ts`. Each kind is a mode of the app (`/chat`, `/work`, `/code`) with its own default agent and tool allowlist. In Pilot AI all three derive from one base agent and differ only in instructions and capabilities.
-- Tools are `web-search`, `scratchpad`, and `ask-user`, listed in `src/agents/agent-tools.ts`. A rule is `ask`, `allow`, or `deny`. A tool runs only when its rule is `allow`, or `ask` and the user approved the durable suspension. Web search is also gated by `PILOT_ENABLE_WEB_SEARCH`.
+- Tools are `web-search`, `scratchpad`, `ask-user`, `plan`, and `code-sandbox`, listed in `src/agents/agent-tools.ts`. A rule is `ask`, `allow`, or `deny`. A tool runs only when its rule is `allow`, or `ask` and the user approved the durable suspension. Web search and the code sandbox are also gated by `PILOT_ENABLE_WEB_SEARCH` and `PILOT_ENABLE_CODE_SANDBOX`; the sandbox runs each call in a fresh Vercel Sandbox with no access to Pilot's own systems, secrets, or data.
 - Do not add a new tool, kind, or mode until it has equivalent authorization, activity, storage, and approval behavior.
 
 ### Code layout

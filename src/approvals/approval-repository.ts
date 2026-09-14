@@ -18,6 +18,12 @@ const approvalToolCopy = {
       "Pilot requested access to update this chat's private scratchpad.",
     summary: "Allow Pilot to update this chat's private scratchpad?",
   },
+  "code-sandbox": {
+    taskTitle: "Approve code execution",
+    taskInstructions:
+      "Pilot requested access to run code in an isolated sandbox with no access to your systems or data.",
+    summary: "Allow Pilot to run code in an isolated sandbox?",
+  },
 } as const;
 
 export async function listApprovals(input: {

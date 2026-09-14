@@ -21,12 +21,18 @@ type ClaimedApproval = NonNullable<
   Awaited<ReturnType<typeof claimConversationApproval>>
 >;
 
+const RESUMABLE_TOOL_IDS = [
+  "web-search",
+  "scratchpad",
+  "code-sandbox",
+] as const;
+
 type ResumableApproval = ClaimedApproval & {
   conversationId: string;
   executionId: string;
   runtimeRunId: string;
   toolCallId: string;
-  toolId: "web-search" | "scratchpad";
+  toolId: (typeof RESUMABLE_TOOL_IDS)[number];
 };
 
 function isResumable(
@@ -36,7 +42,7 @@ function isResumable(
     approval?.executionId &&
     approval.runtimeRunId &&
     approval.toolCallId &&
-    (approval.toolId === "web-search" || approval.toolId === "scratchpad"),
+    (RESUMABLE_TOOL_IDS as readonly string[]).includes(approval.toolId ?? ""),
   );
 }
 

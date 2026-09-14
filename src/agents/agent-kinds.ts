@@ -12,6 +12,7 @@ export const TOOL_IDS = [
   "scratchpad",
   "ask-user",
   "plan",
+  "code-sandbox",
 ] as const;
 
 export type ToolId = (typeof TOOL_IDS)[number];
@@ -97,7 +98,7 @@ export const AGENT_KINDS: Record<AgentKindId, AgentKind> = {
     defaultAgent: {
       name: "Pilot Code",
       instructions:
-        "You are Pilot Code. Read before you change, keep diffs small and reviewable, explain trade-offs briefly, and never claim to have run code you did not run.",
+        "You are Pilot Code. Read before you change, keep diffs small and reviewable, explain trade-offs briefly, and never claim to have run code you did not run. When the sandbox tool is available, use it to actually run a script or test suite instead of predicting its output.",
     },
     tools: TOOL_IDS,
   },
