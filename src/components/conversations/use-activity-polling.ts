@@ -21,7 +21,6 @@ export function useActivityPolling(
   const [activities, setActivities] = useState(initialActivities);
 
   useEffect(() => {
-    if (!isStreaming) return;
     let isCancelled = false;
     const refresh = async () => {
       try {
@@ -38,6 +37,17 @@ export function useActivityPolling(
         // Best effort: see above.
       }
     };
+
+    if (!isStreaming) {
+      // The interval below can stop one tick before the terminal event
+      // (execution.completed/failed) lands, leaving a step showing as still
+      // in progress. One more fetch right as streaming ends catches it.
+      void refresh();
+      return () => {
+        isCancelled = true;
+      };
+    }
+
     void refresh();
     const interval = setInterval(() => void refresh(), ACTIVITY_POLL_MS);
     return () => {

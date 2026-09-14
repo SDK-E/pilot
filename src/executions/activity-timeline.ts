@@ -35,7 +35,21 @@ export function groupActivityTimeline(
     current.events.push(activity);
     current.isComplete ||= activity.type === "execution.completed";
     current.isFailed ||= activity.type === "execution.failed";
-    current.isWaitingForApproval ||= activity.type === "tool.awaiting_approval";
+    // Tracks the *latest* approval state rather than sticking forever, so a
+    // run that resumed after approval stops reading as still waiting.
+    if (activity.type === "tool.awaiting_approval") {
+      current.isWaitingForApproval = true;
+    } else if (
+      (
+        [
+          "tool.completed",
+          "execution.completed",
+          "execution.failed",
+        ] as ActivityEventType[]
+      ).includes(activity.type)
+    ) {
+      current.isWaitingForApproval = false;
+    }
     runs.set(activity.executionId, current);
   }
   return runs.values().toArray();

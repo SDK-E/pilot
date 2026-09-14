@@ -11,15 +11,23 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
+  EXECUTION_BOOKEND_TYPES,
+  type ActivityEventType,
+} from "@/executions/activity-event";
+import {
   groupActivityTimeline,
   type ActivityTimelineRun as ActivityRun,
   type TimelineActivity,
 } from "@/executions/activity-timeline";
 
-import type { ActivityEventType } from "@/executions/activity-event";
+function runSteps(run: ActivityRun) {
+  return run.events.filter(
+    (event) => !EXECUTION_BOOKEND_TYPES.includes(event.type),
+  );
+}
 
-function activityIcon(type: ActivityEventType) {
-  if (type === "execution.started" || type === "tool.started") {
+function activityIcon(type: ActivityEventType, isRunFinished: boolean) {
+  if (!isRunFinished && type === "tool.started") {
     return (
       <RiLoader4Line
         aria-hidden="true"
@@ -51,23 +59,34 @@ function runStatusLabel(run: ActivityRun) {
 }
 
 function ActivityRunItem({ run }: { run: ActivityRun }) {
+  const isRunFinished = run.isComplete || run.isFailed;
+  const steps = runSteps(run);
   return (
     <AccordionItem value={run.id}>
       <AccordionTrigger>
         <span>{runStatusLabel(run)}</span>
         <span className="text-muted-foreground">
-          {run.events.length} {run.events.length === 1 ? "step" : "steps"}
+          {steps.length} {steps.length === 1 ? "step" : "steps"}
         </span>
       </AccordionTrigger>
       <AccordionContent>
-        <ol className="space-y-2 border-l pl-3">
-          {run.events.map((activity) => (
-            <li className="flex gap-2 text-muted-foreground" key={activity.id}>
-              {activityIcon(activity.type)}
-              <span>{activity.summary}</span>
-            </li>
-          ))}
-        </ol>
+        {steps.length > 0 ? (
+          <ol className="space-y-2 border-l pl-3">
+            {steps.map((activity) => (
+              <li
+                className="flex gap-2 text-muted-foreground"
+                key={activity.id}
+              >
+                {activityIcon(activity.type, isRunFinished)}
+                <span>{activity.summary}</span>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Pilot answered directly, without using any capability.
+          </p>
+        )}
       </AccordionContent>
     </AccordionItem>
   );
@@ -91,7 +110,7 @@ export function ActivitySection({
         </p>
       </div>
       {runs.length > 0 ? (
-        <Accordion defaultValue={runs.at(-1)?.id} type="single">
+        <Accordion collapsible defaultValue={runs.at(-1)?.id} type="single">
           {runs.map((run) => (
             <ActivityRunItem key={run.id} run={run} />
           ))}

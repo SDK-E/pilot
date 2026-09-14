@@ -10,6 +10,15 @@ export type ActivityEventType =
 export type ToolActivityState =
   "started" | "completed" | "failed" | "awaiting_approval";
 
+// A run's start and finish are already conveyed by its own status label
+// (e.g. "Response completed"), so UI step lists should skip these bookend
+// events rather than repeat that as confusing extra steps.
+export const EXECUTION_BOOKEND_TYPES: ActivityEventType[] = [
+  "execution.started",
+  "execution.completed",
+  "execution.failed",
+];
+
 export const toolActivityToolIds = [
   "web-search",
   "langsearch",

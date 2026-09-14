@@ -86,6 +86,51 @@ function useStartConversation({
   };
 }
 
+/**
+ * Only worth choosing between when there's more than one agent to pick;
+ * a single agent shows as a plain label, and zero agents show nothing.
+ */
+function AgentPicker({
+  agents,
+  agentId,
+  agentName,
+  defaultAgentName,
+  onAgentChange,
+}: {
+  agents: AgentOption[];
+  agentId: string | undefined;
+  agentName: string;
+  defaultAgentName: string;
+  onAgentChange: (agentId: string) => void;
+}) {
+  if (agents.length > 1) {
+    return (
+      <PromptInputSelect onValueChange={onAgentChange} value={agentId}>
+        <PromptInputSelectTrigger className="h-8 max-w-52 rounded-full border-0 bg-muted px-2.5 text-xs shadow-none">
+          <AgentAvatar className="size-4" name={agentName} />
+          <PromptInputSelectValue placeholder={defaultAgentName} />
+        </PromptInputSelectTrigger>
+        <PromptInputSelectContent>
+          {agents.map((agent) => (
+            <PromptInputSelectItem key={agent.id} value={agent.id}>
+              {agent.name}
+            </PromptInputSelectItem>
+          ))}
+        </PromptInputSelectContent>
+      </PromptInputSelect>
+    );
+  }
+  if (agents.length === 1) {
+    return (
+      <span className="inline-flex h-8 max-w-52 items-center gap-1.5 rounded-full bg-muted px-2.5 text-xs text-muted-foreground">
+        <AgentAvatar className="size-4" name={agentName} />
+        <span className="truncate">{agentName}</span>
+      </span>
+    );
+  }
+  return null;
+}
+
 function SuggestionChips({
   suggestions,
   onPick,
@@ -171,19 +216,13 @@ export function NewConversationForm({
         </PromptInputBody>
         <PromptInputFooter className="px-2 pb-1">
           <PromptInputTools>
-            <PromptInputSelect onValueChange={setAgentId} value={agentId}>
-              <PromptInputSelectTrigger className="h-8 max-w-52 rounded-full border-0 bg-muted px-2.5 text-xs shadow-none">
-                <AgentAvatar className="size-4" name={agentName} />
-                <PromptInputSelectValue placeholder={defaultAgent.name} />
-              </PromptInputSelectTrigger>
-              <PromptInputSelectContent>
-                {agents.map((agent) => (
-                  <PromptInputSelectItem key={agent.id} value={agent.id}>
-                    {agent.name}
-                  </PromptInputSelectItem>
-                ))}
-              </PromptInputSelectContent>
-            </PromptInputSelect>
+            <AgentPicker
+              agentId={agentId}
+              agentName={agentName}
+              agents={agents}
+              defaultAgentName={defaultAgent.name}
+              onAgentChange={setAgentId}
+            />
           </PromptInputTools>
           <PromptInputSubmit
             disabled={!input.trim() && !isStarting}

@@ -17,6 +17,7 @@ import {
   MessageResponse,
 } from "@/components/ai-elements/message";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
+import { MessageActivityTrace } from "@/components/conversations/message-activity-trace";
 import { QuestionOptions } from "@/components/conversations/question-options";
 import { SourceList } from "@/components/conversations/source-list";
 
@@ -47,17 +48,22 @@ function AssistantMessage({
   onAnswer,
   copiedId,
   onCopy,
+  activities,
 }: {
   message: PersistedMessage;
   isLoading: boolean;
   onAnswer: (text: string) => void;
   copiedId?: string;
   onCopy: (id: string, content: string) => void;
+  activities: PersistedActivity[];
 }) {
   const isCopied = copiedId === message.id;
   return (
     <Message from="assistant">
       <MessageContent>
+        {activities.length > 0 ? (
+          <MessageActivityTrace events={activities} />
+        ) : null}
         <MessageResponse>{message.content}</MessageResponse>
         {message.sources?.length ? (
           <SourceList sources={message.sources} />
@@ -104,6 +110,7 @@ function UserMessage({ content }: { content: string }) {
 interface MessageListProps {
   agentName: string;
   messages: PersistedMessage[];
+  activities: PersistedActivity[];
   transientTurns: TransientTurn[];
   pendingPrompt?: string;
   completion: string;
@@ -119,6 +126,7 @@ interface MessageListProps {
 export function MessageList({
   agentName,
   messages,
+  activities,
   transientTurns,
   pendingPrompt,
   completion,
@@ -146,6 +154,9 @@ export function MessageList({
             <UserMessage content={message.content} key={message.id} />
           ) : (
             <AssistantMessage
+              activities={activities.filter(
+                (activity) => activity.conversationMessageId === message.id,
+              )}
               copiedId={copiedId}
               isLoading={isLoading}
               key={message.id}
