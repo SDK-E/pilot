@@ -98,7 +98,7 @@ function ComposerFooter({
   stream,
 }: ComposerFooterProps) {
   return (
-    <footer className="shrink-0 border-t bg-background/95 px-4 py-3 backdrop-blur-xl safe-bottom">
+    <footer className="sticky bottom-0 z-10 shrink-0 border-t bg-background/95 px-4 py-3 backdrop-blur-xl safe-bottom">
       <AttachmentChips attachments={attachments} />
       {runtimeConfigured ? (
         <MessageComposer
@@ -169,11 +169,12 @@ export function ConversationShell(props: ConversationShellProps) {
   const panels = usePanelLayout(props.initialPanelLayout);
   const backHref = modeHref(kind);
 
-  const detailsPanel = (
+  const renderDetailsPanel = (shouldFillHeight: boolean) => (
     <ConversationDetailsPanel
       activities={stream.activities}
       approvals={props.approvals}
       conversationId={conversation.id}
+      fillHeight={shouldFillHeight}
       kind={kind}
       onTaskCreated={() => {
         router.refresh();
@@ -244,13 +245,15 @@ export function ConversationShell(props: ConversationShellProps) {
               id="details"
               minSize="18%"
             >
-              {detailsPanel}
+              {renderDetailsPanel(true)}
             </ResizablePanel>
           </ResizablePanelGroup>
         ) : (
           <div className="flex h-full min-h-0 min-w-0 flex-col">
             {transcript}
-            <MobileDetailsDisclosure>{detailsPanel}</MobileDetailsDisclosure>
+            <MobileDetailsDisclosure>
+              {renderDetailsPanel(false)}
+            </MobileDetailsDisclosure>
             {composer}
           </div>
         )}

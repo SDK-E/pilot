@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "cn";
+
 import { ActivitySection } from "@/components/conversations/details/activity-section";
 import { ApprovalsSection } from "@/components/conversations/details/approvals-section";
 import { NotesSection } from "@/components/conversations/details/notes-section";
@@ -16,6 +18,14 @@ interface ConversationDetailsPanelProps {
   approvals: { id: string; summary: string; status: string }[];
   scratchpad: string;
   onTaskCreated: () => void;
+  /**
+   * Desktop's resizable side panel gives this a definite height to fill
+   * (`h-full`). Mobile's collapsible drawer instead sizes to content — `h-full`
+   * there would resolve against an ancestor far taller than this panel needs,
+   * ballooning the drawer to fill the whole remaining screen. Pass `false`
+   * when embedding it somewhere its height should stay content-driven.
+   */
+  fillHeight?: boolean;
 }
 
 /**
@@ -30,14 +40,21 @@ export function ConversationDetailsPanel({
   approvals,
   scratchpad,
   onTaskCreated,
+  fillHeight = true,
 }: ConversationDetailsPanelProps) {
   return (
     <aside
       aria-label="Agent activity and chat controls"
-      className="h-full min-h-0 w-full overflow-y-auto border-t bg-sidebar/40 p-4 lg:border-t-0 lg:border-l"
+      className={cn(
+        "min-h-0 w-full overflow-y-auto border-t bg-sidebar/40 p-4 lg:border-t-0 lg:border-l",
+        fillHeight ? "h-full" : "h-auto",
+      )}
     >
       <div className="space-y-6">
-        <ActivitySection activities={activities} />
+        <ActivitySection
+          activities={activities}
+          autoExpandLatestRun={fillHeight}
+        />
         <NotesSection scratchpad={scratchpad} />
         <TasksSection
           conversationId={conversationId}

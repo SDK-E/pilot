@@ -16,6 +16,7 @@ import {
 } from "@/executions/activity-event";
 import {
   groupActivityTimeline,
+  groupConsecutiveActivity,
   type ActivityTimelineRun as ActivityRun,
   type TimelineActivity,
 } from "@/executions/activity-timeline";
@@ -60,7 +61,7 @@ function runStatusLabel(run: ActivityRun) {
 
 function ActivityRunItem({ run }: { run: ActivityRun }) {
   const isRunFinished = run.isComplete || run.isFailed;
-  const steps = runSteps(run);
+  const steps = groupConsecutiveActivity(runSteps(run));
   return (
     <AccordionItem value={run.id}>
       <AccordionTrigger>
@@ -72,13 +73,13 @@ function ActivityRunItem({ run }: { run: ActivityRun }) {
       <AccordionContent>
         {steps.length > 0 ? (
           <ol className="space-y-2 border-l pl-3">
-            {steps.map((activity) => (
-              <li
-                className="flex gap-2 text-muted-foreground"
-                key={activity.id}
-              >
-                {activityIcon(activity.type, isRunFinished)}
-                <span>{activity.summary}</span>
+            {steps.map((step) => (
+              <li className="flex gap-2 text-muted-foreground" key={step.id}>
+                {activityIcon(step.type, isRunFinished)}
+                <span>
+                  {step.summary}
+                  {step.count > 1 ? ` ×${String(step.count)}` : null}
+                </span>
               </li>
             ))}
           </ol>
@@ -93,12 +94,17 @@ function ActivityRunItem({ run }: { run: ActivityRun }) {
 }
 
 /**
- * Verified server events grouped by response run. Newest run open by default.
+ * Verified server events grouped by response run. On its own (e.g. the
+ * desktop side panel, already visible) the newest run opens by default; set
+ * `autoExpandLatestRun={false}` where this mounts inside its own disclosure
+ * (the mobile drawer) so opening that drawer doesn't also expand a run.
  */
 export function ActivitySection({
   activities,
+  autoExpandLatestRun = true,
 }: {
   activities: TimelineActivity[];
+  autoExpandLatestRun?: boolean;
 }) {
   const runs = groupActivityTimeline(activities);
   return (
@@ -110,7 +116,11 @@ export function ActivitySection({
         </p>
       </div>
       {runs.length > 0 ? (
-        <Accordion collapsible defaultValue={runs.at(-1)?.id} type="single">
+        <Accordion
+          collapsible
+          defaultValue={autoExpandLatestRun ? runs.at(-1)?.id : undefined}
+          type="single"
+        >
           {runs.map((run) => (
             <ActivityRunItem key={run.id} run={run} />
           ))}

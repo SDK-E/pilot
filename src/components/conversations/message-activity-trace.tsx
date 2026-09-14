@@ -16,6 +16,7 @@ import {
   EXECUTION_BOOKEND_TYPES,
   type ActivityEventType,
 } from "@/executions/activity-event";
+import { groupConsecutiveActivity } from "@/executions/activity-timeline";
 
 import type { PersistedActivity } from "./conversation-types";
 
@@ -56,8 +57,8 @@ export function MessageActivityTrace({
   events: PersistedActivity[];
 }) {
   const isFailed = events.some((event) => event.type === "execution.failed");
-  const steps = events.filter(
-    (event) => !EXECUTION_BOOKEND_TYPES.includes(event.type),
+  const steps = groupConsecutiveActivity(
+    events.filter((event) => !EXECUTION_BOOKEND_TYPES.includes(event.type)),
   );
   // A plain, successful reply has nothing worth disclosing beyond the
   // "started"/"completed" bookends, so skip the trace entirely rather than
@@ -80,12 +81,16 @@ export function MessageActivityTrace({
       <ChainOfThoughtContent className="border-t pt-3">
         <div className="space-y-3">
           {steps.length > 0 ? (
-            steps.map((event) => (
+            steps.map((step) => (
               <ChainOfThoughtStep
-                description={stepDescriptions[event.type]}
-                icon={stepIcon(event.type)}
-                key={event.id}
-                label={event.summary}
+                description={stepDescriptions[step.type]}
+                icon={stepIcon(step.type)}
+                key={step.id}
+                label={
+                  step.count > 1
+                    ? `${step.summary} ×${String(step.count)}`
+                    : step.summary
+                }
                 status="complete"
               />
             ))

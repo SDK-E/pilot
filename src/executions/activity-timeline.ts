@@ -54,3 +54,36 @@ export function groupActivityTimeline(
   }
   return runs.values().toArray();
 }
+
+export interface GroupedActivity {
+  id: string;
+  type: ActivityEventType;
+  summary: string;
+  count: number;
+}
+
+/**
+Collapses a run of consecutive events sharing a type and summary (e.g. the
+same tool starting three times in a row) into one entry with a count, so
+a repeated step reads as "Searching the web… ×3" rather than three
+identical lines. Events that aren't adjacent duplicates are left alone.
+*/
+export function groupConsecutiveActivity(
+  events: TimelineActivity[],
+): GroupedActivity[] {
+  const grouped: GroupedActivity[] = [];
+  for (const event of events) {
+    const last = grouped.at(-1);
+    if (last?.type === event.type && last.summary === event.summary) {
+      last.count += 1;
+    } else {
+      grouped.push({
+        id: event.id,
+        type: event.type,
+        summary: event.summary,
+        count: 1,
+      });
+    }
+  }
+  return grouped;
+}
