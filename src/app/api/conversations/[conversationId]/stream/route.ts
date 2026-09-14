@@ -40,29 +40,28 @@ function diagResponse(streamError: unknown) {
 }
 
 export async function POST(request: Request, { params }: RouteContext) {
-  const session = await getWorkspaceSession();
-  if (!isWorkspaceSession(session)) return sessionFailureResponse(session);
-  const owner = {
-    organizationId: session.organizationId,
-    userId: session.user.id,
-  };
-
-  const { conversationId: rawConversationId } = await params;
-  const conversationId = z.uuid().safeParse(rawConversationId);
-  if (!conversationId.success) return error("Conversation not found.", 404);
-  const input = inputSchema.safeParse(await readJsonBody(request));
-  if (!input.success) return error("A message is required.", 400);
-
-  const conversation = await getConversation(owner, conversationId.data);
-  const agent = conversation
-    ? await loadRuntimeAgent(owner.organizationId, conversation.agentId)
-    : undefined;
-  if (!conversation || !agent)
-    return error("This conversation is unavailable.", 404);
-
-  let stream: ReadableStream<Uint8Array>;
   try {
-    stream = await streamMessage(
+    const session = await getWorkspaceSession();
+    if (!isWorkspaceSession(session)) return sessionFailureResponse(session);
+    const owner = {
+      organizationId: session.organizationId,
+      userId: session.user.id,
+    };
+
+    const { conversationId: rawConversationId } = await params;
+    const conversationId = z.uuid().safeParse(rawConversationId);
+    if (!conversationId.success) return error("Conversation not found.", 404);
+    const input = inputSchema.safeParse(await readJsonBody(request));
+    if (!input.success) return error("A message is required.", 400);
+
+    const conversation = await getConversation(owner, conversationId.data);
+    const agent = conversation
+      ? await loadRuntimeAgent(owner.organizationId, conversation.agentId)
+      : undefined;
+    if (!conversation || !agent)
+      return error("This conversation is unavailable.", 404);
+
+    const stream = await streamMessage(
       {
         ...owner,
         agent,
@@ -71,13 +70,13 @@ export async function POST(request: Request, { params }: RouteContext) {
       },
       request.signal,
     );
+    return new Response(stream, {
+      headers: {
+        "cache-control": "no-cache, no-transform",
+        "content-type": "text/plain; charset=utf-8",
+      },
+    });
   } catch (streamError) {
     return diagResponse(streamError);
   }
-  return new Response(stream, {
-    headers: {
-      "cache-control": "no-cache, no-transform",
-      "content-type": "text/plain; charset=utf-8",
-    },
-  });
 }
