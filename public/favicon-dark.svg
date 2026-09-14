@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+  <text x="20" y="20" text-anchor="middle" dominant-baseline="central"
+        font-family="'JetBrains Mono', ui-monospace, monospace"
+        font-weight="600" font-size="26" letter-spacing="-0.5" fill="#fafafa">
+    P<tspan fill="#84cc16">.</tspan>
+  </text>
+</svg>

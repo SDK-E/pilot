@@ -138,12 +138,17 @@ export function WorkspaceShell({
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Pilot home">
+              <SidebarMenuButton
+                asChild
+                className="justify-center"
+                size="lg"
+                tooltip="Pilot home"
+              >
                 <Link href="/chat">
-                  <PilotWordmark className="group-data-[collapsible=icon]:hidden" />
+                  <PilotWordmark className="text-2xl group-data-[collapsible=icon]:hidden" />
                   <PilotWordmark
+                    className="hidden text-lg group-data-[collapsible=icon]:inline-flex"
                     compact
-                    className="hidden group-data-[collapsible=icon]:inline-flex"
                   />
                 </Link>
               </SidebarMenuButton>
