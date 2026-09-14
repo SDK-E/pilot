@@ -19,6 +19,7 @@ import {
 import { parseRuntimeStream } from "./runtime-stream";
 
 export {
+  isHtmlDocumentText,
   PilotAiRuntimeError,
   type CompletedReply,
   type RuntimeEvent,

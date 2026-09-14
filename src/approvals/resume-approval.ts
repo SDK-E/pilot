@@ -1,6 +1,10 @@
 import "server-only";
 
-import { resumeToolApproval, type CompletedReply } from "@/ai/pilot-ai-client";
+import {
+  isHtmlDocumentText,
+  resumeToolApproval,
+  type CompletedReply,
+} from "@/ai/pilot-ai-client";
 import {
   cancelClaimedConversationApproval,
   claimConversationApproval,
@@ -142,6 +146,9 @@ async function recordResumedReply(
   approval: ResumableApproval,
   reply: CompletedReply,
 ) {
+  if (!reply.text || isHtmlDocumentText(reply.text)) {
+    throw new Error("Pilot returned an invalid response.");
+  }
   const message = await createConversationMessage(owner, {
     conversationId: approval.conversationId,
     role: "worker",

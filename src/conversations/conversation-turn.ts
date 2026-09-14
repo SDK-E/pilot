@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  isHtmlDocumentText,
   PilotAiRuntimeError,
   streamReply,
   type CompletedReply,
@@ -153,7 +154,11 @@ async function persistReply(
   const cleaned = hasWebAccess
     ? sanitizeWebResponse(reply.text)
     : { text: reply.text, hasInvalidToolSyntax: false, sources: [] };
-  if (cleaned.hasInvalidToolSyntax || !cleaned.text) {
+  if (
+    cleaned.hasInvalidToolSyntax ||
+    !cleaned.text ||
+    isHtmlDocumentText(cleaned.text)
+  ) {
     throw new Error("Pilot returned an invalid response.");
   }
   const message = await createConversationMessage(owner(input), {
