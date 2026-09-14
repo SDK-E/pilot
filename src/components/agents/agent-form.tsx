@@ -42,6 +42,17 @@ function KindPicker({
   return (
     <fieldset className="grid gap-2 sm:grid-cols-3">
       <legend className="mb-2 text-sm font-medium">Mode</legend>
+      {/*
+        A disabled input is never included in FormData, so once an existing
+        agent's mode is locked (disabled=true below), the radios alone would
+        submit no baseAgentId at all and updateAgentAction would fail its own
+        validation on every save. This hidden input carries the value in
+        that case; it's harmless alongside the (enabled) radios when
+        creating a new agent, since both stay in sync with the same value.
+      */}
+      {disabled ? (
+        <input name="baseAgentId" type="hidden" value={value} />
+      ) : null}
       {AGENT_KIND_IDS.map((kind) => (
         <label
           className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-3 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:disabled]:cursor-default"
