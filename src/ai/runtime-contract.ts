@@ -149,8 +149,8 @@ export type CompletedReply = Extract<RuntimeEvent, { type: "completed" }> & {
 };
 
 export class PilotAiRuntimeError extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
     this.name = "PilotAiRuntimeError";
   }
 }

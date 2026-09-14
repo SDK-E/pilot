@@ -99,7 +99,20 @@ async function postToRuntime(
     signal,
   });
   if (!response.ok) {
-    throw new PilotAiRuntimeError(`Pilot AI returned ${response.status}.`);
+    // The runtime's error body often carries the actual rejection reason
+    // (see pilot-ai's verifyPilotRuntimeRequestDiag), which is otherwise
+    // silently discarded here. It goes in `cause`, not the message: this
+    // error's message reaches the chat client as-is (conversation-turn.ts
+    // streams it through), so it must stay generic and detail-free.
+    let detail = "";
+    try {
+      detail = await response.text();
+    } catch {
+      // Fall through with no detail; the status code alone still throws below.
+    }
+    throw new PilotAiRuntimeError(`Pilot AI returned ${response.status}.`, {
+      cause: detail || undefined,
+    });
   }
   return response;
 }
