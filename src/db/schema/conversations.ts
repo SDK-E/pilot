@@ -183,3 +183,42 @@ export const conversationScratchpads = pgTable(
     ),
   ],
 );
+
+export interface ConversationPlanStep {
+  id: string;
+  text: string;
+  status: "pending" | "in_progress" | "done";
+}
+
+export const conversationPlans = pgTable(
+  "conversation_plans",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    workerId: uuid("worker_id")
+      .notNull()
+      .references(() => workers.id, { onDelete: "cascade" }),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
+    steps: jsonb("steps").$type<ConversationPlanStep[]>().notNull().default([]),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("conversation_plans_conversation_unique").on(
+      table.conversationId,
+    ),
+    index("conversation_plans_organization_updated_at_index").on(
+      table.organizationId,
+      table.updatedAt,
+    ),
+  ],
+);

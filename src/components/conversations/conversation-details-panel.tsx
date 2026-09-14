@@ -5,9 +5,11 @@ import { cn } from "cn";
 import { ActivitySection } from "@/components/conversations/details/activity-section";
 import { ApprovalsSection } from "@/components/conversations/details/approvals-section";
 import { NotesSection } from "@/components/conversations/details/notes-section";
+import { PlanSection } from "@/components/conversations/details/plan-section";
 import { TasksSection } from "@/components/conversations/details/tasks-section";
 
 import type { AgentKindId } from "@/agents/agent-kinds";
+import type { ConversationPlanStep } from "@/db/schema";
 import type { TimelineActivity } from "@/executions/activity-timeline";
 
 interface ConversationDetailsPanelProps {
@@ -17,6 +19,7 @@ interface ConversationDetailsPanelProps {
   tasks: { id: string; title: string; status: string }[];
   approvals: { id: string; summary: string; status: string }[];
   scratchpad: string;
+  plan: ConversationPlanStep[];
   onTaskCreated: () => void;
   /**
    * Desktop's resizable side panel gives this a definite height to fill
@@ -39,6 +42,7 @@ export function ConversationDetailsPanel({
   tasks,
   approvals,
   scratchpad,
+  plan,
   onTaskCreated,
   fillHeight = true,
 }: ConversationDetailsPanelProps) {
@@ -51,6 +55,7 @@ export function ConversationDetailsPanel({
       )}
     >
       <div className="space-y-6">
+        <PlanSection steps={plan} />
         <ActivitySection activities={activities} collapsibleRuns={fillHeight} />
         <NotesSection scratchpad={scratchpad} />
         <TasksSection

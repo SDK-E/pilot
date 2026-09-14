@@ -46,6 +46,13 @@ export const TOOLS: Record<ToolId, ToolDefinition> = {
       "Pause and ask a focused question when the answer would change the result.",
     approvable: false,
   },
+  plan: {
+    id: "plan",
+    name: "Plan",
+    description:
+      "Keep a visible, step-by-step task list for this conversation so progress stays transparent as the agent works.",
+    approvable: false,
+  },
 };
 
 function isToolId(value: unknown): value is ToolId {

@@ -29,6 +29,7 @@ import type {
   PersistedActivity,
   PersistedMessage,
 } from "./conversation-types";
+import type { ConversationPlanStep } from "@/db/schema";
 
 interface ConversationShellProps {
   kind: AgentKindId;
@@ -42,6 +43,7 @@ interface ConversationShellProps {
   projects: { id: string; name: string }[];
   attachments: { id: string; filename: string }[];
   scratchpad: string;
+  plan: ConversationPlanStep[];
   initialPanelLayout?: PanelLayout;
   runtimeConfigured: boolean;
 }
@@ -179,6 +181,7 @@ export function ConversationShell(props: ConversationShellProps) {
       onTaskCreated={() => {
         router.refresh();
       }}
+      plan={props.plan}
       scratchpad={props.scratchpad}
       tasks={props.tasks}
     />

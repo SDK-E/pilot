@@ -59,10 +59,12 @@ test("a new agent starts with every tool on, asking first", () => {
     "web-search",
     "scratchpad",
     "ask-user",
+    "plan",
   ]);
   assert.deepEqual(defaultApprovalRules(), {
     "web-search": "ask",
     scratchpad: "ask",
     "ask-user": "ask",
+    plan: "ask",
   });
 });

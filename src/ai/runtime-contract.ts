@@ -101,7 +101,7 @@ export const runtimeRequestSchema = z.object({
   conversationId: z.uuid(),
   message: z.string().min(1).max(10_000),
   executionId: z.uuid(),
-  allowedToolIds: z.array(toolIdSchema).max(3),
+  allowedToolIds: z.array(toolIdSchema).max(4),
   project: z
     .object({
       id: z.uuid(),

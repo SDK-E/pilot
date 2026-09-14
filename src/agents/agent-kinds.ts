@@ -7,7 +7,12 @@ export const AGENT_KIND_IDS = ["chat", "work", "code"] as const;
 
 export type AgentKindId = (typeof AGENT_KIND_IDS)[number];
 
-export const TOOL_IDS = ["web-search", "scratchpad", "ask-user"] as const;
+export const TOOL_IDS = [
+  "web-search",
+  "scratchpad",
+  "ask-user",
+  "plan",
+] as const;
 
 export type ToolId = (typeof TOOL_IDS)[number];
 
@@ -94,7 +99,7 @@ export const AGENT_KINDS: Record<AgentKindId, AgentKind> = {
       instructions:
         "You are Pilot Code. Read before you change, keep diffs small and reviewable, explain trade-offs briefly, and never claim to have run code you did not run.",
     },
-    tools: ["scratchpad", "ask-user", "web-search"],
+    tools: TOOL_IDS,
   },
 };
 

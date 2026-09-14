@@ -11,6 +11,7 @@ import {
   listConversationMessages,
 } from "@/conversations/conversation-repository";
 import { listMessageSources } from "@/conversations/message-sources";
+import { getConversationPlan } from "@/conversations/plan-repository";
 import { getConversationScratchpad } from "@/conversations/scratchpad-repository";
 import { listConversationActivity } from "@/executions/execution-repository";
 import { requireWorkspaceSession } from "@/organizations/workspace-session";
@@ -59,6 +60,7 @@ export default async function ConversationPage({
     projects,
     attachments,
     scratchpad,
+    plan,
     preferences,
   ] = await Promise.all([
     listConversationMessages(owner, conversationId),
@@ -70,6 +72,7 @@ export default async function ConversationPage({
     listProjects(owner),
     listConversationAttachments(scope),
     getConversationScratchpad(scope),
+    getConversationPlan(scope),
     getUserPreferences(user.id),
   ]);
   if (!messages) notFound();
@@ -93,6 +96,7 @@ export default async function ConversationPage({
       projects={projects}
       attachments={attachments}
       scratchpad={scratchpad}
+      plan={plan}
       initialPanelLayout={preferences.conversationPanelLayout ?? undefined}
       runtimeConfigured={Boolean(process.env.PILOT_AI_RUNTIME_URL?.trim())}
     />

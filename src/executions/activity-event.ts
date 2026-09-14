@@ -27,6 +27,7 @@ export const toolActivityToolIds = [
   "github",
   "scratchpad",
   "ask-user",
+  "plan",
 ] as const;
 
 type ToolActivityToolId = (typeof toolActivityToolIds)[number];
@@ -65,6 +66,7 @@ const toolLabels: Record<ToolActivityToolId, string> = {
   github: "Using GitHub",
   scratchpad: "Updating the scratchpad",
   "ask-user": "Waiting for your input",
+  plan: "Updating the plan",
 };
 
 const toolStateSuffix: Record<ToolActivityState, string> = {
