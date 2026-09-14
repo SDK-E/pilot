@@ -10,28 +10,43 @@ import {
   type ConversationPlanStep,
 } from "@/db/schema";
 
+const UNDEFINED_TABLE = "42P01";
+
 export async function getConversationPlan(input: {
   organizationId: string;
   conversationId: string;
   userId: string;
 }): Promise<ConversationPlanStep[]> {
-  const [plan] = await db
-    .select({ steps: conversationPlans.steps })
-    .from(conversationPlans)
-    .innerJoin(
-      conversations,
-      eq(conversationPlans.conversationId, conversations.id),
-    )
-    .where(
-      and(
-        eq(conversationPlans.organizationId, input.organizationId),
-        eq(conversationPlans.conversationId, input.conversationId),
-        eq(conversationPlans.createdByWorkosUserId, input.userId),
-        eq(conversations.createdByWorkosUserId, input.userId),
-      ),
-    )
-    .limit(1);
-  return plan?.steps ?? [];
+  try {
+    const [plan] = await db
+      .select({ steps: conversationPlans.steps })
+      .from(conversationPlans)
+      .innerJoin(
+        conversations,
+        eq(conversationPlans.conversationId, conversations.id),
+      )
+      .where(
+        and(
+          eq(conversationPlans.organizationId, input.organizationId),
+          eq(conversationPlans.conversationId, input.conversationId),
+          eq(conversationPlans.createdByWorkosUserId, input.userId),
+          eq(conversations.createdByWorkosUserId, input.userId),
+        ),
+      )
+      .limit(1);
+    return plan?.steps ?? [];
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      "cause" in error &&
+      error.cause instanceof Error &&
+      "code" in error.cause &&
+      error.cause.code === UNDEFINED_TABLE
+    ) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 async function getRuntimeConversation(input: {
