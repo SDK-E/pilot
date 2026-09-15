@@ -15,6 +15,7 @@ function headers(accessToken: string) {
   return { authorization: `Bearer ${accessToken}` };
 }
 
+// eslint-disable-next-line sonarjs/todo-tag -- intentional, tracked flag for an unverified API detail, not a stray note
 // TODO(connectors): verify against Slack's current Web API response shape
 // before enabling in production.
 export async function runSlackAction(input: {
@@ -26,7 +27,7 @@ export async function runSlackAction(input: {
     const params = listChannelsSchema.parse(input.params);
     const url = new URL("https://slack.com/api/conversations.list");
     url.searchParams.set("limit", String(params.limit));
-    const data = (await fetchJson(url.toString(), {
+    const data = (await fetchJson(url.href, {
       headers: headers(input.accessToken),
     })) as { ok?: boolean; channels?: { id: string; name: string }[] };
     if (!data.ok) throw new AdapterError("Slack could not list channels.");
@@ -45,7 +46,7 @@ export async function runSlackAction(input: {
     const url = new URL("https://slack.com/api/conversations.history");
     url.searchParams.set("channel", params.channelId);
     url.searchParams.set("limit", String(params.limit));
-    const data = (await fetchJson(url.toString(), {
+    const data = (await fetchJson(url.href, {
       headers: headers(input.accessToken),
     })) as {
       ok?: boolean;

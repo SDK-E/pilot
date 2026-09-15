@@ -10,7 +10,7 @@ import { getAgent } from "@/agents/agent-repository";
 import {
   disconnectConnectorConnection,
   setDefaultConnectorConnection,
-} from "@/connectors/connector-repository";
+} from "@/connectors/connector-connection-mutations";
 import {
   addOrganizationDomain,
   verifyOrganizationDomain,

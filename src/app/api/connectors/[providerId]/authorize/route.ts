@@ -10,7 +10,7 @@ import { requireWorkspaceSession } from "@/organizations/workspace-session";
 const ADMIN_ROLES = new Set(["owner", "admin"]);
 
 function callbackUrl(request: Request, providerId: string): string {
-  return new URL(`/api/connectors/${providerId}/callback`, request.url).toString();
+  return new URL(`/api/connectors/${providerId}/callback`, request.url).href;
 }
 
 /**

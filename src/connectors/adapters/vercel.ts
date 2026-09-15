@@ -22,6 +22,7 @@ interface VercelDeployment {
   createdAt?: number;
 }
 
+// eslint-disable-next-line sonarjs/todo-tag -- intentional, tracked flag for an unverified API detail, not a stray note
 // TODO(connectors): verify against Vercel's current REST API response
 // shape before enabling in production.
 export async function runVercelAction(input: {
@@ -34,7 +35,7 @@ export async function runVercelAction(input: {
     const url = new URL("https://api.vercel.com/v6/deployments");
     url.searchParams.set("limit", String(params.limit));
     if (params.projectId) url.searchParams.set("projectId", params.projectId);
-    const data = (await fetchJson(url.toString(), {
+    const data = (await fetchJson(url.href, {
       headers: headers(input.accessToken),
     })) as { deployments?: VercelDeployment[] };
     return {

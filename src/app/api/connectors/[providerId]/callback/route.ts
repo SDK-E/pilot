@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { upsertConnectorConnection } from "@/connectors/connector-repository";
+import { upsertConnectorConnection } from "@/connectors/connector-connection-mutations";
 import {
   connectorProvider,
   isConnectorProviderId,
@@ -9,7 +9,7 @@ import { verifyOAuthState } from "@/connectors/oauth-state";
 import { requireWorkspaceSession } from "@/organizations/workspace-session";
 
 function callbackUrl(request: Request, providerId: string): string {
-  return new URL(`/api/connectors/${providerId}/callback`, request.url).toString();
+  return new URL(`/api/connectors/${providerId}/callback`, request.url).href;
 }
 
 function errorRedirect(request: Request, providerId: string): NextResponse {
@@ -43,6 +43,7 @@ export async function GET(
   }
 
   const payload = verifyOAuthState(state);
+  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain -- keeps `payload` narrowed to non-null below
   if (!payload || payload.providerId !== providerId) {
     return errorRedirect(request, providerId);
   }

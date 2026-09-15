@@ -59,7 +59,7 @@ export function ConnectorProviderRow({
         >
           Connect
         </a>
-        {provider.supportsOrgScope && isAdmin ? (
+        {isAdmin && provider.supportsOrgScope ? (
           <a
             className={buttonVariants({ size: "sm", variant: "outline" })}
             href={`/api/connectors/${provider.id}/authorize?scope=organization`}
@@ -87,7 +87,7 @@ function ConnectedRow({
         <Badge variant="destructive">Needs reconnect</Badge>
       ) : null}
       <div className="ml-auto flex gap-2">
-        {!connection.isDefault && hasSiblings ? (
+        {hasSiblings && !connection.isDefault ? (
           <form action={setDefaultConnectorConnectionAction}>
             <input name="connectionId" type="hidden" value={connection.id} />
             <Button size="sm" type="submit" variant="ghost">

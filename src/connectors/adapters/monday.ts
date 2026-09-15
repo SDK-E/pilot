@@ -37,6 +37,7 @@ interface MondayItem {
   name: string;
 }
 
+// eslint-disable-next-line sonarjs/todo-tag -- intentional, tracked flag for an unverified API detail, not a stray note
 // TODO(connectors): verify against Monday.com's current GraphQL schema
 // before enabling in production.
 export async function runMondayAction(input: {

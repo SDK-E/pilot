@@ -6,7 +6,7 @@ const ALGORITHM = "aes-256-gcm";
 const KEY_LENGTH_BYTES = 32;
 const IV_LENGTH_BYTES = 12;
 
-let cachedKey: Buffer | undefined;
+const keyCache: { current?: Buffer } = {};
 
 /**
  * `CONNECTOR_TOKEN_ENCRYPTION_KEY` must be 32 raw bytes, base64-encoded.
@@ -14,7 +14,7 @@ let cachedKey: Buffer | undefined;
  * `src/ai/workos-m2m.ts`'s env var loaders.
  */
 function encryptionKey(): Buffer {
-  if (cachedKey) return cachedKey;
+  if (keyCache.current) return keyCache.current;
   const raw = process.env.CONNECTOR_TOKEN_ENCRYPTION_KEY?.trim();
   if (!raw) {
     throw new Error(
@@ -27,7 +27,7 @@ function encryptionKey(): Buffer {
       `CONNECTOR_TOKEN_ENCRYPTION_KEY must decode to ${KEY_LENGTH_BYTES} bytes (got ${decoded.length}).`,
     );
   }
-  cachedKey = decoded;
+  keyCache.current = decoded;
   return decoded;
 }
 

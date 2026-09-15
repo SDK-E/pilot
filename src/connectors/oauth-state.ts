@@ -57,7 +57,7 @@ function isSignedOAuthState(value: unknown): value is SignedOAuthState {
 }
 
 export function verifyOAuthState(token: string): SignedOAuthState | null {
-  const [encodedPayload, encodedSignature] = token.split(".");
+  const [encodedPayload, encodedSignature] = token.split(".", 2);
   if (!encodedPayload || !encodedSignature) return null;
 
   const expectedSignature = Buffer.from(sign(encodedPayload));

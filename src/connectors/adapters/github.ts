@@ -52,10 +52,12 @@ export async function runGithubAction(input: {
     const url = new URL("https://api.github.com/search/issues");
     url.searchParams.set("q", params.query);
     url.searchParams.set("per_page", String(params.limit));
-    const data = (await fetchJson(url.toString(), {
+    const data = (await fetchJson(url.href, {
       headers: headers(input.accessToken),
     })) as { items?: GithubIssue[] };
-    return { issues: capList((data.items ?? []).map(shapeIssue), params.limit) };
+    return {
+      issues: capList((data.items ?? []).map((issue) => shapeIssue(issue)), params.limit),
+    };
   }
   if (input.action === "list-repository-issues") {
     const params = listRepositoryIssuesSchema.parse(input.params);
@@ -64,10 +66,10 @@ export async function runGithubAction(input: {
     );
     url.searchParams.set("state", params.state);
     url.searchParams.set("per_page", String(params.limit));
-    const data = (await fetchJson(url.toString(), {
+    const data = (await fetchJson(url.href, {
       headers: headers(input.accessToken),
     })) as GithubIssue[];
-    return { issues: capList(data.map(shapeIssue), params.limit) };
+    return { issues: capList(data.map((issue) => shapeIssue(issue)), params.limit) };
   }
   throw new AdapterError(`Unknown GitHub action "${input.action}".`);
 }

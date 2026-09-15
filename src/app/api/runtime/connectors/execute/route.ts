@@ -11,10 +11,10 @@ import { runSlackAction } from "@/connectors/adapters/slack";
 import { runVercelAction } from "@/connectors/adapters/vercel";
 import {
   markConnectorConnectionError,
-  resolveDefaultConnectorConnection,
   touchConnectorConnectionLastUsed,
   upsertConnectorConnection,
-} from "@/connectors/connector-repository";
+} from "@/connectors/connector-connection-mutations";
+import { resolveDefaultConnectorConnection } from "@/connectors/connector-repository";
 import {
   connectorProvider,
   isConnectorToolId,

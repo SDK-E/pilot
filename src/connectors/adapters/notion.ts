@@ -37,6 +37,7 @@ interface NotionBlock {
   [key: string]: unknown;
 }
 
+// eslint-disable-next-line sonarjs/todo-tag -- intentional, tracked flag for an unverified API detail, not a stray note
 // TODO(connectors): verify against Notion's current block schema before
 // enabling in production — this only flattens the common rich_text-bearing
 // block types, not every block type Notion supports.
@@ -79,7 +80,7 @@ export async function runNotionAction(input: {
       { headers: headers(input.accessToken) },
     )) as { results?: NotionBlock[] };
     const text = (data.results ?? [])
-      .map(blockText)
+      .map((block) => blockText(block))
       .filter(Boolean)
       .join("\n");
     if (!text) throw new AdapterError("This Notion page has no readable text.");

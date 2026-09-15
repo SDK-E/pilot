@@ -38,14 +38,12 @@ export async function runGoogleDriveAction(input: {
 }): Promise<unknown> {
   if (input.action === "search") {
     const params = searchSchema.parse(input.params);
+    const escapedQuery = params.query.replaceAll("'", String.raw`\'`);
     const url = new URL("https://www.googleapis.com/drive/v3/files");
-    url.searchParams.set(
-      "q",
-      `fullText contains '${params.query.replaceAll("'", "\\'")}' and trashed = false`,
-    );
+    url.searchParams.set("q", `fullText contains '${escapedQuery}' and trashed = false`);
     url.searchParams.set("pageSize", String(params.limit));
     url.searchParams.set("fields", "files(id,name,mimeType,webViewLink)");
-    const data = (await fetchJson(url.toString(), {
+    const data = (await fetchJson(url.href, {
       headers: headers(input.accessToken),
     })) as { files?: DriveFile[] };
     return {
