@@ -58,10 +58,6 @@ async function fetchAccountIdentifier(accessToken: string) {
   return data.team.name;
 }
 
-// eslint-disable-next-line sonarjs/todo-tag -- intentional, tracked flag for an unverified API detail, not a stray note
-// TODO(connectors): verify against Slack's current OAuth docs before
-// enabling in production; the account-identifier fallback (team name) may
-// need `identity.basic` and `users.identity` instead.
 export const slackProvider: ConnectorProvider = {
   id: "slack",
   displayName: "Slack",
@@ -69,6 +65,9 @@ export const slackProvider: ConnectorProvider = {
   authorizeUrl: AUTHORIZE_URL,
   tokenUrl: TOKEN_URL,
   scopes: ["channels:read", "channels:history"],
+  // Slack's OAuth v2 scope param is comma-separated, matching how
+  // exchangeCode above already parses the response.
+  scopeDelimiter: ",",
   clientIdEnvVar: CLIENT_ID_ENV,
   clientSecretEnvVar: CLIENT_SECRET_ENV,
   exchangeCode,

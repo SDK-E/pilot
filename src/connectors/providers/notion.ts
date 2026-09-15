@@ -7,6 +7,28 @@ const TOKEN_URL = "https://api.notion.com/v1/oauth/token";
 const CLIENT_ID_ENV = "CONNECTOR_NOTION_CLIENT_ID";
 const CLIENT_SECRET_ENV = "CONNECTOR_NOTION_CLIENT_SECRET";
 
+/**
+ * Notion's `/v1/oauth/authorize` requires `owner=user` or the request is
+ * invalid — the generic authorize route (which only sets client_id,
+ * redirect_uri, scope, state, response_type) has no way to know that, so
+ * every provider with an extra required param needs this override.
+ */
+function buildAuthorizeUrl({
+  redirectUri,
+  state,
+}: {
+  redirectUri: string;
+  state: string;
+}): string {
+  const url = new URL(AUTHORIZE_URL);
+  url.searchParams.set("client_id", envValue(CLIENT_ID_ENV));
+  url.searchParams.set("redirect_uri", redirectUri);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("owner", "user");
+  url.searchParams.set("state", state);
+  return url.href;
+}
+
 async function exchangeCode({
   code,
   redirectUri,
@@ -75,6 +97,7 @@ export const notionProvider: ConnectorProvider = {
   scopes: [],
   clientIdEnvVar: CLIENT_ID_ENV,
   clientSecretEnvVar: CLIENT_SECRET_ENV,
+  buildAuthorizeUrl,
   exchangeCode,
   refreshAccessToken,
   fetchAccountIdentifier,

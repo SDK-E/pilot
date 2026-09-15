@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { upsertConnectorConnection } from "@/connectors/connector-connection-mutations";
@@ -8,13 +9,28 @@ import {
 import { verifyOAuthState } from "@/connectors/oauth-state";
 import { requireWorkspaceSession } from "@/organizations/workspace-session";
 
+// The query string must precede the fragment (`?x#y`, not `#y?x`) — a
+// leading `#` makes everything after it part of the fragment, not a real
+// query string a page could ever read.
+function callbackRedirectUrl(
+  request: Request,
+  providerId: string,
+  outcome: "connected" | "error",
+): URL {
+  const url = new URL(
+    `/settings?${outcome}=${providerId}#connectors`,
+    request.url,
+  );
+  return url;
+}
+
 function callbackUrl(request: Request, providerId: string): string {
   return new URL(`/api/connectors/${providerId}/callback`, request.url).href;
 }
 
 function errorRedirect(request: Request, providerId: string): NextResponse {
   return NextResponse.redirect(
-    new URL(`/settings#connectors?error=${providerId}`, request.url),
+    callbackRedirectUrl(request, providerId, "error"),
   );
 }
 
@@ -85,7 +101,14 @@ export async function GET(
     return errorRedirect(request, providerId);
   }
 
+  // Matches every settings Server Action's own pattern after a mutation
+  // (src/app/(workspace)/settings/actions.ts) — the redirect below is a
+  // hard navigation so the Settings page re-fetches regardless, but this
+  // keeps the callback route consistent with how every other write here
+  // invalidates the page, rather than relying solely on it being dynamic.
+  revalidatePath("/settings");
+
   return NextResponse.redirect(
-    new URL(`/settings#connectors?connected=${providerId}`, request.url),
+    callbackRedirectUrl(request, providerId, "connected"),
   );
 }

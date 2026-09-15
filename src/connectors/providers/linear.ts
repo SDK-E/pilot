@@ -61,6 +61,10 @@ export const linearProvider: ConnectorProvider = {
   authorizeUrl: AUTHORIZE_URL,
   tokenUrl: TOKEN_URL,
   scopes: ["read"],
+  // Linear's scope param is comma-separated, matching how exchangeCode
+  // above already parses the response. A no-op today (single scope), but
+  // matters the moment a second scope is added.
+  scopeDelimiter: ",",
   clientIdEnvVar: CLIENT_ID_ENV,
   clientSecretEnvVar: CLIENT_SECRET_ENV,
   exchangeCode,

@@ -70,7 +70,10 @@ export async function GET(
   // Omit an empty `scope` param entirely rather than sending `scope=` —
   // some providers (Vercel today) reject an explicit empty scope request.
   if (provider.scopes.length > 0) {
-    authorizeUrl.searchParams.set("scope", provider.scopes.join(" "));
+    authorizeUrl.searchParams.set(
+      "scope",
+      provider.scopes.join(provider.scopeDelimiter ?? " "),
+    );
   }
   authorizeUrl.searchParams.set("state", state);
   authorizeUrl.searchParams.set("response_type", "code");
