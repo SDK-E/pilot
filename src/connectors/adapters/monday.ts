@@ -12,7 +12,10 @@ const queryItemsSchema = z.object({
 });
 
 function headers(accessToken: string) {
-  return { authorization: accessToken, "content-type": "application/json" };
+  return {
+    authorization: `Bearer ${accessToken}`,
+    "content-type": "application/json",
+  };
 }
 
 async function graphql(accessToken: string, query: string): Promise<unknown> {

@@ -52,16 +52,26 @@ export async function GET(
     ownerScope,
   });
 
+  const redirectUri = callbackUrl(request, providerId);
+
+  if (provider.buildAuthorizeUrl) {
+    return NextResponse.redirect(
+      provider.buildAuthorizeUrl({ redirectUri, state }),
+      { status: 302 },
+    );
+  }
+
   const authorizeUrl = new URL(provider.authorizeUrl);
   authorizeUrl.searchParams.set(
     "client_id",
     process.env[provider.clientIdEnvVar] ?? "",
   );
-  authorizeUrl.searchParams.set(
-    "redirect_uri",
-    callbackUrl(request, providerId),
-  );
-  authorizeUrl.searchParams.set("scope", provider.scopes.join(" "));
+  authorizeUrl.searchParams.set("redirect_uri", redirectUri);
+  // Omit an empty `scope` param entirely rather than sending `scope=` —
+  // some providers (Vercel today) reject an explicit empty scope request.
+  if (provider.scopes.length > 0) {
+    authorizeUrl.searchParams.set("scope", provider.scopes.join(" "));
+  }
   authorizeUrl.searchParams.set("state", state);
   authorizeUrl.searchParams.set("response_type", "code");
 

@@ -43,6 +43,13 @@ export interface ConnectorProvider {
   scopes: readonly string[];
   clientIdEnvVar: string;
   clientSecretEnvVar: string;
+  /**
+   * Overrides the generic `authorizeUrl?client_id=...&redirect_uri=...`
+   * construction for a provider whose authorize step doesn't follow the
+   * standard OAuth2 shape (e.g. Vercel's slug-based integration URL). Most
+   * providers omit this and use the shared route's default behavior.
+   */
+  buildAuthorizeUrl?(context: { redirectUri: string; state: string }): string;
   exchangeCode(input: {
     code: string;
     redirectUri: string;
