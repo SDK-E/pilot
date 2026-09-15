@@ -1,6 +1,50 @@
 # Pilot implementation status
 
-Updated 2026-09-14. This is an implementation record, not a completion claim.
+Updated 2026-09-15. This is an implementation record, not a completion claim.
+
+## Marketing site (2026-09-15)
+
+The public site outside `(workspace)` was rebuilt as a real marketing site,
+route group `src/app/(marketing)/`: Home, About, Pricing, Contact, Docs
+(index + slug pages), Blog (index + slug pages), and Terms/Privacy under
+`/legal`. Shared marketing components live in `src/components/marketing/`;
+copy and structured content live in `src/marketing/` (`pricing-plans.ts`,
+`nav-links.ts`, `faq.ts`, `content.ts`, `site-config.ts`), not inline in
+JSX. `src/proxy.ts`'s matcher and `unauthenticatedPaths` were extended to
+cover the new public routes, since they call `withAuth()` to branch the
+nav/hero CTA between sign-in and "open workspace" — a route not in the
+AuthKit middleware matcher throws when it calls `withAuth()`.
+
+Pilot is not open source; the previous landing page's "Open source on
+GitHub" footer link was false and has been removed. Pricing shown is real
+(Free / 5€ adds Work / 20€ for Chat+Work+Code) under a "free during early
+access" banner — there is no Stripe integration yet, so every plan's call
+to action is a free sign-up, never a checkout. Legal pages use "SDK
+Enterprises" as the entity with clearly marked `TBD` placeholders
+(jurisdiction, last-updated date, and the specific LLM/runtime
+subprocessor name) pending legal review; WorkOS, Neon, and Vercel are
+disclosed as confirmed subprocessors. The social-proof section
+deliberately contains no fabricated testimonials, logos, or usage stats —
+undisclosed fake customer quotes are deceptive advertising, so it instead
+runs on honest signals (a blog link, a direct-contact CTA) with a slot
+ready for real testimonials later.
+
+Technical SEO: `src/app/sitemap.ts` and `src/app/robots.ts` (both at the
+app root, disallowing the authenticated app and API routes), a generated
+`opengraph-image.tsx`, per-route `generateMetadata`/`metadata` with
+`alternates.canonical` on every marketing page, and inline JSON-LD
+(`Organization`/`WebSite` on the marketing layout, `FAQPage` wherever
+`FaqSection` is used, `SoftwareApplication` on Pricing, `BreadcrumbList` on
+Docs, `Article` on Blog posts). `NEXT_PUBLIC_SITE_URL` is a new env var
+(see `.env.example`) driving all of the above; its fallback value is a
+placeholder guess, not a confirmed production domain.
+
+Not yet done: Docs and Blog ship with only the real content available at
+write time (two docs pages, one blog post) rather than a full content set,
+by design — no filler content was added to hit a page count. The
+`(marketing)/page.tsx` and `(marketing)/layout.tsx` both currently call
+`withAuth()` once each per request (nav CTA and hero CTA); this is a minor
+duplicate call, not a correctness issue.
 
 ## Current state (2026-09-14)
 

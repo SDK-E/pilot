@@ -4,6 +4,7 @@ import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SITE_URL } from "@/marketing/site-config";
 
 import type { Metadata } from "next";
 import "./globals.css";
@@ -23,9 +24,10 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: { default: "Pilot by SDK Enterprises", template: "%s · Pilot" },
   description:
-    "Organize. Delegate. Get things done. Your AI workforce, together in one place.",
+    "Pilot answers questions, plans and runs multi-step work, and reviews code in one workspace. Free to start, no credit card required.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
