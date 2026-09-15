@@ -1,19 +1,28 @@
 # Pilot by SDK Enterprises
 
-An open-source AI workforce platform in active development. Pilot offers
-three kinds of agent, **Chat**, **Work**, and **Code**, each with its own mode
-of the app. The application includes WorkOS authentication, organization
-access, configurable organization-scoped agents, protected streaming
-conversations, durable execution activity, private attachments and project
-files, and the web-search, scratchpad, and ask-user capabilities behind
-per-agent approval rules. Browser automation, external-write integrations,
-shared projects, and semantic knowledge retrieval remain unavailable. See
-[implementation status](docs/progress.md) and the
-[three agent kinds decision](docs/decisions/0016-three-agent-kinds.md).
+Pilot is an AI workforce platform. It offers three kinds of agent, each with
+its own mode of the app:
 
-## Run locally
+- **Chat** — ask anything, think out loud, get a clear answer.
+- **Work** — hand Pilot a task; it plans and works through it end to end.
+- **Code** — read, explain, and propose code changes as reviewable diffs.
 
-Use Node.js 24 and pnpm 11.25.0.
+Every organization gets its own configurable, organization-scoped agents,
+protected streaming conversations, durable execution activity, and private
+attachments and project files. Agents can be granted web search, a
+scratchpad, an `ask-user` clarification pause, a visible plan/step list, and
+a sandboxed code execution tool — each gated per-organization from Settings.
+Browser automation, external-write integrations, shared projects, and
+semantic knowledge retrieval remain unavailable.
+
+See [implementation status](docs/progress.md) and the
+[three agent kinds decision](docs/decisions/0016-three-agent-kinds.md) for
+what's actually built and verified today. Pilot is in active development;
+do not treat the current state as production-ready.
+
+## Quick start
+
+Requires Node.js 24 and pnpm 11.25.0.
 
 ```sh
 pnpm install --frozen-lockfile
@@ -21,41 +30,12 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Configure your own WorkOS application's API key and client ID, a random cookie encryption secret of at least 32 characters, and the callback `http://localhost:3000/auth/callback`. Set the application's initiate-login URL to `http://localhost:3000/sign-in`, and homepage/sign-out URL to `http://localhost:3000`. Use an active organization membership to enter a workspace. Do not reuse another application's client ID. See the [official AuthKit guide](https://workos.com/docs/authkit/nextjs).
+`.env.local` needs a WorkOS application (API key, client ID, cookie
+encryption secret of at least 32 characters, callback
+`http://localhost:3000/auth/callback`) and, for full functionality, a
+connection to the Pilot AI runtime. See `.env.example` for every variable
+Pilot reads. Use an active organization membership to enter a workspace.
 
-For the SDK Enterprises deployment, the project is linked to `sdk-enterprises/pilot`. After setup is complete, authorized maintainers can use `vercel env pull .env.local --environment development` to retrieve development configuration. Never pull production secrets into a local test environment.
-
-## Verify
-
-```sh
-pnpm check
-pnpm build
-pnpm exec playwright install chromium
-pnpm test
-pnpm test:server
-pnpm test:db
-pnpm audit --audit-level high
-```
-
-The Playwright suite starts the production build on port 3100 with explicit test-only credentials. It checks public rendering and unauthenticated security boundaries. Successful hosted login, organization switching and logout must also be verified with a real WorkOS development environment; this suite does not prove those flows.
-
-`pnpm test:db` uses the development Neon database to verify worker persistence and organization isolation, then removes its randomized fixtures. Apply committed schema changes with `pnpm db:migrate`; it uses `DATABASE_URL`. Never use development credentials to migrate preview or production.
-
-Production builds run committed Drizzle migrations before `pnpm build`, using the
-production `DATABASE_URL` available only inside Vercel. Drizzle records applied
-migrations, so a later production build does not reapply them. Preview builds
-do not migrate a shared production database.
-
-GitHub Actions runs `pnpm check`, production build, Playwright browser tests, and the high-severity audit for pull requests and `main`. It supplies test-only configuration and does not connect to Neon; run `pnpm test:db` before merging a persistence change.
-
-## Deployment
-
-Vercel is the target platform. Use the Next.js framework preset, Node.js 24,
-and environment-scoped WorkOS secrets. Neon database credentials are separate
-for development, preview and production. Pilot calls the separate Pilot AI
-runtime with a Vercel OIDC token; runtime callbacks are also service-to-service
-OIDC endpoints, rather than human-session routes. The app can run with
-`pnpm build && pnpm start` on another Node host, but authentication currently
-depends on WorkOS.
-
-Do not treat the current state as production-ready. Track remaining work and provisioning verification in [progress](docs/progress.md).
+For contributing, running the full verification pipeline, and test details,
+see [`docs/development.md`](docs/development.md). For deployment, see
+[`docs/deployment.md`](docs/deployment.md).
