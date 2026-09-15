@@ -44,7 +44,10 @@ export const connectorConnections = pgTable(
     refreshTokenIv: text("refresh_token_iv"),
     refreshTokenAuthTag: text("refresh_token_auth_tag"),
     tokenExpiresAt: timestamp("token_expires_at", { withTimezone: true }),
-    grantedScopes: jsonb("granted_scopes").$type<string[]>().notNull().default([]),
+    grantedScopes: jsonb("granted_scopes")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
     status: text("status")
       .$type<"active" | "revoked" | "error">()
       .notNull()

@@ -56,7 +56,10 @@ export async function runGithubAction(input: {
       headers: headers(input.accessToken),
     })) as { items?: GithubIssue[] };
     return {
-      issues: capList((data.items ?? []).map((issue) => shapeIssue(issue)), params.limit),
+      issues: capList(
+        (data.items ?? []).map((issue) => shapeIssue(issue)),
+        params.limit,
+      ),
     };
   }
   if (input.action === "list-repository-issues") {
@@ -69,7 +72,12 @@ export async function runGithubAction(input: {
     const data = (await fetchJson(url.href, {
       headers: headers(input.accessToken),
     })) as GithubIssue[];
-    return { issues: capList(data.map((issue) => shapeIssue(issue)), params.limit) };
+    return {
+      issues: capList(
+        data.map((issue) => shapeIssue(issue)),
+        params.limit,
+      ),
+    };
   }
   throw new AdapterError(`Unknown GitHub action "${input.action}".`);
 }

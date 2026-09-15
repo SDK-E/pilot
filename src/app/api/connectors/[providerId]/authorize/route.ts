@@ -37,7 +37,9 @@ export async function GET(
     !ADMIN_ROLES.has(session.membership.role.slug)
   ) {
     return NextResponse.json(
-      { error: "Only organization owners and admins can connect for everyone." },
+      {
+        error: "Only organization owners and admins can connect for everyone.",
+      },
       { status: 403 },
     );
   }
@@ -51,8 +53,14 @@ export async function GET(
   });
 
   const authorizeUrl = new URL(provider.authorizeUrl);
-  authorizeUrl.searchParams.set("client_id", process.env[provider.clientIdEnvVar] ?? "");
-  authorizeUrl.searchParams.set("redirect_uri", callbackUrl(request, providerId));
+  authorizeUrl.searchParams.set(
+    "client_id",
+    process.env[provider.clientIdEnvVar] ?? "",
+  );
+  authorizeUrl.searchParams.set(
+    "redirect_uri",
+    callbackUrl(request, providerId),
+  );
   authorizeUrl.searchParams.set("scope", provider.scopes.join(" "));
   authorizeUrl.searchParams.set("state", state);
   authorizeUrl.searchParams.set("response_type", "code");

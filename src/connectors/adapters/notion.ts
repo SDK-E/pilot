@@ -26,10 +26,13 @@ interface NotionPage {
 }
 
 function pageTitle(page: NotionPage): string {
-  const titleProperty = Object.values(page.properties ?? {}).find(
-    (property) => Array.isArray(property.title),
+  const titleProperty = Object.values(page.properties ?? {}).find((property) =>
+    Array.isArray(property.title),
   );
-  return titleProperty?.title?.map((piece) => piece.plain_text ?? "").join("") ?? "Untitled";
+  return (
+    titleProperty?.title?.map((piece) => piece.plain_text ?? "").join("") ??
+    "Untitled"
+  );
 }
 
 interface NotionBlock {
@@ -42,7 +45,8 @@ interface NotionBlock {
 // enabling in production — this only flattens the common rich_text-bearing
 // block types, not every block type Notion supports.
 function blockText(block: NotionBlock): string {
-  const body = block[block.type] as { rich_text?: { plain_text?: string }[] } | undefined;
+  const body = block[block.type] as
+    { rich_text?: { plain_text?: string }[] } | undefined;
   return body?.rich_text?.map((piece) => piece.plain_text ?? "").join("") ?? "";
 }
 

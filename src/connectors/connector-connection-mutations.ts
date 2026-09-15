@@ -21,7 +21,10 @@ function ownerMatch(
   return isNull(connectorConnections.ownerWorkosUserId);
 }
 
-function connectionLabel(providerId: ConnectorProviderId, accountIdentifier: string) {
+function connectionLabel(
+  providerId: ConnectorProviderId,
+  accountIdentifier: string,
+) {
   const capitalized = `${providerId[0]?.toUpperCase()}${providerId.slice(1)}`;
   return `${capitalized} — ${accountIdentifier}`;
 }
@@ -40,7 +43,9 @@ interface UpsertInput {
   createdByWorkosUserId: string;
 }
 
-async function findExistingConnectionId(input: UpsertInput): Promise<string | undefined> {
+async function findExistingConnectionId(
+  input: UpsertInput,
+): Promise<string | undefined> {
   const [existing] = await db
     .select({ id: connectorConnections.id })
     .from(connectorConnections)
@@ -82,10 +87,15 @@ async function hasActiveDefault(input: UpsertInput): Promise<boolean> {
  * status updated in place, a new one is inserted with `isDefault: true` only
  * if it is the first active connection for that owner+provider.
  */
-export async function upsertConnectorConnection(input: UpsertInput): Promise<void> {
+export async function upsertConnectorConnection(
+  input: UpsertInput,
+): Promise<void> {
   const accessToken = encryptToken(input.accessToken);
-  const refreshToken = input.refreshToken ? encryptToken(input.refreshToken) : null;
-  const label = input.label ?? connectionLabel(input.providerId, input.accountIdentifier);
+  const refreshToken = input.refreshToken
+    ? encryptToken(input.refreshToken)
+    : null;
+  const label =
+    input.label ?? connectionLabel(input.providerId, input.accountIdentifier);
   const tokenColumns = {
     encryptedAccessToken: accessToken.ciphertext,
     accessTokenIv: accessToken.iv,
@@ -156,7 +166,10 @@ export async function touchConnectorConnectionLastUsed(
 }
 
 function assertOwnedOrAdmin(
-  connection: { ownerScope: "organization" | "user"; ownerWorkosUserId: string | null },
+  connection: {
+    ownerScope: "organization" | "user";
+    ownerWorkosUserId: string | null;
+  },
   input: { userId: string; isAdmin: boolean },
 ): void {
   if (connection.ownerScope === "organization" && !input.isAdmin) {

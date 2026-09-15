@@ -18,7 +18,10 @@ import type {
   ConnectorProviderId,
 } from "@/connectors/connector-provider-types";
 
-export const CONNECTOR_PROVIDERS: Record<ConnectorProviderId, ConnectorProvider> = {
+export const CONNECTOR_PROVIDERS: Record<
+  ConnectorProviderId,
+  ConnectorProvider
+> = {
   github: githubProvider,
   google: googleProvider,
   slack: slackProvider,
@@ -33,8 +36,6 @@ export function connectorProvider(id: ConnectorProviderId): ConnectorProvider {
 }
 
 export {
-  CONNECTOR_PROVIDER_IDS,
-  CONNECTOR_TOOL_IDS,
   isConnectorProviderId,
   isConnectorToolId,
   TOOL_ID_PROVIDER,
@@ -44,5 +45,4 @@ export type {
   ConnectorProvider,
   ConnectorProviderId,
   ConnectorToolId,
-  ProviderTokenResult,
 } from "@/connectors/connector-provider-types";

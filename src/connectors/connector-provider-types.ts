@@ -2,7 +2,9 @@
  * Shared types and small fetch helpers for the connector provider
  * implementations under `src/connectors/providers/`.
  */
-export const CONNECTOR_PROVIDER_IDS = [
+// Not exported: nothing outside this module needs the raw id list, only the
+// derived ConnectorProviderId type and the isConnectorProviderId guard below.
+const CONNECTOR_PROVIDER_IDS = [
   "github",
   "google",
   "slack",
@@ -20,7 +22,9 @@ export function isConnectorProviderId(
   return (CONNECTOR_PROVIDER_IDS as readonly string[]).includes(value);
 }
 
-export interface ProviderTokenResult {
+// Not exported: only used as the return type of ConnectorProvider's methods
+// below; provider implementations satisfy it structurally without importing it.
+interface ProviderTokenResult {
   accessToken: string;
   refreshToken: string | null;
   expiresAt: Date | null;
@@ -68,7 +72,9 @@ export async function postForm(
     body: new URLSearchParams(body),
   });
   if (!response.ok) {
-    throw new Error(`Token endpoint ${new URL(url).host} returned ${response.status}.`);
+    throw new Error(
+      `Token endpoint ${new URL(url).host} returned ${response.status}.`,
+    );
   }
   return response.json();
 }
@@ -77,7 +83,9 @@ export async function postForm(
  * Connector tool ids: the subset of `ToolId` that maps to a connector
  * provider.
  */
-export const CONNECTOR_TOOL_IDS = [
+// Not exported: nothing outside this module needs the raw id list, only the
+// derived ConnectorToolId type and the isConnectorToolId guard below.
+const CONNECTOR_TOOL_IDS = [
   "connector-github",
   "connector-google-drive",
   "connector-gmail",

@@ -40,7 +40,10 @@ export async function runGoogleDriveAction(input: {
     const params = searchSchema.parse(input.params);
     const escapedQuery = params.query.replaceAll("'", String.raw`\'`);
     const url = new URL("https://www.googleapis.com/drive/v3/files");
-    url.searchParams.set("q", `fullText contains '${escapedQuery}' and trashed = false`);
+    url.searchParams.set(
+      "q",
+      `fullText contains '${escapedQuery}' and trashed = false`,
+    );
     url.searchParams.set("pageSize", String(params.limit));
     url.searchParams.set("fields", "files(id,name,mimeType,webViewLink)");
     const data = (await fetchJson(url.href, {
@@ -68,9 +71,13 @@ export async function runGoogleDriveAction(input: {
     const contentUrl = exportMime
       ? `https://www.googleapis.com/drive/v3/files/${params.fileId}/export?mimeType=${encodeURIComponent(exportMime)}`
       : `https://www.googleapis.com/drive/v3/files/${params.fileId}?alt=media`;
-    const response = await fetch(contentUrl, { headers: headers(input.accessToken) });
+    const response = await fetch(contentUrl, {
+      headers: headers(input.accessToken),
+    });
     if (!response.ok) {
-      throw new AdapterError(`Could not read this Drive file (${response.status}).`);
+      throw new AdapterError(
+        `Could not read this Drive file (${response.status}).`,
+      );
     }
     const text = await response.text();
     return {

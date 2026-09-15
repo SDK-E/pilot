@@ -60,8 +60,7 @@ export const TOOLS: Record<ToolId, ToolDefinition> = {
   "connector-gmail": {
     id: "connector-gmail",
     name: "Gmail",
-    description:
-      "Search and read messages in your connected Gmail account.",
+    description: "Search and read messages in your connected Gmail account.",
   },
   "connector-slack": {
     id: "connector-slack",
@@ -72,8 +71,7 @@ export const TOOLS: Record<ToolId, ToolDefinition> = {
   "connector-notion": {
     id: "connector-notion",
     name: "Notion",
-    description:
-      "Search and read pages in your connected Notion workspace.",
+    description: "Search and read pages in your connected Notion workspace.",
   },
   "connector-linear": {
     id: "connector-linear",
@@ -89,8 +87,7 @@ export const TOOLS: Record<ToolId, ToolDefinition> = {
   "connector-monday": {
     id: "connector-monday",
     name: "Monday",
-    description:
-      "Query boards and items in your connected Monday.com account.",
+    description: "Query boards and items in your connected Monday.com account.",
   },
 };
 

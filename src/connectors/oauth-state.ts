@@ -34,7 +34,9 @@ function base64url(input: Buffer | string): string {
 }
 
 function sign(encodedPayload: string): string {
-  return base64url(createHmac("sha256", signingSecret()).update(encodedPayload).digest());
+  return base64url(
+    createHmac("sha256", signingSecret()).update(encodedPayload).digest(),
+  );
 }
 
 export function signOAuthState(payload: OAuthStatePayload): string {
@@ -51,7 +53,8 @@ function isSignedOAuthState(value: unknown): value is SignedOAuthState {
     typeof candidate.userId === "string" &&
     typeof candidate.providerId === "string" &&
     isConnectorProviderId(candidate.providerId) &&
-    (candidate.ownerScope === "organization" || candidate.ownerScope === "user") &&
+    (candidate.ownerScope === "organization" ||
+      candidate.ownerScope === "user") &&
     typeof candidate.issuedAt === "number"
   );
 }
@@ -71,7 +74,9 @@ export function verifyOAuthState(token: string): SignedOAuthState | null {
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8"));
+    parsed = JSON.parse(
+      Buffer.from(encodedPayload, "base64url").toString("utf8"),
+    );
   } catch {
     return null;
   }

@@ -16,13 +16,15 @@ function headers(accessToken: string) {
 }
 
 function stripHtml(html: string): string {
-  return html
-    .replaceAll(/<style\b[^>]*>.*?<\/style>/gis, "")
-    .replaceAll(/<script\b[^>]*>.*?<\/script>/gis, "")
-    // eslint-disable-next-line sonarjs/super-linear-regex -- bounded, non-nested character class; no backtracking risk in practice
-    .replaceAll(/<[^>]+>/g, " ")
-    .replaceAll(/\s+/g, " ")
-    .trim();
+  return (
+    html
+      .replaceAll(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replaceAll(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+      // eslint-disable-next-line sonarjs/super-linear-regex -- bounded, non-nested character class; no backtracking risk in practice
+      .replaceAll(/<[^>]+>/g, " ")
+      .replaceAll(/\s+/g, " ")
+      .trim()
+  );
 }
 
 interface GmailHeader {
@@ -44,7 +46,9 @@ interface GmailPart {
 function extractBody(payload: GmailPart | undefined): string {
   if (!payload) return "";
   if (payload.body?.data) {
-    const decoded = Buffer.from(payload.body.data, "base64url").toString("utf8");
+    const decoded = Buffer.from(payload.body.data, "base64url").toString(
+      "utf8",
+    );
     return payload.mimeType === "text/html" ? stripHtml(decoded) : decoded;
   }
   const parts = payload.parts ?? [];
@@ -55,25 +59,39 @@ function extractBody(payload: GmailPart | undefined): string {
   return "";
 }
 
-function headerValue(headerList: GmailHeader[] | undefined, name: string): string | null {
+function headerValue(
+  headerList: GmailHeader[] | undefined,
+  name: string,
+): string | null {
   return (
-    headerList?.find((header) => header.name.toLowerCase() === name.toLowerCase())
-      ?.value ?? null
+    headerList?.find(
+      (header) => header.name.toLowerCase() === name.toLowerCase(),
+    )?.value ?? null
   );
 }
 
-async function searchMessages(accessToken: string, params: Record<string, unknown>) {
+async function searchMessages(
+  accessToken: string,
+  params: Record<string, unknown>,
+) {
   const parsed = searchMessagesSchema.parse(params);
-  const url = new URL("https://gmail.googleapis.com/gmail/v1/users/me/messages");
+  const url = new URL(
+    "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+  );
   url.searchParams.set("q", parsed.query);
   url.searchParams.set("maxResults", String(parsed.limit));
-  const data = (await fetchJson(url.href, { headers: headers(accessToken) })) as {
+  const data = (await fetchJson(url.href, {
+    headers: headers(accessToken),
+  })) as {
     messages?: { id: string }[];
   };
   return { messages: capList(data.messages ?? [], parsed.limit) };
 }
 
-async function readMessage(accessToken: string, params: Record<string, unknown>) {
+async function readMessage(
+  accessToken: string,
+  params: Record<string, unknown>,
+) {
   const parsed = readMessageSchema.parse(params);
   const data = (await fetchJson(
     `https://gmail.googleapis.com/gmail/v1/users/me/messages/${parsed.messageId}?format=full`,

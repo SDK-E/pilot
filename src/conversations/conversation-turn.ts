@@ -8,6 +8,7 @@ import {
   type RuntimeEvent,
   type RuntimeRequest,
 } from "@/ai/pilot-ai-client";
+import { getAvailableConnectorProviders } from "@/connectors/connector-repository";
 import { buildAttachmentContext } from "@/conversations/attachment-context";
 import { appendConversationMessageContent } from "@/conversations/conversation-message-repository";
 import { createConversationMessage } from "@/conversations/conversation-repository";
@@ -28,7 +29,6 @@ import {
   storedCount,
   type TurnInput,
 } from "@/conversations/turn-shared";
-import { getAvailableConnectorProviders } from "@/connectors/connector-repository";
 import {
   finishExecution,
   startExecution,

@@ -41,8 +41,8 @@ export function ConnectorsSection({
         <CardTitle>Connectors</CardTitle>
         <CardDescription>
           Connect your own accounts, or (as an admin) an account shared with
-          everyone in the organization. Agents can only read through these —
-          no connector action changes anything in the connected account.
+          everyone in the organization. Agents can only read through these — no
+          connector action changes anything in the connected account.
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-4">

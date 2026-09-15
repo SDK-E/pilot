@@ -80,6 +80,7 @@ export async function GET(
       createdByWorkosUserId: session.user.id,
     });
   } catch (error) {
+    // eslint-disable-next-line no-console -- only path to surface this server-side; never a raw 500 for an OAuth failure
     console.error(`Connector OAuth callback failed for ${providerId}:`, error);
     return errorRedirect(request, providerId);
   }
