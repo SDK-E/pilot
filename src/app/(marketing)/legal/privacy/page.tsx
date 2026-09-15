@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-const LAST_UPDATED = "[DATE — TBD, set when this page is reviewed by counsel]";
+const LAST_UPDATED = "September 15, 2026";
 
 export default function PrivacyPage() {
   return (
@@ -26,12 +26,6 @@ export default function PrivacyPage() {
         Last updated: {LAST_UPDATED}
       </p>
       <div className="mt-8 space-y-6 text-sm leading-relaxed text-muted-foreground">
-        <p className="rounded-md border border-dashed bg-muted/40 p-4 text-xs">
-          This page is a structural draft, not a final legal document. Fields
-          marked <strong>TBD</strong> need review by {ORGANIZATION_NAME}
-          &apos;s legal counsel and Data Protection Officer before this goes
-          live.
-        </p>
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-foreground">
             1. Who controls your data
@@ -72,8 +66,8 @@ export default function PrivacyPage() {
             <li>Neon — database hosting.</li>
             <li>Vercel — application hosting and deployment.</li>
             <li>
-              The AI model provider(s) that power Pilot&apos;s agent runtime.
-              [TBD: name the specific provider(s) here before launch.]
+              KiloCode — the AI model provider powering Pilot&apos;s agent
+              runtime.
             </li>
           </ul>
         </section>
@@ -81,15 +75,53 @@ export default function PrivacyPage() {
           <h2 className="text-sm font-semibold text-foreground">
             5. Data retention
           </h2>
-          <p>[TBD: retention periods, reviewed by counsel.]</p>
+          <p>
+            We keep your conversations, projects, and files for as long as your
+            account is active. After you close your account, we retain this data
+            for up to 30 days (to allow recovery from accidental closure or
+            billing errors), then delete it, except where we&apos;re required by
+            law to keep it longer. Basic operational logs needed to run and
+            secure the service are kept for a limited period on a rolling basis.
+          </p>
         </section>
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-foreground">
             6. Your rights
           </h2>
           <p>
-            [TBD: rights under applicable law — e.g. access, correction,
-            deletion, portability — and how to exercise them.]
+            Because {ORGANIZATION_NAME} is based in France, you have rights
+            under the EU General Data Protection Regulation (GDPR), including
+            the right to:
+          </p>
+          <ul className="ml-4 list-disc space-y-1">
+            <li>Access the personal data we hold about you.</li>
+            <li>Correct inaccurate or incomplete data.</li>
+            <li>
+              Request deletion of your data (&ldquo;right to be
+              forgotten&rdquo;).
+            </li>
+            <li>Receive a portable copy of your data.</li>
+            <li>Object to, or request that we restrict, certain processing.</li>
+            <li>
+              Lodge a complaint with a supervisory authority — in France, the{" "}
+              <a
+                className="underline underline-offset-4 hover:text-foreground"
+                href="https://www.cnil.fr/"
+              >
+                CNIL
+              </a>
+              .
+            </li>
+          </ul>
+          <p>
+            To exercise any of these rights, email{" "}
+            <a
+              className="underline underline-offset-4 hover:text-foreground"
+              href={`mailto:${SUPPORT_EMAIL}`}
+            >
+              {SUPPORT_EMAIL}
+            </a>
+            .
           </p>
         </section>
         <section className="space-y-2">

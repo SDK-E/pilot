@@ -20,14 +20,18 @@ GitHub" footer link was false and has been removed. Pricing shown is real
 (Free / 5€ adds Work / 20€ for Chat+Work+Code) under a "free during early
 access" banner — there is no Stripe integration yet, so every plan's call
 to action is a free sign-up, never a checkout. Legal pages use "SDK
-Enterprises" as the entity with clearly marked `TBD` placeholders
-(jurisdiction, last-updated date, and the specific LLM/runtime
-subprocessor name) pending legal review; WorkOS, Neon, and Vercel are
-disclosed as confirmed subprocessors. The social-proof section
-deliberately contains no fabricated testimonials, logos, or usage stats —
-undisclosed fake customer quotes are deceptive advertising, so it instead
-runs on honest signals (a blog link, a direct-contact CTA) with a slot
-ready for real testimonials later.
+Enterprises" (incorporated in France) as the entity, `hello@sdk.enterprises`
+as the contact address, KiloCode named as the AI model subprocessor
+alongside WorkOS, Neon, and Vercel, French law/EU courts as the governing
+law, and standard GDPR data-subject rights (referencing the CNIL as
+supervisory authority) — all confirmed by the business owner. The pages no
+longer carry a "not yet reviewed by counsel" disclaimer, at the business
+owner's explicit instruction; that review status is an internal fact, not
+something to state on public-facing pages.
+The social-proof section deliberately contains no fabricated testimonials,
+logos, or usage stats — undisclosed fake customer quotes are deceptive
+advertising, so it instead runs on honest signals (a blog link, a
+direct-contact CTA) with a slot ready for real testimonials later.
 
 Technical SEO: `src/app/sitemap.ts` and `src/app/robots.ts` (both at the
 app root, disallowing the authenticated app and API routes), a generated
@@ -36,8 +40,7 @@ app root, disallowing the authenticated app and API routes), a generated
 (`Organization`/`WebSite` on the marketing layout, `FAQPage` wherever
 `FaqSection` is used, `SoftwareApplication` on Pricing, `BreadcrumbList` on
 Docs, `Article` on Blog posts). `NEXT_PUBLIC_SITE_URL` is a new env var
-(see `.env.example`) driving all of the above; its fallback value is a
-placeholder guess, not a confirmed production domain.
+(see `.env.example`), confirmed as `https://pilot.sdk.enterprises`.
 
 Not yet done: Docs and Blog ship with only the real content available at
 write time (two docs pages, one blog post) rather than a full content set,
