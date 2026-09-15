@@ -46,5 +46,18 @@ jobs:
       - name: Run browser tests
         run: pnpm test
 
+      - name: Write CI .env.local for test:server
+        run: |
+          cat <<EOF > .env.local
+          DATABASE_URL=$DATABASE_URL
+          WORKOS_API_KEY=$WORKOS_API_KEY
+          WORKOS_CLIENT_ID=$WORKOS_CLIENT_ID
+          WORKOS_COOKIE_PASSWORD=$WORKOS_COOKIE_PASSWORD
+          NEXT_PUBLIC_WORKOS_REDIRECT_URI=$NEXT_PUBLIC_WORKOS_REDIRECT_URI
+          EOF
+
+      - name: Run server unit tests
+        run: pnpm test:server
+
       - name: Check known vulnerabilities
         run: pnpm audit --audit-level high

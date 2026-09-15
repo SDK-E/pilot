@@ -1,0 +1,68 @@
+name: Database integration tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test-db:
+    runs-on: ubuntu-latest
+    # tests/*.integration.test.ts (pnpm test:db) need a real Neon database —
+    # the main quality.yml workflow only has a local Postgres container,
+    # which doesn't speak Neon's HTTP driver (src/db/client.ts). This job
+    # runs only when a repo secret provides a real, isolated Neon
+    # connection string; forks and PRs without the secret skip cleanly
+    # instead of failing the required check.
+    if: ${{ github.repository == 'SDK-E/pilot' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
+      WORKOS_API_KEY: sk_test_pilot_ci
+      WORKOS_CLIENT_ID: client_pilot_ci
+      WORKOS_COOKIE_PASSWORD: pilot-ci-cookie-password-with-at-least-32-characters
+      NEXT_PUBLIC_WORKOS_REDIRECT_URI: http://localhost:3100/auth/callback
+    steps:
+      - name: Check out source
+        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Write CI .env.local for test:db
+        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        run: |
+          cat <<EOF > .env.local
+          DATABASE_URL=$DATABASE_URL
+          WORKOS_API_KEY=$WORKOS_API_KEY
+          WORKOS_CLIENT_ID=$WORKOS_CLIENT_ID
+          WORKOS_COOKIE_PASSWORD=$WORKOS_COOKIE_PASSWORD
+          NEXT_PUBLIC_WORKOS_REDIRECT_URI=$NEXT_PUBLIC_WORKOS_REDIRECT_URI
+          EOF
+
+      - name: Apply pending migrations
+        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        run: pnpm db:migrate
+
+      - name: Run Neon-backed integration tests
+        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        run: pnpm test:db
+
+      - name: Skipped (no DATABASE_URL_TEST secret configured)
+        if: ${{ secrets.DATABASE_URL_TEST == '' }}
+        run: echo "DATABASE_URL_TEST is not set; skipping pnpm test:db. Configure a dedicated, isolated Neon database URL as a repo secret to enable this job."

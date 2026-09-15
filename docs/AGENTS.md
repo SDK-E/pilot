@@ -11,8 +11,10 @@ older platform reports.
   the top is the source of truth; entries below it are history.
 - `docs/decisions/` — Architecture Decision Records. Start with
   [0016](decisions/0016-three-agent-kinds.md) for today's product model.
-- `docs/pilot-platform/` — Reports and plans from earlier phases. Read them as
-  history; where they conflict with an ADR, the ADR wins.
+- `docs/architecture.md` — a short current-state system map (services, auth
+  boundaries, data stores); the ADRs win where they disagree.
+- `docs/development.md` / `docs/deployment.md` — local setup and the full
+  verification pipeline / Vercel deployment specifics.
 
 ## Rules
 
