@@ -247,8 +247,11 @@ export async function setDefaultConnectorConnection(input: {
   if (connection?.status !== "active") return;
   assertOwnedOrAdmin(connection, input);
 
-  await db.transaction(async (tx) => {
-    await tx
+  // db.transaction isn't supported by the neon-http driver this app uses
+  // (see src/db/client.ts) — db.batch is this codebase's equivalent for an
+  // atomic multi-statement write (already used by agent-repository.ts).
+  await db.batch([
+    db
       .update(connectorConnections)
       .set({ isDefault: false, updatedAt: new Date() })
       .where(
@@ -259,10 +262,10 @@ export async function setDefaultConnectorConnection(input: {
           eq(connectorConnections.providerId, connection.providerId),
           eq(connectorConnections.status, "active"),
         ),
-      );
-    await tx
+      ),
+    db
       .update(connectorConnections)
       .set({ isDefault: true, updatedAt: new Date() })
-      .where(eq(connectorConnections.id, input.connectionId));
-  });
+      .where(eq(connectorConnections.id, input.connectionId)),
+  ]);
 }

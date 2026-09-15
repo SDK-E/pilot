@@ -12,26 +12,37 @@ test("anonymous cannot access workspace routes (already in auth-boundary)", asyn
   }
 });
 
+const RUNTIME_ROUTE_BODIES = {
+  "/api/runtime/activity": {
+    organizationId: "org_forged",
+    executionId: "00000000-0000-4000-8000-000000000000",
+    toolId: "web-search",
+    state: "started",
+  },
+  "/api/runtime/scratchpad": {
+    organizationId: "org_forged",
+    executionId: "00000000-0000-4000-8000-000000000000",
+    action: "read",
+  },
+  "/api/runtime/connectors/execute": {
+    organizationId: "org_forged",
+    executionId: "00000000-0000-4000-8000-000000000000",
+    toolId: "connector-github",
+    action: "search-issues",
+    params: { query: "bug" },
+  },
+} as const;
+
 test("anonymous cannot access runtime API routes", async ({ request }) => {
   for (const [method, path] of [
     ["post", "/api/runtime/activity"],
     ["post", "/api/runtime/scratchpad"],
+    ["post", "/api/runtime/connectors/execute"],
   ] as const) {
     const response = await request[method](path, {
       maxRedirects: 0,
       headers: { "content-type": "application/json" },
-      data: path.includes("activity")
-        ? {
-            organizationId: "org_forged",
-            executionId: "00000000-0000-4000-8000-000000000000",
-            toolId: "web-search",
-            state: "started",
-          }
-        : {
-            organizationId: "org_forged",
-            executionId: "00000000-0000-4000-8000-000000000000",
-            action: "read",
-          },
+      data: RUNTIME_ROUTE_BODIES[path],
     });
     expect(response.status()).toBe(401);
   }

@@ -40,6 +40,7 @@ test("anonymous and forged sessions cannot access workspace routes", async ({
     "/chat",
     "/agents/forged-agent",
     "/work/00000000-0000-4000-8000-000000000000",
+    "/api/connectors/github/authorize",
   ]) {
     for (const cookie of ["", "wos-session=forged-session"]) {
       const response = await request.get(path, {
