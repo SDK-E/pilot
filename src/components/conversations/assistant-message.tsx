@@ -170,7 +170,7 @@ export function TransientTurnReply({ turn }: { turn: TransientTurn }) {
   if (turn.error) {
     return (
       <Message from="assistant">
-        <MessageContent className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive">
+        <MessageContent className={ERROR_CONTENT_CLASSNAME}>
           <p>{turn.error}</p>
         </MessageContent>
       </Message>

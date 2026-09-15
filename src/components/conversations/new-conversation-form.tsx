@@ -21,9 +21,14 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
 import {
+  COMPOSER_WRAPPER_CLASSNAME,
+  useComposerSubmitState,
+} from "@/components/conversations/composer-shared";
+import {
   startConversationRequest,
   startFailureMessage,
 } from "@/components/conversations/start-conversation-request";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { submitOnShortcut } from "@/hooks/use-message-submit-shortcut";
 
@@ -122,10 +127,13 @@ function AgentPicker({
   }
   if (agents.length === 1) {
     return (
-      <span className="inline-flex h-8 max-w-52 items-center gap-1.5 rounded-full bg-muted px-2.5 text-xs text-muted-foreground">
+      <Badge
+        className="h-8 max-w-52 gap-1.5 px-2.5 font-normal text-muted-foreground"
+        variant="secondary"
+      >
         <AgentAvatar className="size-4" name={agentName} />
         <span className="truncate">{agentName}</span>
-      </span>
+      </Badge>
     );
   }
   return null;
@@ -186,11 +194,15 @@ export function NewConversationForm({
     agentId,
     textareaRef,
   });
+  const submitState = useComposerSubmitState({
+    isBusy: isStarting,
+    text: input,
+  });
 
   return (
     <div className="space-y-4">
       <PromptInput
-        className="rounded-xl border bg-card p-2 shadow-sm"
+        className={COMPOSER_WRAPPER_CLASSNAME}
         onSubmit={(message: PromptInputMessage) => void start(message.text)}
       >
         <PromptInputBody>
@@ -225,7 +237,7 @@ export function NewConversationForm({
             />
           </PromptInputTools>
           <PromptInputSubmit
-            disabled={!input.trim() && !isStarting}
+            disabled={submitState.isDisabled}
             status={isStarting ? "submitted" : "ready"}
           />
         </PromptInputFooter>

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, CopyIcon } from "lucide-react";
+import { RiCheckLine, RiFileCopyLine } from "@remixicon/react";
 import {
   isValidElement,
   useState,
@@ -74,9 +74,9 @@ export function CompactCodeBlock({
         type="button"
       >
         {isCopied ? (
-          <CheckIcon className="size-3.5" />
+          <RiCheckLine className="size-3.5" />
         ) : (
-          <CopyIcon className="size-3.5" />
+          <RiFileCopyLine className="size-3.5" />
         )}
       </button>
     </div>

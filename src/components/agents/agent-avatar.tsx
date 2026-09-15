@@ -13,24 +13,23 @@ function initials(name: string) {
   );
 }
 
-// A small, fixed set of on-brand gradients so every agent gets a distinct,
-// deterministic look without reaching for per-pixel random hues that could
-// clash with the theme.
-const GRADIENTS = [
-  "from-violet-500 to-indigo-600",
-  "from-blue-500 to-cyan-500",
-  "from-emerald-500 to-teal-600",
-  "from-amber-500 to-orange-600",
-  "from-rose-500 to-pink-600",
-  "from-fuchsia-500 to-purple-600",
+// Deterministic per-agent tinting built from the theme's own chart tokens,
+// so an agent's color follows a re-theme instead of staying pinned to raw
+// Tailwind hues chosen independently of the palette.
+const TOKEN_TREATMENTS = [
+  "bg-chart-1/25 text-chart-1",
+  "bg-chart-2/25 text-chart-2",
+  "bg-chart-3/25 text-chart-3",
+  "bg-chart-4/25 text-chart-4",
+  "bg-chart-5/25 text-chart-5",
 ] as const;
 
-function gradientFor(name: string) {
+function treatmentFor(name: string) {
   let hash = 0;
   for (let index = 0; index < name.length; index += 1) {
     hash = (hash * 31 + (name.codePointAt(index) ?? 0)) >>> 0;
   }
-  return GRADIENTS[hash % GRADIENTS.length];
+  return TOKEN_TREATMENTS[hash % TOKEN_TREATMENTS.length];
 }
 
 export function AgentAvatar({
@@ -43,10 +42,7 @@ export function AgentAvatar({
   return (
     <Avatar className={cn("size-6 shadow-sm", className)}>
       <AvatarFallback
-        className={cn(
-          "bg-gradient-to-br font-semibold text-[0.65em] text-white",
-          gradientFor(name),
-        )}
+        className={cn("font-semibold text-[0.65em]", treatmentFor(name))}
       >
         {initials(name)}
       </AvatarFallback>

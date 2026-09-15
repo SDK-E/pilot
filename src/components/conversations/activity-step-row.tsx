@@ -1,7 +1,7 @@
 "use client";
 
+import { RiArrowDownSLine } from "@remixicon/react";
 import { cn } from "cn";
-import { ChevronDownIcon } from "lucide-react";
 import { useState } from "react";
 
 import { ChainOfThoughtStep } from "@/components/ai-elements/chain-of-thought";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/collapsible";
 
 import { describeActivityStep } from "./activity-step-presentation";
+import { asChainOfThoughtIcon } from "./chain-of-thought-icon";
 import {
   MESSAGE_RESPONSE_COMPONENTS,
   MESSAGE_RESPONSE_CONTROLS,
@@ -45,12 +46,13 @@ export function ActivityStepRow({
   const [isOpen, setIsOpen] = useState(false);
   const { label, icon } = describeActivityStep(step);
   const status = step.status === "active" ? "active" : "complete";
+  const resolvedIcon = icon ? asChainOfThoughtIcon(icon) : undefined;
 
   if (!step.detail) {
     return (
       <ChainOfThoughtStep
         className={className}
-        icon={icon}
+        icon={resolvedIcon}
         label={label}
         status={status}
       />
@@ -60,12 +62,12 @@ export function ActivityStepRow({
   return (
     <ChainOfThoughtStep
       className={className}
-      icon={icon}
+      icon={resolvedIcon}
       label={
         <Collapsible onOpenChange={setIsOpen} open={isOpen}>
           <CollapsibleTrigger className="-my-0.5 flex items-center gap-1.5 text-left hover:text-foreground">
             {label}
-            <ChevronDownIcon
+            <RiArrowDownSLine
               className={cn(
                 "size-3.5 shrink-0 transition-transform",
                 isOpen ? "rotate-180" : "rotate-0",

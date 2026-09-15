@@ -35,7 +35,7 @@ export default async function ModePage({ params }: ModePageProps) {
   const kindAgents = agents.filter((agent) => agent.baseAgentId === kind.id);
 
   return (
-    <main className="flex min-h-[calc(100svh-3rem)] flex-1 flex-col items-center p-6 sm:py-16">
+    <main className="flex min-h-[calc(100svh-var(--header-height))] flex-1 flex-col items-center p-6 sm:py-16">
       <section className="w-full max-w-2xl space-y-8">
         <header className="space-y-2 text-center">
           <h1 className="font-heading text-2xl font-semibold tracking-tight">

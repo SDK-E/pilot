@@ -222,7 +222,7 @@ export function WorkspaceShell({
       </Sidebar>
 
       <SidebarInset>
-        <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+        <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator
             className="mr-1 data-[orientation=vertical]:h-4"

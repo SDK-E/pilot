@@ -5,7 +5,6 @@ import { useCallback, useState } from "react";
 import {
   Conversation,
   ConversationContent,
-  ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import {
@@ -23,6 +22,12 @@ import {
   MESSAGE_RESPONSE_CONTROLS,
 } from "@/components/conversations/message-response-controls";
 import { UserMessage } from "@/components/conversations/user-message";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 import type { PersistedActivity, PersistedMessage } from "./conversation-types";
 import type { TransientTurn } from "./use-conversation-stream";
@@ -106,10 +111,12 @@ function isTranscriptEmpty(input: {
 function StreamingReply({
   completion,
   isLoading,
+  isDetailsPanelVisible,
   streamActivities,
 }: {
   completion: string;
   isLoading: boolean;
+  isDetailsPanelVisible: boolean;
   streamActivities: PersistedActivity[];
 }) {
   return (
@@ -124,7 +131,10 @@ function StreamingReply({
           </MessageResponse>
         ) : null}
         {isLoading ? (
-          <LiveConversationActivity events={streamActivities} />
+          <LiveConversationActivity
+            events={streamActivities}
+            isCompact={isDetailsPanelVisible}
+          />
         ) : null}
       </MessageContent>
     </Message>
@@ -139,6 +149,7 @@ interface MessageListProps {
   pendingPrompt?: string;
   completion: string;
   isLoading: boolean;
+  isDetailsPanelVisible: boolean;
   streamActivities: PersistedActivity[];
   onAnswer: (text: string) => void;
   onEditMessage: (messageId: string, content: string) => void;
@@ -160,6 +171,7 @@ export function MessageList({
   pendingPrompt,
   completion,
   isLoading,
+  isDetailsPanelVisible,
   streamActivities,
   onAnswer,
   onEditMessage,
@@ -179,11 +191,14 @@ export function MessageList({
     <Conversation className="min-h-0 min-w-0 flex-1">
       <ConversationContent className="mx-auto w-full max-w-3xl gap-8 px-5 py-8 sm:px-8 sm:py-12">
         {isEmpty ? (
-          <ConversationEmptyState
-            className="min-h-[min(52svh,34rem)]"
-            description={`Start with a clear objective, context, or question for ${agentName}.`}
-            title={`How can ${agentName} help?`}
-          />
+          <Empty className="min-h-[min(52svh,34rem)] border-none">
+            <EmptyHeader>
+              <EmptyTitle>{`How can ${agentName} help?`}</EmptyTitle>
+              <EmptyDescription>
+                {`Start with a clear objective, context, or question for ${agentName}.`}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : null}
         {messages.map((message) =>
           renderMessage(message, {
@@ -209,6 +224,7 @@ export function MessageList({
         {isLoading || pendingPrompt ? (
           <StreamingReply
             completion={completion}
+            isDetailsPanelVisible={isDetailsPanelVisible}
             isLoading={isLoading}
             streamActivities={streamActivities}
           />

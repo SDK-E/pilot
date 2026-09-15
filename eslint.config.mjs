@@ -104,6 +104,21 @@ export default defineConfig([
         { max: 300, skipBlankLines: true, skipComments: true },
       ],
       "no-console": "error",
+      // components.json pins @remixicon/react as the icon library; lucide-react
+      // is only expected inside the vendored ai-elements files, which are
+      // lint-ignored above and never reach this rule.
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "lucide-react",
+              message:
+                "Use @remixicon/react instead (this project's configured icon library).",
+            },
+          ],
+        },
+      ],
 
       // Both rules fight framework vocabulary (props, ref, env, req, res) and
       // contradict each other on the same identifiers; the rest of the unicorn
