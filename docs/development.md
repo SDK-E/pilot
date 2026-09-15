@@ -18,6 +18,12 @@ pnpm dev
 
 ## Environment variables
 
+For the SDK Enterprises deployment, the project is linked to
+`sdk-enterprises/pilot`. Authorized maintainers can use
+`vercel env pull .env.local --environment development` instead of filling in
+`.env.local` by hand. Never pull production secrets into a local
+environment.
+
 See `.env.example` for the authoritative list. In summary:
 
 - `WORKOS_API_KEY`, `WORKOS_CLIENT_ID`, `WORKOS_COOKIE_PASSWORD`,

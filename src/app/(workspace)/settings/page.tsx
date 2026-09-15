@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { listAgents } from "@/agents/agent-repository";
 import { AgentCapabilitiesSection } from "@/components/settings/agent-capabilities-section";
+import { ConnectorsSection } from "@/components/settings/connectors-section";
 import {
   DefaultAgentSection,
   DeleteWorkspaceSection,
@@ -31,6 +32,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/workspace/page-header";
+import { listConnectorConnectionsForSettings } from "@/connectors/connector-repository";
 import { listOrganizationDomains } from "@/organizations/local-domain-verification";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
 import {
@@ -141,17 +143,22 @@ function buildDangerZoneSection({
  */
 async function loadOrganizationSettingsGroups(): Promise<{
   agentsAndCapabilities: React.ReactNode;
+  connectors: React.ReactNode;
   organization: React.ReactNode;
   dangerZone: React.ReactNode;
 } | null> {
   const session = await getWorkspaceSession();
   if (!isWorkspaceSession(session)) return null;
-  const [organization, agents, domains] = await Promise.all([
+  const [organization, agents, domains, connectors] = await Promise.all([
     getOrganizationPreferences(session.organizationId),
     listAgents(session.organizationId),
     session.kind === "local"
       ? listOrganizationDomains(session.organizationId)
       : Promise.resolve([]),
+    listConnectorConnectionsForSettings({
+      organizationId: session.organizationId,
+      userId: session.user.id,
+    }),
   ]);
   const isAdmin = ADMIN_ROLES.has(session.membership.role.slug);
   const isOwner = session.membership.role.slug === "owner";
@@ -162,6 +169,13 @@ async function loadOrganizationSettingsGroups(): Promise<{
       isAdmin,
       organization,
     }),
+    connectors: (
+      <ConnectorsSection
+        isAdmin={isAdmin}
+        organization={connectors.organization}
+        personal={connectors.personal}
+      />
+    ),
     organization: buildOrganizationSection({ domains, isAdmin, session }),
     dangerZone: buildDangerZoneSection({ isOwner, session }),
   };
@@ -230,6 +244,13 @@ export default async function SettingsPage() {
           id: "agents",
           label: "Agents & Capabilities",
           content: organizationGroups.agentsAndCapabilities,
+        }
+      : null,
+    organizationGroups
+      ? {
+          id: "connectors",
+          label: "Connectors",
+          content: organizationGroups.connectors,
         }
       : null,
     organizationGroups?.organization

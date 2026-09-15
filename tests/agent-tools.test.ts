@@ -37,11 +37,5 @@ test("a tool is granted only when enabled and allowed for the kind", () => {
 });
 
 test("a new agent starts with every tool on", () => {
-  assert.deepEqual(defaultEnabledToolIds, [
-    "web-search",
-    "scratchpad",
-    "ask-user",
-    "plan",
-    "code-sandbox",
-  ]);
+  assert.deepEqual(defaultEnabledToolIds, TOOL_IDS);
 });

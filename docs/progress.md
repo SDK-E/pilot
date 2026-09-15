@@ -1,8 +1,72 @@
 # Pilot implementation status
 
-Updated 2026-09-14. This is an implementation record, not a completion claim.
+Updated 2026-09-15. This is an implementation record, not a completion claim.
 
-## Current state (2026-09-14)
+## Marketing site (2026-09-15)
+
+The public site outside `(workspace)` was rebuilt as a real marketing site,
+route group `src/app/(marketing)/`: Home, About, Pricing, Contact, Docs
+(index + slug pages), Blog (index + slug pages), and Terms/Privacy under
+`/legal`. Shared marketing components live in `src/components/marketing/`;
+copy and structured content live in `src/marketing/` (`pricing-plans.ts`,
+`nav-links.ts`, `faq.ts`, `content.ts`, `site-config.ts`), not inline in
+JSX. `src/proxy.ts`'s matcher and `unauthenticatedPaths` were extended to
+cover the new public routes, since they call `withAuth()` to branch the
+nav/hero CTA between sign-in and "open workspace" — a route not in the
+AuthKit middleware matcher throws when it calls `withAuth()`.
+
+Pilot is not open source; the previous landing page's "Open source on
+GitHub" footer link was false and has been removed. Pricing shown is real
+(Free / 5€ adds Work / 20€ for Chat+Work+Code) under a "free during early
+access" banner — there is no Stripe integration yet, so every plan's call
+to action is a free sign-up, never a checkout. Legal pages use "SDK
+Enterprises" (incorporated in France) as the entity, `hello@sdk.enterprises`
+as the contact address, KiloCode named as the AI model subprocessor
+alongside WorkOS, Neon, and Vercel, French law/EU courts as the governing
+law, and standard GDPR data-subject rights (referencing the CNIL as
+supervisory authority) — all confirmed by the business owner. The pages no
+longer carry a "not yet reviewed by counsel" disclaimer, at the business
+owner's explicit instruction; that review status is an internal fact, not
+something to state on public-facing pages.
+The social-proof section deliberately contains no fabricated testimonials,
+logos, or usage stats — undisclosed fake customer quotes are deceptive
+advertising, so it instead runs on honest signals (a blog link, a
+direct-contact CTA) with a slot ready for real testimonials later.
+
+### Legal content review (2026-09-15)
+
+Terms of Service and Privacy Policy were expanded against externally
+researched requirements (GDPR compliance checklists, French LCEN legal-notice
+rules, standard SaaS ToS clauses, EU consumer right-of-withdrawal rules):
+added intellectual property, limitation of liability, indemnification, and
+right-of-withdrawal clauses to Terms; added per-purpose legal basis,
+international-transfer safeguards, and a DPA-on-request line to Privacy.
+A new `/legal/mentions-legales` page was added — French law (LCEN) requires
+this as a page separate from Terms/Privacy — with SDK Enterprises' real
+registration details (SIREN, SIRET, VAT, registered office, publication
+director) supplied by the business owner, and Vercel's publicly documented
+hosting-provider address. `src/marketing/site-config.ts` now exports
+`LEGAL_ENTITY` and `HOSTING_PROVIDER` for this. This content is still
+standard drafted language, not a substitute for actual legal counsel
+review — the public pages just never say so, per instruction.
+
+Technical SEO: `src/app/sitemap.ts` and `src/app/robots.ts` (both at the
+app root, disallowing the authenticated app and API routes), a generated
+`opengraph-image.tsx`, per-route `generateMetadata`/`metadata` with
+`alternates.canonical` on every marketing page, and inline JSON-LD
+(`Organization`/`WebSite` on the marketing layout, `FAQPage` wherever
+`FaqSection` is used, `SoftwareApplication` on Pricing, `BreadcrumbList` on
+Docs, `Article` on Blog posts). `NEXT_PUBLIC_SITE_URL` is a new env var
+(see `.env.example`), confirmed as `https://pilot.sdk.enterprises`.
+
+Not yet done: Docs and Blog ship with only the real content available at
+write time (two docs pages, one blog post) rather than a full content set,
+by design — no filler content was added to hit a page count. The
+`(marketing)/page.tsx` and `(marketing)/layout.tsx` both currently call
+`withAuth()` once each per request (nav CTA and hero CTA); this is a minor
+duplicate call, not a correctness issue.
+
+## Current state (2026-09-15)
 
 Pilot was restructured around three agent kinds, **Chat**, **Work**, and
 **Code** ([ADR-0016](decisions/0016-three-agent-kinds.md)). Everything below
@@ -41,11 +105,27 @@ Implemented:
   (`@vercel/sandbox`) still needs Vercel's own OIDC or a `VERCEL_TOKEN`
   fallback and has no local equivalent — that's `@vercel/sandbox` itself
   authenticating to Vercel, unrelated to the pilot↔pilot-ai boundary below.
+- **Connectors** ([ADR-0021](decisions/0021-connectors.md)): 8 new read-only
+  tools backed by real OAuth connections to GitHub, Google Drive, Gmail,
+  Slack, Notion, Linear, Vercel, and Monday.com. A connection is personal (a
+  member's own account) or organization-wide (an admin's, shared with every
+  member); personal wins when both exist. Tokens are AES-256-GCM encrypted
+  at rest (`CONNECTOR_TOKEN_ENCRYPTION_KEY`) and never leave Pilot's server
+  process — pilot-ai's connector tools call back into
+  `/api/runtime/connectors/execute`, the same context-bound pattern as
+  `scratchpad`/`plan`, rather than ever holding a decrypted token
+  themselves. Gated per-tool by connection existence (not a separate org
+  preference boolean) in `tool-authorization.ts`, plus pilot-ai's own
+  `PILOT_ENABLE_CONNECTORS` platform circuit breaker. Managed from
+  Settings' new Connectors section. Read-only in this slice by design — no
+  write/mutating provider action exists yet.
 
-Verified on 2026-09-14 (local): `tsc --noEmit`, `eslint .` (0 problems),
-`knip`, `prettier --check`, `pnpm build`, `pnpm test` (24 Playwright checks),
-`pnpm test:server` (32), and `pnpm test:db` (5, after `pnpm db:migrate` on
-the development Neon database).
+Verified on 2026-09-15 (local): `tsc --noEmit`, `eslint .` (0 problems),
+`knip`, `prettier --check`, `pnpm build`, `pnpm test:server` (61), and
+`pnpm test:db` (18, after `pnpm db:migrate` on the development Neon
+database). `pnpm test` (Playwright) could not be run in this environment
+(browser binary unavailable locally); it runs in GitHub Actions, which
+provisions its own Playwright browsers.
 
 Not yet available:
 

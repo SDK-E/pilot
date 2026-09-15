@@ -1,7 +1,7 @@
 # Pilot by SDK Enterprises
 
-Pilot is an AI workforce platform. It offers three kinds of agent, each with
-its own mode of the app:
+Pilot is an open-source AI workforce platform. It offers three kinds of
+agent, each with its own mode of the app:
 
 - **Chat** — ask anything, think out loud, get a clear answer.
 - **Work** — hand Pilot a task; it plans and works through it end to end.
@@ -10,15 +10,18 @@ its own mode of the app:
 Every organization gets its own configurable, organization-scoped agents,
 protected streaming conversations, durable execution activity, and private
 attachments and project files. Agents can be granted web search, a
-scratchpad, an `ask-user` clarification pause, a visible plan/step list, and
-a sandboxed code execution tool — each gated per-organization from Settings.
-Browser automation, external-write integrations, shared projects, and
-semantic knowledge retrieval remain unavailable.
+scratchpad, an `ask-user` clarification pause, a visible plan/step list, a
+sandboxed code execution tool, and read-only connectors (GitHub, Google
+Drive, Gmail, Slack, Notion, Linear, Vercel, Monday.com) — each gated
+per-organization from Settings. Browser automation, external-write
+integrations, shared projects, and semantic knowledge retrieval remain
+unavailable.
 
-See [implementation status](docs/progress.md) and the
-[three agent kinds decision](docs/decisions/0016-three-agent-kinds.md) for
-what's actually built and verified today. Pilot is in active development;
-do not treat the current state as production-ready.
+See [implementation status](docs/progress.md), the
+[three agent kinds decision](docs/decisions/0016-three-agent-kinds.md), and
+the [connectors decision](docs/decisions/0021-connectors.md) for what's
+actually built and verified today. Pilot is in active development; do not
+treat the current state as production-ready.
 
 ## Quick start
 

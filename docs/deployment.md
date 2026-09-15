@@ -37,16 +37,21 @@ credentials. `DATABASE_URL` (and `DATABASE_URL_UNPOOLED` where used) must
 never be shared across environments. Local development and `pnpm test:db`
 use the development database only.
 
-## OIDC to the Pilot AI runtime
+## WorkOS M2M to the Pilot AI runtime
 
-Pilot calls the separate Pilot AI runtime with a Vercel OIDC token:
-`src/ai/pilot-ai-client.ts` obtains one via `getVercelOidcToken()`
-(`@vercel/oidc`) and sends it as `x-pilot-runtime-oidc-token` plus
-`x-vercel-trusted-oidc-idp-token`. Runtime callbacks back into Pilot
-(`/api/runtime/*`) are service-to-service endpoints authenticated the other
-direction, via a WorkOS M2M token (`src/ai/workos-m2m.ts`) — see
-`.claude/skills/workos/SKILL.md` and
-[ADR-0017](decisions/0017-workos-m2m-runtime-auth.md).
+Pilot and Pilot AI authenticate each other with a WorkOS M2M token, not
+Vercel OIDC — [ADR-0017](decisions/0017-workos-m2m-runtime-auth.md) replaced
+the earlier OIDC-based verifier because `VERCEL_ENV` is unset in local
+development, which made that boundary impossible to exercise off Vercel.
+Pilot mints a token via the `client_credentials` grant
+(`src/ai/workos-m2m.ts`) and sends it as `x-pilot-runtime-token`; Pilot AI
+verifies it before reading the request body, and echoes the same token back
+on runtime callbacks into Pilot (`/api/runtime/*`), which Pilot reverifies
+identically. See `.claude/skills/workos/SKILL.md`.
+
+Vercel OIDC is unrelated to this boundary today — it's still used for
+`@vercel/sandbox` provisioning (below) and for pilot-ai's own calls to the
+external skills.sh registry.
 
 ## Vercel Blob and Vercel Sandbox
 
