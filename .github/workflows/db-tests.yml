@@ -11,7 +11,7 @@ permissions:
 jobs:
   test-db:
     runs-on: ubuntu-latest
-    # tests/*.integration.test.ts (pnpm test:db) need a real Neon database —
+    # tests/integration/*.test.ts (pnpm test:db) need a real Neon database —
     # the main quality.yml workflow only has a local Postgres container,
     # which doesn't speak Neon's HTTP driver (src/db/client.ts). This job
     # runs only when a repo secret provides a real, isolated Neon

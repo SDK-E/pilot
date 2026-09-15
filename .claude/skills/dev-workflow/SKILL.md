@@ -22,12 +22,12 @@ Node 24, pnpm 11.25.0 (see `package.json` `packageManager`). Always `pnpm instal
 - `pnpm db:migrate` — `dotenv -e .env.local -- drizzle-kit migrate` (applies pending migrations to the local/dev database named by `.env.local`'s `DATABASE_URL`).
 - `pnpm db:migrate:deploy` — `tsx scripts/migrate.mts`, the production migration path run only from the Vercel production build (see `vercel.json`); never run this locally against a production `DATABASE_URL`.
 - `pnpm test` — Playwright (`tests/*.spec.ts`), needs a fresh `pnpm build` first (it boots the production build on port 3100).
-- `pnpm test:server` — `node:test` unit tests listed explicitly in the script (server-tests + several `tests/*.test.ts`), run under `NODE_OPTIONS='--conditions=react-server'` with `.env.local`.
-- `pnpm test:db` — Neon-backed integration tests (`tests/*.integration.test.ts`); needs `.env.local` pointing at the isolated development Neon database.
+- `pnpm test:server` — `node:test` unit tests, auto-discovered from every `*.test.ts` under `server-tests/`, `src/ai/`, and `tests/unit/` (no DB), run under `NODE_OPTIONS='--conditions=react-server'` with `.env.local`. Drop a new test file in one of those directories and it runs automatically — no script edit needed.
+- `pnpm test:db` — Neon-backed integration tests, auto-discovered from every `*.test.ts` under `tests/integration/`; needs `.env.local` pointing at the isolated development Neon database.
 
 ## What CI (`.github/workflows/quality.yml`) runs
 
-On every PR and push to `main`: install → `pnpm check` → `pnpm build` → install Chromium → `pnpm test` (Playwright) → `pnpm audit --audit-level high`. CI supplies test-only WorkOS env vars and a local Postgres `DATABASE_URL`; it does **not** run `pnpm test:server` or `pnpm test:db` unless a later workflow file adds them — check the current workflow file, since AGENTS.md's Verification section requires both before calling a slice complete, so a green CI run is not the full bar.
+On every PR and push to `main`: install → `pnpm check` → `pnpm build` → install Chromium → `pnpm test` (Playwright) → write a CI `.env.local` → `pnpm test:server` → `pnpm audit --audit-level high`. CI supplies test-only WorkOS env vars and a local Postgres `DATABASE_URL`; it does **not** run `pnpm test:db` (needs a real Neon endpoint — see `.github/workflows/db-tests.yml`, gated on a `DATABASE_URL_TEST` secret), so a green `quality.yml` run alone is not the full bar per AGENTS.md's Verification section.
 
 ## Before calling anything done
 

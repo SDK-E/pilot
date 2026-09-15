@@ -1,11 +1,10 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
-
 import { z } from "zod";
+
+import { isValidMarketplaceWebhookSignature } from "@/connectors/github-marketplace-webhook";
 
 export const runtime = "nodejs";
 
 const SIGNATURE_HEADER = "x-hub-signature-256";
-const SIGNATURE_PREFIX = "sha256=";
 
 const marketplacePurchaseEventSchema = z.object({
   action: z.enum([
@@ -26,30 +25,6 @@ const marketplacePurchaseEventSchema = z.object({
     .optional(),
 });
 
-function webhookSecret(): string {
-  const value = process.env.GITHUB_MARKETPLACE_WEBHOOK_SECRET?.trim();
-  if (!value) {
-    throw new Error(
-      "GITHUB_MARKETPLACE_WEBHOOK_SECRET is required to verify GitHub Marketplace webhooks.",
-    );
-  }
-  return value;
-}
-
-function isValidSignature(rawBody: string, header: string | null): boolean {
-  if (!header?.startsWith(SIGNATURE_PREFIX)) return false;
-  const expected = createHmac("sha256", webhookSecret())
-    .update(rawBody)
-    .digest("hex");
-  const provided = header.slice(SIGNATURE_PREFIX.length);
-  const expectedBuffer = Buffer.from(expected, "hex");
-  const providedBuffer = Buffer.from(provided, "hex");
-  return (
-    expectedBuffer.length === providedBuffer.length &&
-    timingSafeEqual(expectedBuffer, providedBuffer)
-  );
-}
-
 /**
  * GitHub Marketplace's `marketplace_purchase` webhook — fired when a user
  * installs ("purchases", even on the Free plan), changes, or cancels the
@@ -57,13 +32,17 @@ function isValidSignature(rawBody: string, header: string | null): boolean {
  * over the raw body, not a WorkOS session: GitHub calls this server-to-
  * server, so it is intentionally excluded from `src/proxy.ts`'s matcher.
  * Pilot has no billing/plan logic tied to this listing today, so the
- * handler only logs the event and acknowledges it — GitHub requires the
- * endpoint to exist and return 2xx, nothing downstream depends on the
- * payload yet.
+ * handler only acknowledges it — GitHub requires the endpoint to exist and
+ * return 2xx, nothing downstream depends on the payload yet.
  */
 export async function POST(request: Request) {
   const rawBody = await request.text();
-  if (!isValidSignature(rawBody, request.headers.get(SIGNATURE_HEADER))) {
+  if (
+    !isValidMarketplaceWebhookSignature(
+      rawBody,
+      request.headers.get(SIGNATURE_HEADER),
+    )
+  ) {
     return Response.json({ error: "Invalid signature." }, { status: 401 });
   }
 
