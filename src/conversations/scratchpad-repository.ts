@@ -33,7 +33,13 @@ export async function getConversationScratchpad(input: {
   return scratchpad?.content ?? "";
 }
 
-async function getRuntimeConversation(input: {
+/**
+ * Resolves `{organizationId, conversationId, userId, workerId}` strictly
+ * from a running execution record — never from caller-supplied body fields
+ * beyond `executionId` itself. Shared by every runtime callback that needs
+ * to derive ownership this way (scratchpad, connectors' execute route).
+ */
+export async function getRuntimeConversation(input: {
   organizationId: string;
   executionId: string;
 }) {

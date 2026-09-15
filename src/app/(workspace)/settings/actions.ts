@@ -8,6 +8,10 @@ import { z } from "zod";
 
 import { getAgent } from "@/agents/agent-repository";
 import {
+  disconnectConnectorConnection,
+  setDefaultConnectorConnection,
+} from "@/connectors/connector-repository";
+import {
   addOrganizationDomain,
   verifyOrganizationDomain,
 } from "@/organizations/local-domain-verification";
@@ -97,6 +101,47 @@ export async function updateOrganizationCapabilitiesAction(formData: FormData) {
   }
   await updateOrganizationCapabilities({ organizationId, ...input });
   revalidatePath("/", "layout");
+}
+
+const connectionIdSchema = z.object({ connectionId: z.uuid() });
+
+/**
+ * Revokes a connector connection. A personal connection may only be
+ * disconnected by its own owner; an organization connection only by an
+ * admin — both checks are enforced again inside the repository.
+ */
+export async function disconnectConnectorConnectionAction(formData: FormData) {
+  const input = connectionIdSchema.safeParse({
+    connectionId: formData.get("connectionId"),
+  });
+  if (!input.success) return;
+  const { organizationId, user, membership } = await requireWorkspaceSession();
+  await disconnectConnectorConnection({
+    organizationId,
+    userId: user.id,
+    connectionId: input.data.connectionId,
+    isAdmin: ADMIN_ROLES.has(membership.role.slug),
+  });
+  revalidatePath("/settings");
+}
+
+/**
+ * Makes one connection the default used by connector tool calls for its
+ * provider and owner scope.
+ */
+export async function setDefaultConnectorConnectionAction(formData: FormData) {
+  const input = connectionIdSchema.safeParse({
+    connectionId: formData.get("connectionId"),
+  });
+  if (!input.success) return;
+  const { organizationId, user, membership } = await requireWorkspaceSession();
+  await setDefaultConnectorConnection({
+    organizationId,
+    userId: user.id,
+    connectionId: input.data.connectionId,
+    isAdmin: ADMIN_ROLES.has(membership.role.slug),
+  });
+  revalidatePath("/settings");
 }
 
 /**
