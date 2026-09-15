@@ -66,7 +66,7 @@ by design — no filler content was added to hit a page count. The
 `withAuth()` once each per request (nav CTA and hero CTA); this is a minor
 duplicate call, not a correctness issue.
 
-## Current state (2026-09-14)
+## Current state (2026-09-15)
 
 Pilot was restructured around three agent kinds, **Chat**, **Work**, and
 **Code** ([ADR-0016](decisions/0016-three-agent-kinds.md)). Everything below
@@ -105,11 +105,27 @@ Implemented:
   (`@vercel/sandbox`) still needs Vercel's own OIDC or a `VERCEL_TOKEN`
   fallback and has no local equivalent — that's `@vercel/sandbox` itself
   authenticating to Vercel, unrelated to the pilot↔pilot-ai boundary below.
+- **Connectors** ([ADR-0021](decisions/0021-connectors.md)): 8 new read-only
+  tools backed by real OAuth connections to GitHub, Google Drive, Gmail,
+  Slack, Notion, Linear, Vercel, and Monday.com. A connection is personal (a
+  member's own account) or organization-wide (an admin's, shared with every
+  member); personal wins when both exist. Tokens are AES-256-GCM encrypted
+  at rest (`CONNECTOR_TOKEN_ENCRYPTION_KEY`) and never leave Pilot's server
+  process — pilot-ai's connector tools call back into
+  `/api/runtime/connectors/execute`, the same context-bound pattern as
+  `scratchpad`/`plan`, rather than ever holding a decrypted token
+  themselves. Gated per-tool by connection existence (not a separate org
+  preference boolean) in `tool-authorization.ts`, plus pilot-ai's own
+  `PILOT_ENABLE_CONNECTORS` platform circuit breaker. Managed from
+  Settings' new Connectors section. Read-only in this slice by design — no
+  write/mutating provider action exists yet.
 
-Verified on 2026-09-14 (local): `tsc --noEmit`, `eslint .` (0 problems),
-`knip`, `prettier --check`, `pnpm build`, `pnpm test` (24 Playwright checks),
-`pnpm test:server` (32), and `pnpm test:db` (5, after `pnpm db:migrate` on
-the development Neon database).
+Verified on 2026-09-15 (local): `tsc --noEmit`, `eslint .` (0 problems),
+`knip`, `prettier --check`, `pnpm build`, `pnpm test:server` (61), and
+`pnpm test:db` (18, after `pnpm db:migrate` on the development Neon
+database). `pnpm test` (Playwright) could not be run in this environment
+(browser binary unavailable locally); it runs in GitHub Actions, which
+provisions its own Playwright browsers.
 
 Not yet available:
 

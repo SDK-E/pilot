@@ -8,6 +8,7 @@ import {
   type RuntimeEvent,
   type RuntimeRequest,
 } from "@/ai/pilot-ai-client";
+import { getAvailableConnectorProviders } from "@/connectors/connector-repository";
 import { buildAttachmentContext } from "@/conversations/attachment-context";
 import { appendConversationMessageContent } from "@/conversations/conversation-message-repository";
 import { createConversationMessage } from "@/conversations/conversation-repository";
@@ -234,7 +235,17 @@ async function runStreamingTurn(
   signal: AbortSignal,
   write: (text: string) => void,
 ) {
-  const policy = await getOrganizationPreferences(input.organizationId);
+  const [policy, availableConnectorProviders] = await Promise.all([
+    getOrganizationPreferences(input.organizationId),
+    getAvailableConnectorProviders({
+      organizationId: input.organizationId,
+      userId: input.userId,
+    }),
+  ]);
+  const capabilities: OrganizationCapabilities = {
+    ...policy,
+    availableConnectorProviders,
+  };
   const models = policy.retryEnabled
     ? [policy.primaryModelId, FALLBACK_MODEL_ID]
     : [policy.primaryModelId];
@@ -244,7 +255,7 @@ async function runStreamingTurn(
       input,
       turn.execution.id,
       modelId,
-      policy,
+      capabilities,
     );
     const isUsesWeb = request.allowedToolIds.includes("web-search");
     const isLastAttempt = attempt === models.length - 1;

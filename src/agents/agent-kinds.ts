@@ -13,6 +13,14 @@ export const TOOL_IDS = [
   "ask-user",
   "plan",
   "code-sandbox",
+  "connector-github",
+  "connector-google-drive",
+  "connector-gmail",
+  "connector-slack",
+  "connector-notion",
+  "connector-linear",
+  "connector-vercel",
+  "connector-monday",
 ] as const;
 
 export type ToolId = (typeof TOOL_IDS)[number];
