@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { savePanelLayoutAction } from "@/app/(workspace)/[mode]/[conversationId]/actions";
+import { useMediaQuery } from "@/hooks/use-mobile";
 
 import type { PanelLayout } from "./conversation-types";
 
@@ -36,16 +37,13 @@ function readLocalLayout(): PanelLayout | undefined {
  */
 export function usePanelLayout(initial?: PanelLayout) {
   const [layout, setLayout] = useState<PanelLayout>(initial ?? DEFAULT_LAYOUT);
-  const [isDesktop, setIsDesktop] = useState(false);
+  // Shares the sidebar's own 768px breakpoint (via useMediaQuery) so the
+  // sidebar's mobile/desktop split and this panel's split flip together,
+  // instead of desyncing across two independently-chosen thresholds.
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
-    const media = matchMedia("(min-width: 1024px)");
-    const update = () => {
-      setIsDesktop(media.matches);
-    };
-    update();
-    media.addEventListener("change", update);
     const local = initial ? undefined : readLocalLayout();
     const frame = local
       ? requestAnimationFrame(() => {
@@ -53,7 +51,6 @@ export function usePanelLayout(initial?: PanelLayout) {
         })
       : undefined;
     return () => {
-      media.removeEventListener("change", update);
       if (frame) cancelAnimationFrame(frame);
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };

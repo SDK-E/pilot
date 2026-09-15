@@ -1,4 +1,8 @@
-import { CircleAlert, FileText, type LucideIcon } from "lucide-react";
+import {
+  RiErrorWarningLine,
+  RiFileTextLine,
+  type RemixiconComponentType,
+} from "@remixicon/react";
 
 import type { ActivityStep } from "@/executions/activity-timeline";
 
@@ -80,7 +84,7 @@ export interface ActivityStepPresentation {
   // steps read fine as text alone, so an icon is reserved for the two cases
   // that genuinely change how a line should be read (a failure, or a named
   // skill), not stamped on every line as decoration.
-  icon?: LucideIcon;
+  icon?: RemixiconComponentType;
   isFailed: boolean;
 }
 
@@ -93,7 +97,7 @@ export function describeActivityStep(
   step: ActivityStep,
 ): ActivityStepPresentation {
   if (step.kind === "skill") {
-    return { label: step.summary, icon: FileText, isFailed: false };
+    return { label: step.summary, icon: RiFileTextLine, isFailed: false };
   }
   const tool = TOOL_LABELS[step.toolId ?? ""] ?? FALLBACK_TOOL_LABELS;
   const isFailed = step.status === "failed";
@@ -117,7 +121,7 @@ export function describeActivityStep(
       : labelByStatus[step.status];
   return {
     label,
-    icon: isFailed ? CircleAlert : undefined,
+    icon: isFailed ? RiErrorWarningLine : undefined,
     isFailed,
   };
 }

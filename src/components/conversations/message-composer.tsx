@@ -24,6 +24,10 @@ import {
   usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
 import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
+import {
+  COMPOSER_WRAPPER_CLASSNAME,
+  useComposerSubmitState,
+} from "@/components/conversations/composer-shared";
 import { ComposerStatus } from "@/components/conversations/composer-status";
 import {
   shouldInsertComposerNewline,
@@ -140,6 +144,10 @@ export function MessageComposer({
   const [validationError, setValidationError] = useState<string>();
   const upload = useAttachmentUpload(conversationId);
   const isBusy = isLoading || upload.isUploading;
+  const submitState = useComposerSubmitState({
+    isBusy: upload.isUploading,
+    text: draft,
+  });
 
   const submit = async (message: PromptInputMessage) => {
     const text = message.text.trim();
@@ -176,7 +184,7 @@ export function MessageComposer({
     <div className="mx-auto w-full max-w-3xl">
       <PromptInput
         accept={ACCEPTED_FILES}
-        className="rounded-xl border bg-card p-2 shadow-sm transition-shadow focus-within:shadow-md"
+        className={COMPOSER_WRAPPER_CLASSNAME}
         maxFileSize={MAX_FILE_BYTES}
         multiple
         onError={(event) => {
@@ -221,7 +229,9 @@ export function MessageComposer({
             </span>
           </PromptInputTools>
           <PromptInputSubmit
-            disabled={isLoading ? false : !draft.trim() || upload.isUploading}
+            // While streaming, force the button enabled so it still works as
+            // the Stop control regardless of the draft/upload state.
+            disabled={isLoading ? false : submitState.isDisabled}
             onStop={onCancel}
             status={isLoading ? "streaming" : "ready"}
           />

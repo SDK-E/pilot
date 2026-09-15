@@ -12,6 +12,8 @@ import { MessageComposer } from "@/components/conversations/message-composer";
 import { MessageList } from "@/components/conversations/message-list";
 import { useConversationStream } from "@/components/conversations/use-conversation-stream";
 import { usePanelLayout } from "@/components/conversations/use-panel-layout";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
   CollapsibleContent,
@@ -57,22 +59,21 @@ function AttachmentChips({
       aria-label="Attachments"
     >
       {attachments.map((attachment) => (
-        <li
-          className="flex items-center gap-1 rounded-md border bg-card px-2 py-1 text-xs"
-          key={attachment.id}
-        >
-          <a
-            className="max-w-48 truncate hover:underline"
-            href={`/api/attachments/${attachment.id}`}
-            rel="noreferrer"
-            target="_blank"
-          >
-            {attachment.filename}
-          </a>
-          <DeleteAttachmentButton
-            attachmentId={attachment.id}
-            filename={attachment.filename}
-          />
+        <li key={attachment.id}>
+          <Badge className="h-7 max-w-64 gap-1 pr-1 pl-2" variant="outline">
+            <a
+              className="max-w-48 truncate hover:underline"
+              href={`/api/attachments/${attachment.id}`}
+              rel="noreferrer"
+              target="_blank"
+            >
+              {attachment.filename}
+            </a>
+            <DeleteAttachmentButton
+              attachmentId={attachment.id}
+              filename={attachment.filename}
+            />
+          </Badge>
         </li>
       ))}
     </ul>
@@ -114,10 +115,13 @@ function ComposerFooter({
           timeoutError={stream.timeoutError}
         />
       ) : (
-        <p className="mx-auto max-w-3xl rounded-md border bg-muted/40 px-4 py-3 text-center text-xs text-muted-foreground">
-          Messaging becomes available after this environment is connected to
-          Pilot AI.
-        </p>
+        <Alert className="mx-auto max-w-3xl">
+          <AlertTitle>Messaging unavailable</AlertTitle>
+          <AlertDescription>
+            Messaging becomes available after this environment is connected to
+            Pilot AI.
+          </AlertDescription>
+        </Alert>
       )}
     </footer>
   );
@@ -125,14 +129,23 @@ function ComposerFooter({
 
 /**
  * Below the composer on desktop's side-by-side rail, this same content is a
- * collapsed-by-default drawer on mobile so it never crowds out the chat.
+ * collapsed-by-default drawer on mobile so it never crowds out the chat. The
+ * open state is owned by the parent (rather than local) so the header's plan
+ * badge can open this drawer too.
  */
-function MobileDetailsDisclosure({ children }: { children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
+function MobileDetailsDisclosure({
+  children,
+  isOpen,
+  onOpenChange,
+}: {
+  children: React.ReactNode;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}) {
   return (
     <Collapsible
       className="shrink-0 border-t bg-sidebar/40"
-      onOpenChange={setIsOpen}
+      onOpenChange={onOpenChange}
       open={isOpen}
     >
       <CollapsibleTrigger className="flex w-full items-center justify-between px-4 py-2 text-xs font-medium">
@@ -166,6 +179,10 @@ export function ConversationShell(props: ConversationShellProps) {
   });
   const panels = usePanelLayout(props.initialPanelLayout);
   const backHref = modeHref(kind);
+  const [isMobileDetailsOpen, setIsMobileDetailsOpen] = useState(false);
+  const openPlan = () => {
+    if (!panels.isDesktop) setIsMobileDetailsOpen(true);
+  };
 
   const renderDetailsPanel = (shouldFillHeight: boolean) => (
     <ConversationDetailsPanel
@@ -181,6 +198,7 @@ export function ConversationShell(props: ConversationShellProps) {
       activities={stream.activities}
       agentName={agent.name}
       completion={stream.completion}
+      isDetailsPanelVisible={panels.isDesktop}
       isLoading={stream.isLoading}
       messages={stream.messages}
       onAnswer={stream.send}
@@ -205,12 +223,21 @@ export function ConversationShell(props: ConversationShellProps) {
   );
 
   return (
-    <main className="flex h-[calc(100svh-6rem)] flex-col overflow-hidden bg-background">
+    // Stacks the workspace shell's header with this view's own
+    // ConversationHeader rather than merging them into one row: the shell's
+    // header renders once at the layout level while ConversationHeader needs
+    // per-conversation data (agent identity, back link, actions) that only
+    // this page component has, so merging would need a header-content slot
+    // threaded across the layout/page boundary — deferred as out of scope
+    // for a consistency pass, left for a future dedicated change.
+    <main className="flex h-[calc(100svh-var(--header-height)*2)] flex-col overflow-hidden bg-background">
       <ConversationHeader
         agent={agent}
         backHref={backHref}
         conversation={conversation}
         kind={kind}
+        onOpenPlan={openPlan}
+        plan={props.plan}
         project={project}
         projects={props.projects}
       />
@@ -253,7 +280,10 @@ export function ConversationShell(props: ConversationShellProps) {
         ) : (
           <div className="flex h-full min-h-0 min-w-0 flex-col">
             {transcript}
-            <MobileDetailsDisclosure>
+            <MobileDetailsDisclosure
+              isOpen={isMobileDetailsOpen}
+              onOpenChange={setIsMobileDetailsOpen}
+            >
               {renderDetailsPanel(false)}
             </MobileDetailsDisclosure>
             {composer}

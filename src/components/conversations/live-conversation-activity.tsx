@@ -1,5 +1,4 @@
-import { RiLoader4Line } from "@remixicon/react";
-import { FileText } from "lucide-react";
+import { RiFileTextLine, RiLoader4Line } from "@remixicon/react";
 
 import {
   ChainOfThought,
@@ -11,6 +10,7 @@ import { buildActivitySteps } from "@/executions/activity-timeline";
 
 import { describeActivityStep } from "./activity-step-presentation";
 import { ActivityStepRow } from "./activity-step-row";
+import { asChainOfThoughtIcon } from "./chain-of-thought-icon";
 
 import type { TimelineActivity } from "@/executions/activity-timeline";
 
@@ -27,11 +27,18 @@ import type { TimelineActivity } from "@/executions/activity-timeline";
  * click — the same "watch it work" moment Claude Code gives for tool calls.
  * Once the turn finishes this component unmounts in favor of
  * MessageActivityTrace, which is collapsed by default for finished history.
+ *
+ * `isCompact` collapses this down to a single status line: when the desktop
+ * details panel is already open, it shows the same live steps in full, so
+ * repeating them here too would just duplicate the same information twice
+ * on screen at once.
  */
 export function LiveConversationActivity({
   events = [],
+  isCompact = false,
 }: {
   events?: TimelineActivity[];
+  isCompact?: boolean;
 }) {
   const steps = buildActivitySteps(events);
   const lastStep = steps.at(-1);
@@ -39,6 +46,20 @@ export function LiveConversationActivity({
   const header = lastStep
     ? describeActivityStep(lastStep).label
     : "Pilot is responding…";
+
+  if (isCompact) {
+    const compactLabel =
+      steps.length > 0 ? `Working — step ${String(steps.length)}` : header;
+    return (
+      <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+        <RiLoader4Line
+          aria-hidden="true"
+          className="animate-spin text-primary"
+        />
+        {compactLabel}
+      </div>
+    );
+  }
 
   return (
     <ChainOfThought className="mt-3 max-w-xl" defaultOpen>
@@ -71,7 +92,7 @@ export function LiveConversationActivity({
           {isStepActive ? null : (
             <ChainOfThoughtStep
               className="[&>div:first-child>div]:hidden"
-              icon={FileText}
+              icon={asChainOfThoughtIcon(RiFileTextLine)}
               label="Writing response"
               status="active"
             />

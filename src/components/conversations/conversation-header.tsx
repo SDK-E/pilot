@@ -4,6 +4,9 @@ import Link from "next/link";
 import { AGENT_KINDS, type AgentKindId } from "@/agents/agent-kinds";
 import { AgentAvatar } from "@/components/agents/agent-avatar";
 import { ConversationActionsMenu } from "@/components/conversations/conversation-actions-menu";
+import { PlanProgressBadge } from "@/components/conversations/plan-progress-badge";
+
+import type { ConversationPlanStep } from "@/db/schema";
 
 interface ConversationHeaderProps {
   kind: AgentKindId;
@@ -12,12 +15,15 @@ interface ConversationHeaderProps {
   project?: { id: string; name: string; sharedMemoryEnabled: boolean };
   projects: { id: string; name: string }[];
   backHref: string;
+  plan: ConversationPlanStep[];
+  onOpenPlan: () => void;
 }
 
 /**
- * The fixed 3rem bar above the transcript: back link, agent identity, and
- * conversation actions. `ConversationShell` accounts for this header's own
- * height on top of the workspace shell's header when sizing the transcript.
+ * The `--header-height` bar above the transcript: back link, agent identity,
+ * and conversation actions. `ConversationShell` accounts for this header's
+ * own height on top of the workspace shell's header when sizing the
+ * transcript (see the comment there on why these stay two separate bars).
  */
 export function ConversationHeader({
   kind,
@@ -26,9 +32,11 @@ export function ConversationHeader({
   project,
   projects,
   backHref,
+  plan,
+  onOpenPlan,
 }: ConversationHeaderProps) {
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b px-4">
+    <header className="flex h-(--header-height) shrink-0 items-center justify-between gap-2 border-b px-4">
       <Link
         className="inline-flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
         href={backHref}
@@ -59,12 +67,15 @@ export function ConversationHeader({
           )}
         </div>
       </div>
-      <ConversationActionsMenu
-        conversationId={conversation.id}
-        project={project}
-        projects={projects}
-        title={conversation.title}
-      />
+      <div className="flex shrink-0 items-center gap-2">
+        <PlanProgressBadge onClick={onOpenPlan} steps={plan} />
+        <ConversationActionsMenu
+          conversationId={conversation.id}
+          project={project}
+          projects={projects}
+          title={conversation.title}
+        />
+      </div>
     </header>
   );
 }

@@ -10,7 +10,7 @@ import {
 
 export default function WorkspaceError({ reset }: { reset: () => void }) {
   return (
-    <main className="mx-auto flex min-h-[calc(100svh-3rem)] max-w-xl items-center px-6">
+    <main className="mx-auto flex min-h-[calc(100svh-var(--header-height))] max-w-xl items-center px-6">
       <Empty>
         <EmptyHeader>
           <EmptyTitle>Workspace unavailable</EmptyTitle>
