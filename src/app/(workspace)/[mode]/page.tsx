@@ -2,12 +2,9 @@ import { notFound } from "next/navigation";
 
 import { agentKind, isAgentKindId } from "@/agents/agent-kinds";
 import { listAgents } from "@/agents/agent-repository";
-import { listApprovals } from "@/approvals/approval-repository";
 import { NewConversationForm } from "@/components/conversations/new-conversation-form";
-import { WorkQueue } from "@/components/work/work-queue";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
 import { requireWorkspaceSession } from "@/organizations/workspace-session";
-import { listTasks } from "@/tasks/task-repository";
 
 import type { Metadata } from "next";
 
@@ -23,25 +20,19 @@ export async function generateMetadata({
 }
 
 /**
- * The start screen of one mode: a composer, the agents of that kind, and for
- * Work the queue of tasks and approvals.
+ * The start screen of one mode: a composer and the agents of that kind.
  */
 export default async function ModePage({ params }: ModePageProps) {
   const { mode } = await params;
   if (!isAgentKindId(mode)) notFound();
   const kind = agentKind(mode);
-  const { organizationId, user } = await requireWorkspaceSession();
-  const owner = { organizationId, userId: user.id };
+  const { organizationId } = await requireWorkspaceSession();
 
   const [agents, preferences] = await Promise.all([
     listAgents(organizationId),
     getOrganizationPreferences(organizationId),
   ]);
   const kindAgents = agents.filter((agent) => agent.baseAgentId === kind.id);
-  const [tasks, approvals] =
-    kind.id === "work"
-      ? await Promise.all([listTasks(owner), listApprovals(owner)])
-      : [[], []];
 
   return (
     <main className="flex min-h-[calc(100svh-3rem)] flex-1 flex-col items-center p-6 sm:py-16">
@@ -62,9 +53,6 @@ export default async function ModePage({ params }: ModePageProps) {
           }))}
           defaultAgentId={preferences.defaultWorkerId}
         />
-        {kind.id === "work" ? (
-          <WorkQueue tasks={tasks} approvals={approvals} />
-        ) : null}
       </section>
     </main>
   );

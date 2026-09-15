@@ -9,12 +9,16 @@ interface OrganizationPreferences {
   defaultWorkerId: string | null;
   primaryModelId: string;
   retryEnabled: boolean;
+  webSearchEnabled: boolean;
+  codeSandboxEnabled: boolean;
 }
 
 const defaults: OrganizationPreferences = {
   defaultWorkerId: null,
   primaryModelId: "kilo/kilo-auto/free",
   retryEnabled: true,
+  webSearchEnabled: true,
+  codeSandboxEnabled: true,
 };
 
 export async function getOrganizationPreferences(organizationId: string) {
@@ -23,6 +27,8 @@ export async function getOrganizationPreferences(organizationId: string) {
       defaultWorkerId: organizationPreferences.defaultWorkerId,
       primaryModelId: organizationPreferences.primaryModelId,
       retryEnabled: organizationPreferences.retryEnabled,
+      webSearchEnabled: organizationPreferences.webSearchEnabled,
+      codeSandboxEnabled: organizationPreferences.codeSandboxEnabled,
     })
     .from(organizationPreferences)
     .where(eq(organizationPreferences.organizationId, organizationId))
@@ -79,6 +85,29 @@ export async function updateOrganizationModelPolicy(input: {
     .returning({
       primaryModelId: organizationPreferences.primaryModelId,
       retryEnabled: organizationPreferences.retryEnabled,
+    });
+  return preferences;
+}
+
+export async function updateOrganizationCapabilities(input: {
+  organizationId: string;
+  webSearchEnabled: boolean;
+  codeSandboxEnabled: boolean;
+}) {
+  const [preferences] = await db
+    .insert(organizationPreferences)
+    .values(input)
+    .onConflictDoUpdate({
+      target: organizationPreferences.organizationId,
+      set: {
+        webSearchEnabled: input.webSearchEnabled,
+        codeSandboxEnabled: input.codeSandboxEnabled,
+        updatedAt: new Date(),
+      },
+    })
+    .returning({
+      webSearchEnabled: organizationPreferences.webSearchEnabled,
+      codeSandboxEnabled: organizationPreferences.codeSandboxEnabled,
     });
   return preferences;
 }

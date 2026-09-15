@@ -1,0 +1,2 @@
+ALTER TABLE "organization_preferences" ADD COLUMN "web_search_enabled" boolean DEFAULT true NOT NULL;--> statement-breakpoint
+ALTER TABLE "organization_preferences" ADD COLUMN "code_sandbox_enabled" boolean DEFAULT true NOT NULL;

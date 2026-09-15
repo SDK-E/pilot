@@ -2,6 +2,7 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { redirect } from "next/navigation";
 
 import { listAgents } from "@/agents/agent-repository";
+import { AgentCapabilitiesSection } from "@/components/settings/agent-capabilities-section";
 import {
   DefaultAgentSection,
   DeleteWorkspaceSection,
@@ -89,6 +90,10 @@ async function OrganizationSettings() {
           <ModelPolicySection
             primaryModelId={organization.primaryModelId}
             retryEnabled={organization.retryEnabled}
+          />
+          <AgentCapabilitiesSection
+            codeSandboxEnabled={organization.codeSandboxEnabled}
+            webSearchEnabled={organization.webSearchEnabled}
           />
           {session.kind === "workos" ? <DomainVerificationSection /> : null}
           {session.kind === "local" ? (

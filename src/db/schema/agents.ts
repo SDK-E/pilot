@@ -39,10 +39,6 @@ export const workers = pgTable(
       .$type<string[]>()
       .notNull()
       .default([]),
-    approvalRules: jsonb("approval_rules")
-      .$type<Record<string, "ask" | "allow" | "deny">>()
-      .notNull()
-      .default({}),
     createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -75,6 +71,8 @@ export const organizationPreferences = pgTable("organization_preferences", {
     .notNull()
     .default("kilo/kilo-auto/free"),
   retryEnabled: boolean("retry_enabled").notNull().default(true),
+  webSearchEnabled: boolean("web_search_enabled").notNull().default(true),
+  codeSandboxEnabled: boolean("code_sandbox_enabled").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

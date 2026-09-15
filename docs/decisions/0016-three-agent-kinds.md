@@ -36,5 +36,8 @@ whose tool rules grant `web-search`.
 - Tool rules are `ask | allow | deny`. A tool runs only when its rule is
   `allow`, or `ask` and the user approved the durable suspension
   ([0010](0010-durable-tool-approval.md)).
-- The environment flag `PILOT_ENABLE_WEB_SEARCH` gates web search for every
-  kind; there is no per-kind flag.
+- The organization's `webSearchEnabled` preference gates web search for every
+  kind; there is no per-kind flag. It lives in `organization_preferences`
+  (editable from Settings, owners/admins only), not an environment variable —
+  pilot-ai separately still enforces its own `PILOT_ENABLE_WEB_SEARCH` env
+  flag as a platform-level circuit breaker.

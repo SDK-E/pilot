@@ -47,8 +47,8 @@ export function DeleteOrganizationButton({
           </AlertDialogTitle>
           <AlertDialogDescription>
             This permanently deletes the workspace for every member —
-            conversations, agents, projects, tasks, and any verified domain.
-            This can&apos;t be undone.
+            conversations, agents, projects, and any verified domain. This
+            can&apos;t be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         {state.status === "error" ? (

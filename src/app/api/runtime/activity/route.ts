@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { isVerifiedRuntimeCallback } from "@/ai/pilot-runtime-oidc";
+import { isVerifiedPilotRuntimeCallback } from "@/ai/workos-m2m";
 import {
   isSafeSkillId,
   toolActivityToolIds,
@@ -18,8 +18,9 @@ const toolInputSchema = z
     executionId: z.uuid(),
     toolId: z.enum(toolActivityToolIds),
     toolCallId: z.string().min(1).max(255).optional(),
-    state: z.enum(["started", "completed", "failed", "awaiting_approval"]),
+    state: z.enum(["started", "completed", "failed"]),
     runtimeRunId: z.string().min(1).max(255).optional(),
+    detail: z.string().max(4000).optional(),
   })
   .strict();
 
@@ -35,7 +36,7 @@ const skillInputSchema = z
 const inputSchema = z.union([toolInputSchema, skillInputSchema]);
 
 export async function POST(request: Request) {
-  if (!(await isVerifiedRuntimeCallback(request))) {
+  if (!(await isVerifiedPilotRuntimeCallback(request))) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
@@ -49,33 +50,6 @@ export async function POST(request: Request) {
   if (input.data.kind === "skill") {
     await appendSkillActivity(input.data);
     return new Response(null, { status: 204 });
-  }
-  if (input.data.state === "awaiting_approval") {
-    if (!input.data.runtimeRunId || !input.data.toolCallId) {
-      return Response.json(
-        { error: "Invalid approval event." },
-        { status: 400 },
-      );
-    }
-    const { createRuntimeToolApproval } =
-      await import("@/approvals/approval-repository");
-    if (
-      input.data.toolId !== "web-search" &&
-      input.data.toolId !== "scratchpad" &&
-      input.data.toolId !== "code-sandbox"
-    ) {
-      return Response.json(
-        { error: "Unsupported approval tool." },
-        { status: 400 },
-      );
-    }
-    await createRuntimeToolApproval({
-      organizationId: input.data.organizationId,
-      executionId: input.data.executionId,
-      runtimeRunId: input.data.runtimeRunId,
-      toolCallId: input.data.toolCallId,
-      toolId: input.data.toolId,
-    });
   }
   await appendToolActivity(input.data);
   return new Response(null, { status: 204 });

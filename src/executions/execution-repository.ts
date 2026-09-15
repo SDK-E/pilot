@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, inArray, lt } from "drizzle-orm";
+import { and, asc, eq, lt } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import { activityEvents, conversations, executions } from "@/db/schema";
@@ -26,10 +26,9 @@ function isUniqueViolation(error: unknown) {
 const STALE_EXECUTION_MS = 5 * 60 * 1000;
 
 /**
- * Closes any execution for this conversation that has sat in
- * running/awaiting_approval well past how long a turn could legitimately
- * take. Without this, a turn abandoned mid-flight (a crash, a killed
- * function) never reaches finishExecution, and
+ * Closes any execution for this conversation that has sat running well past
+ * how long a turn could legitimately take. Without this, a turn abandoned
+ * mid-flight (a crash, a killed function) never reaches finishExecution, and
  * executions_conversation_active_unique then blocks that conversation from
  * starting a new turn forever.
  */
@@ -49,7 +48,7 @@ async function reapStaleExecutions(input: {
       and(
         eq(executions.organizationId, input.organizationId),
         eq(executions.conversationId, input.conversationId),
-        inArray(executions.status, ["running", "awaiting_approval"]),
+        eq(executions.status, "running"),
         lt(executions.startedAt, staleBefore),
       ),
     )
@@ -66,9 +65,9 @@ async function reapStaleExecutions(input: {
 
 /**
  * Opens an execution for a conversation, or returns undefined if one is
- * already running or awaiting approval there (executions_conversation_active_unique).
- * Callers should treat that the same as "could not start this turn" rather
- * than starting a second, overlapping one.
+ * already running there (executions_conversation_active_unique). Callers
+ * should treat that the same as "could not start this turn" rather than
+ * starting a second, overlapping one.
  */
 export async function startExecution(input: {
   organizationId: string;
@@ -96,6 +95,29 @@ export async function startExecution(input: {
   return execution;
 }
 
+/**
+ * Guards edit and regenerate: mutating history while a turn is still writing
+ * to it would race the in-flight reply, so both are refused until the
+ * conversation is quiet.
+ */
+export async function hasRunningExecution(
+  organizationId: string,
+  conversationId: string,
+) {
+  const [running] = await db
+    .select({ id: executions.id })
+    .from(executions)
+    .where(
+      and(
+        eq(executions.organizationId, organizationId),
+        eq(executions.conversationId, conversationId),
+        eq(executions.status, "running"),
+      ),
+    )
+    .limit(1);
+  return !!running;
+}
+
 export async function finishExecution(input: {
   organizationId: string;
   executionId: string;
@@ -118,25 +140,40 @@ export async function finishExecution(input: {
       and(
         eq(executions.organizationId, input.organizationId),
         eq(executions.id, input.executionId),
-        inArray(executions.status, ["running", "awaiting_approval"]),
+        eq(executions.status, "running"),
       ),
     )
     .returning({ id: executions.id });
-  if (execution)
-    await db.insert(activityEvents).values({
-      organizationId: input.organizationId,
-      executionId: execution.id,
-      conversationMessageId: input.conversationMessageId,
-      type: status === "completed" ? "execution.completed" : "execution.failed",
-      summary:
-        status === "completed" ? "Response completed" : "Response failed",
-    });
+  if (!execution) return;
+  // Tool and skill events were recorded while this execution ran, before its
+  // reply message existed, so they were inserted with no conversationMessageId.
+  // Backfilling it here is what lets the reply bubble show its own collapsed
+  // step trace instead of only the conversation-wide activity panel.
+  if (input.conversationMessageId) {
+    await db
+      .update(activityEvents)
+      .set({ conversationMessageId: input.conversationMessageId })
+      .where(
+        and(
+          eq(activityEvents.organizationId, input.organizationId),
+          eq(activityEvents.executionId, execution.id),
+        ),
+      );
+  }
+  await db.insert(activityEvents).values({
+    organizationId: input.organizationId,
+    executionId: execution.id,
+    conversationMessageId: input.conversationMessageId,
+    type: status === "completed" ? "execution.completed" : "execution.failed",
+    summary: status === "completed" ? "Response completed" : "Response failed",
+  });
 }
 
 /**
- * Appends a concise, server-derived tool lifecycle event. This intentionally
- * accepts only a known capability and state so activity storage can never be
- * used to retain model prompts, tool payloads, URLs, secrets, or reasoning.
+ * Appends a concise, server-derived tool lifecycle event, plus an optional
+ * bounded `detail` of the real command/output/results captured for that
+ * call. Only a known capability, state, and pre-formatted detail can ever be
+ * written here — never a free-form payload the caller invents.
  */
 export async function appendToolActivity(input: {
   organizationId: string;
@@ -144,6 +181,7 @@ export async function appendToolActivity(input: {
   toolId: Parameters<typeof createToolActivity>[0]["toolId"];
   toolCallId?: string;
   state: ToolActivityState;
+  detail?: string;
 }) {
   const event = createToolActivity(input);
   const [execution] = await db
@@ -153,7 +191,7 @@ export async function appendToolActivity(input: {
       and(
         eq(executions.organizationId, input.organizationId),
         eq(executions.id, input.executionId),
-        inArray(executions.status, ["running", "awaiting_approval"]),
+        eq(executions.status, "running"),
       ),
     )
     .limit(1);
@@ -166,6 +204,7 @@ export async function appendToolActivity(input: {
     toolId: event.toolId,
     toolCallId: event.toolCallId,
     summary: event.summary,
+    detail: event.detail,
   });
 }
 
@@ -185,7 +224,7 @@ export async function appendSkillActivity(input: {
       and(
         eq(executions.organizationId, input.organizationId),
         eq(executions.id, input.executionId),
-        inArray(executions.status, ["running", "awaiting_approval"]),
+        eq(executions.status, "running"),
       ),
     )
     .limit(1);
@@ -213,6 +252,7 @@ export async function listConversationActivity(
       toolId: activityEvents.toolId,
       toolCallId: activityEvents.toolCallId,
       summary: activityEvents.summary,
+      detail: activityEvents.detail,
       createdAt: activityEvents.createdAt,
     })
     .from(activityEvents)

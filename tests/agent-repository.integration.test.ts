@@ -37,12 +37,6 @@ import {
   updateProject,
 } from "@/projects/project-repository";
 import {
-  createTask,
-  listConversationTasks,
-  listTasks,
-  updateUserManagedTaskStatus,
-} from "@/tasks/task-repository";
-import {
   getUserPreferences,
   updateUserPreferences,
 } from "@/users/user-preference-repository";
@@ -71,7 +65,6 @@ function agentInput(name = "Writing assistant") {
     tone: "Concise",
     outputFormat: "Markdown",
     enabledToolIds: ["web-search"],
-    approvalRules: { "web-search": "ask" as const },
   };
 }
 
@@ -91,7 +84,6 @@ test("agents are persisted, unique by name, and isolated by organization", async
   assert.ok(fetched);
   assert.equal(fetched.baseAgentId, "chat");
   assert.deepEqual(fetched.enabledToolIds, ["web-search"]);
-  assert.deepEqual(fetched.approvalRules, { "web-search": "ask" });
   assert.equal(await getAgent(otherOrganizationId, created.id), undefined);
 
   await assert.rejects(
@@ -273,7 +265,7 @@ test("conversations, messages, and activity stay private to their creator", asyn
   );
 });
 
-test("projects and tasks join through the creator's conversations", async () => {
+test("projects join through the creator's conversations", async () => {
   const [agent] = await listAgents(organizationId);
   assert.ok(agent);
   const [conversation] = await listConversations(owner);
@@ -346,47 +338,4 @@ test("projects and tasks join through the creator's conversations", async () => 
     undefined,
   );
   assert.ok(await deleteProject({ ...owner, projectId: project.id }));
-
-  const task = await createTask({
-    organizationId,
-    createdByWorkosUserId: userId,
-    workerId: agent.id,
-    conversationId: conversation.id,
-    title: "Document the answer",
-    instructions: "Capture the answer in the project notes.",
-  });
-  assert.ok(task);
-  assert.equal(
-    await createTask({
-      organizationId,
-      createdByWorkosUserId: otherUserId,
-      conversationId: conversation.id,
-      title: "Forged task",
-      instructions: "Must not be created.",
-    }),
-    undefined,
-  );
-  assert.deepEqual(
-    (
-      await listConversationTasks({ ...owner, conversationId: conversation.id })
-    ).map((t) => t.title),
-    ["Document the answer"],
-  );
-  assert.deepEqual((await listTasks(stranger)).length, 0);
-  assert.equal(
-    await updateUserManagedTaskStatus({
-      ...stranger,
-      taskId: task.id,
-      status: "cancelled",
-    }),
-    undefined,
-  );
-  assert.deepEqual(
-    await updateUserManagedTaskStatus({
-      ...owner,
-      taskId: task.id,
-      status: "completed",
-    }),
-    { id: task.id, status: "completed" },
-  );
 });

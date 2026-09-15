@@ -5,10 +5,8 @@ export type ActivityEventType =
   | "skill.selected"
   | "tool.started"
   | "tool.completed"
-  | "tool.failed"
-  | "tool.awaiting_approval";
-export type ToolActivityState =
-  "started" | "completed" | "failed" | "awaiting_approval";
+  | "tool.failed";
+export type ToolActivityState = "started" | "completed" | "failed";
 
 // A run's start and finish are already conveyed by its own status label
 // (e.g. "Response completed"), so UI step lists should skip these bookend
@@ -74,19 +72,22 @@ const toolLabels: Record<ToolActivityToolId, string> = {
 const toolStateSuffix: Record<ToolActivityState, string> = {
   started: "…",
   completed: " completed",
-  awaiting_approval: " needs approval",
   failed: " failed",
 };
 
 /**
- * Converts a known capability identifier into the only detail persisted for a
- * tool event. Model-provided input, output, URLs, prompts, and errors are not
- * eligible for this audit trail.
+ * Converts a known capability identifier into the label persisted for a tool
+ * event, plus an optional bounded `detail` — the real, formatted command/
+ * output/results Pilot AI captured for that call, shown as an expandable
+ * body under the label. `detail` is never present on a `started` event
+ * (nothing has run yet) and is absent for tools with their own dedicated,
+ * always-visible UI (ask-user, plan, scratchpad).
  */
 export function createToolActivity(input: {
   toolId: ToolActivityToolId;
   toolCallId?: string;
   state: ToolActivityState;
+  detail?: string;
 }) {
   const label = toolLabels[input.toolId];
   return {
@@ -94,5 +95,6 @@ export function createToolActivity(input: {
     toolId: input.toolId,
     toolCallId: input.toolCallId,
     summary: `${label}${toolStateSuffix[input.state]}`,
+    detail: input.detail,
   };
 }

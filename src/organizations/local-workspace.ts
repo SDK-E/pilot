@@ -159,10 +159,10 @@ export async function renameLocalOrganization(
 
 /**
  * Permanently deletes a local workspace and everything scoped to it —
- * members, agents, projects, conversations, tasks, executions, and any
- * domain claims. Every one of those tables has an `ON DELETE CASCADE`
- * foreign key to `organizations.id`, so removing the organization row is
- * enough at the database layer. Never touches WorkOS.
+ * members, agents, projects, conversations, executions, and any domain
+ * claims. Every one of those tables has an `ON DELETE CASCADE` foreign key
+ * to `organizations.id`, so removing the organization row is enough at the
+ * database layer. Never touches WorkOS.
  */
 export async function deleteLocalOrganization(
   organizationId: string,

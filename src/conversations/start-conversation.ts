@@ -55,7 +55,6 @@ export async function startConversation(input: {
       modelId: DEFAULT_MODEL_ID,
       baseAgentId: agent.baseAgentId,
       enabledToolIds: agent.enabledToolIds,
-      approvalRules: agent.approvalRules,
     },
   };
 }

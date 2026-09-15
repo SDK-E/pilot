@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-test("runtime activity callback requires a Vercel OIDC token", async () => {
+test("runtime activity callback requires a runtime token", async () => {
   const { POST } = await import("@/app/api/runtime/activity/route");
   const response = await POST(
     new Request("https://pilot.test/api/runtime/activity", {

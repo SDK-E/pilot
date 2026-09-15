@@ -1,6 +1,5 @@
 "use client";
 
-import { RiCheckLine, RiFileCopyLine } from "@remixicon/react";
 import { useCallback, useState } from "react";
 
 import {
@@ -11,15 +10,19 @@ import {
 } from "@/components/ai-elements/conversation";
 import {
   Message,
-  MessageAction,
-  MessageActions,
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
+import {
+  AssistantMessage,
+  TransientTurnReply,
+} from "@/components/conversations/assistant-message";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
-import { MessageActivityTrace } from "@/components/conversations/message-activity-trace";
-import { QuestionOptions } from "@/components/conversations/question-options";
-import { SourceList } from "@/components/conversations/source-list";
+import {
+  MESSAGE_RESPONSE_COMPONENTS,
+  MESSAGE_RESPONSE_CONTROLS,
+} from "@/components/conversations/message-response-controls";
+import { UserMessage } from "@/components/conversations/user-message";
 
 import type { PersistedActivity, PersistedMessage } from "./conversation-types";
 import type { TransientTurn } from "./use-conversation-stream";
@@ -42,100 +45,87 @@ function useCopyMessage() {
   return { copiedId, copy };
 }
 
-const ERROR_CONTENT_CLASSNAME =
-  "rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive";
-
-function assistantContentClassName(isError?: boolean) {
-  return isError ? ERROR_CONTENT_CLASSNAME : undefined;
-}
-
-function AssistantMessageBody({ message }: { message: PersistedMessage }) {
-  if (message.isError) return <p>{message.content}</p>;
-  return <MessageResponse>{message.content}</MessageResponse>;
-}
-
-function AssistantMessage({
-  message,
-  isLoading,
-  onAnswer,
-  copiedId,
-  onCopy,
-  activities,
-}: {
-  message: PersistedMessage;
-  isLoading: boolean;
-  onAnswer: (text: string) => void;
-  copiedId?: string;
-  onCopy: (id: string, content: string) => void;
+interface RenderMessageOptions {
   activities: PersistedActivity[];
-}) {
-  const isCopied = copiedId === message.id;
+  copiedId?: string;
+  copy: (id: string, content: string) => void;
+  isLoading: boolean;
+  lastMessageId?: string;
+  pendingPrompt?: string;
+  onAnswer: (text: string) => void;
+  onEditMessage: (messageId: string, content: string) => void;
+  onRegenerate: (messageId: string) => void;
+  onContinue: (messageId: string) => void;
+}
+
+function renderMessage(
+  message: PersistedMessage,
+  options: RenderMessageOptions,
+) {
+  if (message.role === "user") {
+    return (
+      <UserMessage
+        content={message.content}
+        id={message.id}
+        isLoading={options.isLoading}
+        key={message.id}
+        onEdit={options.onEditMessage}
+      />
+    );
+  }
+  const isLast = message.id === options.lastMessageId && !options.pendingPrompt;
   return (
-    <Message from="assistant">
-      <MessageContent className={assistantContentClassName(message.isError)}>
-        {activities.length > 0 ? (
-          <MessageActivityTrace events={activities} />
-        ) : null}
-        <AssistantMessageBody message={message} />
-        {message.sources?.length ? (
-          <SourceList sources={message.sources} />
-        ) : null}
-        {message.userQuestionOptions?.length ? (
-          <QuestionOptions
-            disabled={isLoading}
-            mode={message.userQuestionSelectionMode ?? "single_select"}
-            onAnswer={onAnswer}
-            options={message.userQuestionOptions}
-          />
-        ) : null}
-      </MessageContent>
-      <MessageActions className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-        <MessageAction
-          aria-pressed={isCopied}
-          label={isCopied ? "Copied" : "Copy message"}
-          onClick={() => {
-            onCopy(message.id, message.content);
-          }}
-          tooltip={isCopied ? "Copied" : "Copy"}
-        >
-          {isCopied ? (
-            <RiCheckLine aria-hidden="true" />
-          ) : (
-            <RiFileCopyLine aria-hidden="true" />
-          )}
-        </MessageAction>
-      </MessageActions>
-    </Message>
+    <AssistantMessage
+      activities={options.activities.filter(
+        (activity) => activity.conversationMessageId === message.id,
+      )}
+      canContinue={isLast && Boolean(message.isPartial)}
+      canRegenerate={isLast && !message.isPartial}
+      copiedId={options.copiedId}
+      isLoading={options.isLoading}
+      key={message.id}
+      message={message}
+      onAnswer={options.onAnswer}
+      onContinue={options.onContinue}
+      onCopy={options.copy}
+      onRegenerate={options.onRegenerate}
+    />
   );
 }
 
-function TransientTurnReply({ turn }: { turn: TransientTurn }) {
-  if (turn.completion) {
-    return (
-      <Message from="assistant">
-        <MessageContent>
-          <MessageResponse>{turn.completion}</MessageResponse>
-        </MessageContent>
-      </Message>
-    );
-  }
-  if (turn.error) {
-    return (
-      <Message from="assistant">
-        <MessageContent className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive">
-          <p>{turn.error}</p>
-        </MessageContent>
-      </Message>
-    );
-  }
-  return null;
+function isTranscriptEmpty(input: {
+  messages: PersistedMessage[];
+  transientTurns: TransientTurn[];
+  pendingPrompt?: string;
+  isLoading: boolean;
+}) {
+  if (input.isLoading || input.pendingPrompt) return false;
+  return input.messages.length === 0 && input.transientTurns.length === 0;
 }
 
-function UserMessage({ content }: { content: string }) {
+function StreamingReply({
+  completion,
+  isLoading,
+  streamActivities,
+}: {
+  completion: string;
+  isLoading: boolean;
+  streamActivities: PersistedActivity[];
+}) {
   return (
-    <Message from="user">
+    <Message from="assistant">
       <MessageContent>
-        <p className="whitespace-pre-wrap">{content}</p>
+        {completion ? (
+          <MessageResponse
+            components={MESSAGE_RESPONSE_COMPONENTS}
+            controls={MESSAGE_RESPONSE_CONTROLS}
+          >
+            {completion}
+          </MessageResponse>
+        ) : null}
+        {isLoading ? (
+          <LiveConversationActivity events={streamActivities} />
+        ) : null}
       </MessageContent>
     </Message>
   );
@@ -151,11 +141,16 @@ interface MessageListProps {
   isLoading: boolean;
   streamActivities: PersistedActivity[];
   onAnswer: (text: string) => void;
+  onEditMessage: (messageId: string, content: string) => void;
+  onRegenerate: (messageId: string) => void;
+  onContinue: (messageId: string) => void;
 }
 
 /**
  * The transcript: persisted messages, then turns finished in this session
- * that the server has not been re-fetched for, then the streaming turn.
+ * that the server has not been re-fetched for, then the streaming turn. Only
+ * the last assistant reply can be regenerated — editing a user message and
+ * resending is the general way to revise anything earlier.
  */
 export function MessageList({
   agentName,
@@ -167,10 +162,18 @@ export function MessageList({
   isLoading,
   streamActivities,
   onAnswer,
+  onEditMessage,
+  onRegenerate,
+  onContinue,
 }: MessageListProps) {
   const { copiedId, copy } = useCopyMessage();
-  const isEmpty =
-    messages.length === 0 && transientTurns.length === 0 && !pendingPrompt;
+  const isEmpty = isTranscriptEmpty({
+    isLoading,
+    messages,
+    pendingPrompt,
+    transientTurns,
+  });
+  const lastMessageId = messages.at(-1)?.id;
 
   return (
     <Conversation className="min-h-0 min-w-0 flex-1">
@@ -183,21 +186,18 @@ export function MessageList({
           />
         ) : null}
         {messages.map((message) =>
-          message.role === "user" ? (
-            <UserMessage content={message.content} key={message.id} />
-          ) : (
-            <AssistantMessage
-              activities={activities.filter(
-                (activity) => activity.conversationMessageId === message.id,
-              )}
-              copiedId={copiedId}
-              isLoading={isLoading}
-              key={message.id}
-              message={message}
-              onAnswer={onAnswer}
-              onCopy={(id, content) => void copy(id, content)}
-            />
-          ),
+          renderMessage(message, {
+            activities,
+            copiedId,
+            copy: (id, content) => void copy(id, content),
+            isLoading,
+            lastMessageId,
+            onAnswer,
+            onContinue,
+            onEditMessage,
+            onRegenerate,
+            pendingPrompt,
+          }),
         )}
         {transientTurns.map((turn) => (
           <div key={turn.id}>
@@ -205,20 +205,13 @@ export function MessageList({
             <TransientTurnReply turn={turn} />
           </div>
         ))}
-        {pendingPrompt ? (
-          <>
-            <UserMessage content={pendingPrompt} />
-            <Message from="assistant">
-              <MessageContent>
-                {completion ? (
-                  <MessageResponse>{completion}</MessageResponse>
-                ) : null}
-                {isLoading ? (
-                  <LiveConversationActivity events={streamActivities} />
-                ) : null}
-              </MessageContent>
-            </Message>
-          </>
+        {pendingPrompt ? <UserMessage content={pendingPrompt} /> : null}
+        {isLoading || pendingPrompt ? (
+          <StreamingReply
+            completion={completion}
+            isLoading={isLoading}
+            streamActivities={streamActivities}
+          />
         ) : null}
       </ConversationContent>
       <ConversationScrollButton />

@@ -1,15 +1,10 @@
 "use client";
 
 import { useCompletion } from "@ai-sdk/react";
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { activitiesSince, useActivityPolling } from "./use-activity-polling";
+import { useInitialMessage } from "./use-initial-message";
 import { useTranscript } from "./use-transcript";
 
 import type { PersistedActivity, PersistedMessage } from "./conversation-types";
@@ -17,6 +12,10 @@ import type { PersistedActivity, PersistedMessage } from "./conversation-types";
 export type { TransientTurn } from "./use-transcript";
 
 const RESPONSE_TIMEOUT_MS = 60_000;
+// A stop needs the server's failTurn to persist the partial reply before
+// `sync` re-fetches the transcript; long enough for that round trip, short
+// enough that the pause after clicking Stop isn't itself noticeable.
+const STOP_SYNC_DELAY_MS = 500;
 const TIMEOUT_MESSAGE =
   "The response timed out. The request may still have completed; review the message before sending it again.";
 
@@ -81,18 +80,70 @@ export function useConversationStream(input: {
       setInput("");
       setStreamError(undefined);
       setTimeoutError(undefined);
-      void complete(prompt);
+      void complete(prompt, { body: { mode: "send" } });
     },
     [complete, isLoading, setCompletion, setInput],
   );
 
+  const editMessage = useCallback(
+    (messageId: string, content: string) => {
+      const prompt = content.trim();
+      if (!prompt || isLoading) return;
+      transcript.truncateFrom(messageId);
+      lastPrompt.current = prompt;
+      setStreamStartedAt(Date.now());
+      setPendingPrompt(prompt);
+      setCompletion("");
+      setStreamError(undefined);
+      setTimeoutError(undefined);
+      void complete(prompt, { body: { mode: "edit", messageId } });
+    },
+    [complete, isLoading, setCompletion, transcript],
+  );
+
+  // Regenerate and continue both resend without any new user-typed prompt —
+  // the only difference is which existing message the reply lands on.
+  const startWithoutPrompt = useCallback(
+    (mode: "regenerate" | "continue", messageId: string) => {
+      if (isLoading) return;
+      lastPrompt.current = "";
+      setStreamStartedAt(Date.now());
+      setPendingPrompt(undefined);
+      setCompletion("");
+      setStreamError(undefined);
+      setTimeoutError(undefined);
+      void complete("", { body: { mode, messageId } });
+    },
+    [complete, isLoading, setCompletion],
+  );
+
+  const regenerate = useCallback(
+    (messageId: string) => {
+      transcript.truncateFrom(messageId);
+      startWithoutPrompt("regenerate", messageId);
+    },
+    [startWithoutPrompt, transcript],
+  );
+
+  const continueMessage = useCallback(
+    (messageId: string) => {
+      startWithoutPrompt("continue", messageId);
+    },
+    [startWithoutPrompt],
+  );
+
+  // The visible partial text is left in place — cleared only once `sync`
+  // brings back the persisted, resumable version of it — rather than wiped
+  // immediately, which would flash the reply away before it reappears.
   const cancel = useCallback(() => {
     stop();
     setTimeoutError(undefined);
-    setPendingPrompt(undefined);
-    setCompletion("");
     setInput("");
-  }, [setCompletion, setInput, stop]);
+    setTimeout(() => {
+      setCompletion("");
+      finishTurn();
+    }, STOP_SYNC_DELAY_MS);
+  }, [finishTurn, setCompletion, setInput, stop]);
 
   const restoreLastPrompt = useCallback(() => {
     cancel();
@@ -100,16 +151,7 @@ export function useConversationStream(input: {
     setInput(lastPrompt.current ?? "");
   }, [cancel, setInput]);
 
-  // The start screen stores the first message and opens the conversation.
-  useEffect(() => {
-    const key = `pilot:initial-message:${conversationId}`;
-    const initialMessage = sessionStorage.getItem(key);
-    if (!initialMessage) return;
-    sessionStorage.removeItem(key);
-    startTransition(() => {
-      send(initialMessage);
-    });
-  }, [conversationId, send]);
+  useInitialMessage(conversationId, send);
 
   useEffect(() => {
     if (!isLoading) return;
@@ -133,6 +175,9 @@ export function useConversationStream(input: {
     setDraft: setInput,
     isLoading,
     send,
+    editMessage,
+    regenerate,
+    continueMessage,
     cancel,
     restoreLastPrompt,
     streamError: streamError ?? completionState.error?.message,

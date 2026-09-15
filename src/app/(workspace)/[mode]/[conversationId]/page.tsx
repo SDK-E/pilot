@@ -3,7 +3,6 @@ import { z } from "zod";
 
 import { isAgentKindId, modeHref } from "@/agents/agent-kinds";
 import { getAgent } from "@/agents/agent-repository";
-import { listConversationApprovals } from "@/approvals/approval-repository";
 import { ConversationShell } from "@/components/conversations/conversation-shell";
 import { listConversationAttachments } from "@/conversations/attachment-repository";
 import {
@@ -19,7 +18,6 @@ import {
   getProjectMemoryContextForConversation,
   listProjects,
 } from "@/projects/project-repository";
-import { listConversationTasks } from "@/tasks/task-repository";
 import { getUserPreferences } from "@/users/user-preference-repository";
 
 import type { Metadata } from "next";
@@ -54,8 +52,6 @@ export default async function ConversationPage({
     messages,
     sources,
     activities,
-    tasks,
-    approvals,
     project,
     projects,
     attachments,
@@ -66,8 +62,6 @@ export default async function ConversationPage({
     listConversationMessages(owner, conversationId),
     listMessageSources(scope),
     listConversationActivity(organizationId, conversationId, user.id),
-    listConversationTasks(scope),
-    listConversationApprovals(scope),
     getProjectMemoryContextForConversation(scope),
     listProjects(owner),
     listConversationAttachments(scope),
@@ -90,8 +84,6 @@ export default async function ConversationPage({
         sources: sources.filter((source) => source.messageId === message.id),
       }))}
       activities={activities}
-      tasks={tasks}
-      approvals={approvals}
       project={project}
       projects={projects}
       attachments={attachments}

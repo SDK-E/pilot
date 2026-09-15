@@ -1,6 +1,11 @@
 # Task approval workflow boundary
 
-Status: implemented for the production public web-search and private scratchpad capabilities shared by
+Status: superseded. Tasks and durable tool-approval were removed entirely —
+a granted tool now just runs, matching Claude Code/Codex; see
+[progress.md](../progress.md) for the current authorization model. The rest
+of this document describes the removed design for historical context only.
+
+Status (historical): implemented for the production public web-search and private scratchpad capabilities shared by
 Conversational and Research personas. Generic task workflows and all other
 protected actions remain pending.
 

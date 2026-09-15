@@ -138,7 +138,7 @@ test("AC-08-02: stream without terminal event does not produce false success", a
 
   await assert.rejects(
     Array.fromAsync(parseRuntimeStream(stream)),
-    /ended before completing/,
+    /couldn.t complete this response/,
     "should reject without false success",
   );
 });
@@ -148,7 +148,7 @@ test("AC-08-02: [DONE] without any events does not produce false success", async
 
   await assert.rejects(
     Array.fromAsync(parseRuntimeStream(stream)),
-    /ended before completing/,
+    /couldn.t complete this response/,
     "should reject without false success",
   );
 });
@@ -162,7 +162,7 @@ test("AC-08-02: empty stream does not produce false success", async () => {
 
   await assert.rejects(
     Array.fromAsync(parseRuntimeStream(stream)),
-    /ended before completing/,
+    /couldn.t complete this response/,
     "should reject without false success",
   );
 });

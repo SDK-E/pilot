@@ -15,7 +15,6 @@ export interface RuntimeAgent {
   modelId: string;
   baseAgentId: AgentKindId;
   enabledToolIds: string[];
-  approvalRules: Record<string, string>;
 }
 
 export async function loadRuntimeAgent(
@@ -30,6 +29,5 @@ export async function loadRuntimeAgent(
     modelId: DEFAULT_MODEL_ID,
     baseAgentId: agent.baseAgentId,
     enabledToolIds: agent.enabledToolIds,
-    approvalRules: agent.approvalRules,
   };
 }

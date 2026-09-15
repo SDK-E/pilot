@@ -1,6 +1,12 @@
 # Execution and activity records
 
-Status: accepted for the durable execution slice.
+Status: accepted for the durable execution slice. The no-raw-content clause
+below (a tool event exposes only a fixed-vocabulary summary, never real
+input/output) is superseded by
+[ADR-0018](0018-tool-call-transparency.md) — a completed tool call may now
+carry a bounded, real `detail` of its command/output/results. The rest of
+this document (execution lifecycle, ownership, cascading deletes) still
+applies as written.
 
 Pilot records one execution after an authorized user message is persisted and
 before it invokes the protected runtime. An execution belongs to exactly one

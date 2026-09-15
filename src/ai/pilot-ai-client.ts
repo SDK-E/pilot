@@ -1,22 +1,13 @@
 import "server-only";
 
-import { getVercelOidcToken } from "@vercel/oidc";
-import { z } from "zod";
-
-import { approvalRequiredToolIds } from "@/agents/agent-tools";
-
 import {
-  approvableToolIdSchema,
-  completionSchema,
   PilotAiRuntimeError,
   runtimeRequestSchema,
-  toCompleted,
-  type ApprovableToolId,
-  type CompletedReply,
   type RuntimeEvent,
   type RuntimeRequest,
 } from "./runtime-contract";
 import { parseRuntimeStream } from "./runtime-stream";
+import { getPilotRuntimeToken } from "./workos-m2m";
 
 export {
   isHtmlDocumentText,
@@ -27,7 +18,7 @@ export {
 } from "./runtime-contract";
 
 /**
- * Server-only HTTP client for Pilot AI. Every call carries the Vercel OIDC
+ * Server-only HTTP client for Pilot AI. Every call carries a WorkOS M2M
  * token, so the runtime can verify that Pilot, and not a browser, is calling.
  */
 
@@ -35,35 +26,31 @@ function runtimeUrl(path: string): URL {
   const value = process.env.PILOT_AI_RUNTIME_URL?.trim();
   if (!value) {
     throw new PilotAiRuntimeError(
-      "Pilot AI is not configured for this environment.",
+      "Pilot couldn't complete this response. Try sending it again.",
+      { cause: "PILOT_AI_RUNTIME_URL is not configured." },
     );
   }
   const base = new URL(value);
   if (base.protocol !== "https:" && process.env.NODE_ENV === "production") {
     throw new PilotAiRuntimeError(
-      "Pilot AI requires an HTTPS URL in production.",
+      "Pilot couldn't complete this response. Try sending it again.",
+      { cause: "PILOT_AI_RUNTIME_URL must be HTTPS in production." },
     );
   }
   return new URL(path, base);
 }
 
 async function runtimeHeaders(request: RuntimeRequest) {
-  const oidcToken = await getVercelOidcToken();
-  const approvalRequired = approvalRequiredToolIds(
-    request.worker,
-    request.allowedToolIds,
-  );
+  const runtimeToken = await getPilotRuntimeToken();
   return {
     "content-type": "application/json",
-    "x-pilot-runtime-oidc-token": oidcToken,
-    "x-vercel-trusted-oidc-idp-token": oidcToken,
+    "x-pilot-runtime-token": runtimeToken,
     "x-pilot-organization-id": request.organizationId,
     "x-pilot-worker-id": request.worker.id,
     "x-pilot-conversation-id": request.conversationId,
     "x-pilot-execution-id": request.executionId,
     "x-pilot-base-agent-id": request.worker.baseAgentId,
     "x-pilot-allowed-tool-ids": JSON.stringify(request.allowedToolIds),
-    "x-pilot-approval-required-tool-ids": JSON.stringify(approvalRequired),
     ...(request.project && {
       "x-pilot-project-id": request.project.id,
       "x-pilot-project-instructions": request.project.instructions ?? "",
@@ -102,18 +89,20 @@ async function postToRuntime(
   if (!response.ok) {
     // The runtime's error body often carries the actual rejection reason
     // (see pilot-ai's verifyPilotRuntimeRequestDiag), which is otherwise
-    // silently discarded here. It goes in `cause`, not the message: this
-    // error's message reaches the chat client as-is (conversation-turn.ts
-    // streams it through), so it must stay generic and detail-free.
+    // silently discarded here. It goes in `cause` for server-side logging
+    // only: this error's message reaches the chat client as-is
+    // (conversation-turn.ts streams it through), so it must stay generic —
+    // no internal service name, no raw HTTP status code.
     let detail = "";
     try {
       detail = await response.text();
     } catch {
-      // Fall through with no detail; the status code alone still throws below.
+      // Fall through with no detail; the response is still reported below.
     }
-    throw new PilotAiRuntimeError(`Pilot AI returned ${response.status}.`, {
-      cause: detail || undefined,
-    });
+    throw new PilotAiRuntimeError(
+      "Pilot couldn't complete this response. Try sending it again.",
+      { cause: detail || `status ${String(response.status)}` },
+    );
   }
   return response;
 }
@@ -130,43 +119,21 @@ export async function* streamReply(
     signal,
   );
   if (!response.body) {
-    throw new PilotAiRuntimeError("Pilot AI returned an empty stream.");
+    throw new PilotAiRuntimeError(
+      "Pilot couldn't complete this response. Try sending it again.",
+      { cause: "Runtime returned an empty stream." },
+    );
   }
   yield* parseRuntimeStream(response.body);
 }
 
-export async function resumeToolApproval(
-  input: RuntimeRequest & {
-    runtimeRunId: string;
-    toolCallId: string;
-    toolId: ApprovableToolId;
-    approved: boolean;
-  },
-): Promise<CompletedReply> {
-  const request = runtimeRequestSchema
-    .extend({
-      runtimeRunId: z.string().min(1),
-      toolCallId: z.string().min(1),
-      toolId: approvableToolIdSchema,
-      approved: z.boolean(),
-    })
-    .parse(input);
-  const response = await postToRuntime(
-    "/v1/approvals/resume",
-    request,
-    JSON.stringify(request),
-  );
-  return toCompleted(completionSchema.parse(await response.json()));
-}
-
 async function postCleanup(path: string, input: object, what: string) {
-  const oidcToken = await getVercelOidcToken();
+  const runtimeToken = await getPilotRuntimeToken();
   const response = await fetch(runtimeUrl(path), {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-pilot-runtime-oidc-token": oidcToken,
-      "x-vercel-trusted-oidc-idp-token": oidcToken,
+      "x-pilot-runtime-token": runtimeToken,
     },
     body: JSON.stringify(input),
     cache: "no-store",
@@ -183,6 +150,26 @@ export function deleteConversationMemory(input: {
   project?: { id: string; sharedMemoryEnabled: boolean };
 }) {
   return postCleanup("/v1/conversations/delete", input, "Conversation cleanup");
+}
+
+/**
+ * Forgets the runtime's own memory of a conversation from `cutoff` onward —
+ * called before editing or regenerating a message, so the model does not
+ * see stale content Pilot's own history no longer contains (see
+ * ADR-0019 for why the runtime cannot be left to go stale here).
+ */
+export function truncateConversationMemory(input: {
+  organizationId: string;
+  workerId: string;
+  conversationId: string;
+  project?: { id: string; sharedMemoryEnabled: boolean };
+  cutoff: Date;
+}) {
+  return postCleanup(
+    "/v1/conversations/truncate",
+    { ...input, cutoff: input.cutoff.toISOString() },
+    "Conversation truncate",
+  );
 }
 
 export function deleteProjectMemory(input: {

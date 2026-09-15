@@ -246,6 +246,34 @@
       "when": 1789378277250,
       "tag": "0034_conversation_messages_is_error",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1789416916771,
+      "tag": "0035_organization_capability_flags",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1789428149008,
+      "tag": "0036_drop_tasks_approvals_and_approval_rules",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1789431565548,
+      "tag": "0037_add_activity_events_detail",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1789441311011,
+      "tag": "0038_add_conversation_messages_is_partial",
+      "breakpoints": true
     }
   ]
 }

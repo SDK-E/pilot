@@ -3,24 +3,16 @@
 import { cn } from "cn";
 
 import { ActivitySection } from "@/components/conversations/details/activity-section";
-import { ApprovalsSection } from "@/components/conversations/details/approvals-section";
 import { NotesSection } from "@/components/conversations/details/notes-section";
 import { PlanSection } from "@/components/conversations/details/plan-section";
-import { TasksSection } from "@/components/conversations/details/tasks-section";
 
-import type { AgentKindId } from "@/agents/agent-kinds";
 import type { ConversationPlanStep } from "@/db/schema";
 import type { TimelineActivity } from "@/executions/activity-timeline";
 
 interface ConversationDetailsPanelProps {
   activities: TimelineActivity[];
-  kind: AgentKindId;
-  conversationId: string;
-  tasks: { id: string; title: string; status: string }[];
-  approvals: { id: string; summary: string; status: string }[];
   scratchpad: string;
   plan: ConversationPlanStep[];
-  onTaskCreated: () => void;
   /**
    * Desktop's resizable side panel gives this a definite height to fill
    * (`h-full`). Mobile's collapsible drawer instead sizes to content — `h-full`
@@ -32,18 +24,12 @@ interface ConversationDetailsPanelProps {
 }
 
 /**
- * The side panel of an open conversation: activity, notes, tasks, and
- * approvals.
+ * The side panel of an open conversation: activity and notes.
  */
 export function ConversationDetailsPanel({
   activities,
-  kind,
-  conversationId,
-  tasks,
-  approvals,
   scratchpad,
   plan,
-  onTaskCreated,
   fillHeight = true,
 }: ConversationDetailsPanelProps) {
   return (
@@ -58,17 +44,6 @@ export function ConversationDetailsPanel({
         <PlanSection steps={plan} />
         <ActivitySection activities={activities} collapsibleRuns={fillHeight} />
         <NotesSection scratchpad={scratchpad} />
-        <TasksSection
-          conversationId={conversationId}
-          onTaskCreated={onTaskCreated}
-          tasks={tasks}
-        />
-        <ApprovalsSection
-          approvals={approvals}
-          conversationId={conversationId}
-          kind={kind}
-          onDecided={onTaskCreated}
-        />
       </div>
     </aside>
   );

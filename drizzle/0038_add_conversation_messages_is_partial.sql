@@ -1,0 +1,1 @@
+ALTER TABLE "conversation_messages" ADD COLUMN "is_partial" boolean DEFAULT false NOT NULL;

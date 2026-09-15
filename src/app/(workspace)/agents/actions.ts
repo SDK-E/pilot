@@ -15,7 +15,7 @@ import {
   updateAgent,
   type AgentConfiguration,
 } from "@/agents/agent-repository";
-import { APPROVAL_MODES, isToolAvailableTo } from "@/agents/agent-tools";
+import { isToolAvailableTo } from "@/agents/agent-tools";
 import { optionalText } from "@/lib/form-data";
 import {
   getWorkspaceSession,
@@ -43,11 +43,10 @@ const agentFormSchema = z.object({
   tone: z.string().trim().max(200).optional(),
   outputFormat: z.string().trim().max(1000).optional(),
   enabledToolIds: z.array(z.enum(TOOL_IDS)),
-  approvalRules: z.partialRecord(z.enum(TOOL_IDS), z.enum(APPROVAL_MODES)),
 });
 
 /**
- * Reads the agent form. Tool rules are kept only for enabled tools the kind
+ * Reads the agent form. Enabled tools are kept only for tools the kind
  * allows, so a stale hidden field can never grant a tool.
  */
 function agentFromForm(
@@ -61,19 +60,13 @@ function agentFromForm(
     tone: optionalText(formData, "tone"),
     outputFormat: optionalText(formData, "outputFormat"),
     enabledToolIds: formData.getAll("enabledToolIds"),
-    approvalRules: Object.fromEntries(
-      TOOL_IDS.flatMap((toolId) => {
-        const value = formData.get(`approvalRule.${toolId}`);
-        return typeof value === "string" && value ? [[toolId, value]] : [];
-      }),
-    ),
   });
   if (!parsed.success) {
     return {
       error: parsed.error.issues[0]?.message ?? "Check the agent details.",
     };
   }
-  const { approvalRules, ...agent } = parsed.data;
+  const agent = parsed.data;
   const enabledToolIds = agent.enabledToolIds.filter((toolId) =>
     isToolAvailableTo(toolId, agent.baseAgentId),
   );
@@ -82,12 +75,6 @@ function agentFromForm(
       ...agent,
       modelId: DEFAULT_MODEL_ID,
       enabledToolIds,
-      approvalRules: Object.fromEntries(
-        enabledToolIds.flatMap((toolId) => {
-          const mode = approvalRules[toolId];
-          return mode ? [[toolId, mode]] : [];
-        }),
-      ),
     },
   };
 }
@@ -201,7 +188,6 @@ export async function duplicateAgentAction(
     tone: source.tone,
     outputFormat: source.outputFormat,
     enabledToolIds: source.enabledToolIds,
-    approvalRules: source.approvalRules,
   });
   revalidatePath("/", "layout");
   return {

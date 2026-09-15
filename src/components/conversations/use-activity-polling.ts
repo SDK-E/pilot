@@ -6,12 +6,14 @@ import { readJson } from "@/lib/read-json";
 
 import type { PersistedActivity } from "./conversation-types";
 
-const ACTIVITY_POLL_MS = 1000;
+const ACTIVITY_POLL_MS = 400;
 
 /**
- * While a reply streams, refreshes the sanitized activity trail every second
- * so the user can watch the agent's steps. The stream itself is authoritative;
- * polling is best effort and stops as soon as the stream ends.
+ * While a reply streams, refreshes the sanitized activity trail at a fast
+ * interval so the user can watch the agent's steps as they happen, including
+ * short-lived tool calls that would otherwise complete between two slower
+ * polls and never visibly appear. The stream itself is authoritative; polling
+ * is best effort and stops as soon as the stream ends.
  */
 export function useActivityPolling(
   conversationId: string,

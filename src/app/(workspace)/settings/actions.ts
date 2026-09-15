@@ -16,6 +16,7 @@ import {
   renameLocalOrganization,
 } from "@/organizations/local-workspace";
 import {
+  updateOrganizationCapabilities,
   updateOrganizationDefaultWorker,
   updateOrganizationModelPolicy,
 } from "@/organizations/organization-preference-repository";
@@ -75,6 +76,26 @@ export async function updateModelPolicyAction(formData: FormData) {
     );
   }
   await updateOrganizationModelPolicy({ organizationId, ...input.data });
+  revalidatePath("/", "layout");
+}
+
+const capabilitiesSchema = z.object({
+  webSearchEnabled: z.boolean(),
+  codeSandboxEnabled: z.boolean(),
+});
+
+export async function updateOrganizationCapabilitiesAction(formData: FormData) {
+  const input = capabilitiesSchema.parse({
+    webSearchEnabled: formData.get("webSearchEnabled") === "true",
+    codeSandboxEnabled: formData.get("codeSandboxEnabled") === "true",
+  });
+  const { organizationId, membership } = await requireWorkspaceSession();
+  if (!ADMIN_ROLES.has(membership.role.slug)) {
+    throw new Error(
+      "Only organization owners and admins can change agent capabilities.",
+    );
+  }
+  await updateOrganizationCapabilities({ organizationId, ...input });
   revalidatePath("/", "layout");
 }
 

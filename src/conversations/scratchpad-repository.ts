@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import {
@@ -49,7 +49,7 @@ async function getRuntimeConversation(input: {
       and(
         eq(executions.organizationId, input.organizationId),
         eq(executions.id, input.executionId),
-        inArray(executions.status, ["running", "awaiting_approval"]),
+        eq(executions.status, "running"),
         eq(conversations.organizationId, input.organizationId),
       ),
     )
@@ -58,7 +58,7 @@ async function getRuntimeConversation(input: {
 }
 
 /**
- * Pilot AI can reach this only through its OIDC-authenticated callback. The
+ * Pilot AI can reach this only through its WorkOS-M2M-authenticated callback. The
  * execution record, rather than callback input, determines every owner and
  * resource identifier used for the read or write.
  */

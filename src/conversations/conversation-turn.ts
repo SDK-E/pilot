@@ -9,12 +9,25 @@ import {
   type RuntimeRequest,
 } from "@/ai/pilot-ai-client";
 import { buildAttachmentContext } from "@/conversations/attachment-context";
+import { appendConversationMessageContent } from "@/conversations/conversation-message-repository";
 import { createConversationMessage } from "@/conversations/conversation-repository";
+import {
+  failTurn,
+  StreamAttemptError,
+} from "@/conversations/conversation-turn-failure";
 import {
   sanitizeWebResponse,
   saveMessageSources,
 } from "@/conversations/message-sources";
-import { allowedToolIds } from "@/conversations/tool-authorization";
+import {
+  allowedToolIds,
+  type OrganizationCapabilities,
+} from "@/conversations/tool-authorization";
+import {
+  owner,
+  storedCount,
+  type TurnInput,
+} from "@/conversations/turn-shared";
 import {
   finishExecution,
   startExecution,
@@ -22,29 +35,11 @@ import {
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
 import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 
-import type { RuntimeAgent } from "@/conversations/runtime-agent";
-
-export interface TurnInput {
-  organizationId: string;
-  userId: string;
-  agent: RuntimeAgent;
-  conversationId: string;
-  message: string;
-}
+export type { TurnInput } from "@/conversations/turn-shared";
 
 const MAX_INSTRUCTIONS_LENGTH = 20_000;
 const STREAM_TIMEOUT_MS = 90_000;
 const FALLBACK_MODEL_ID = "kilo/kilo-auto/free";
-
-function storedCount(value: number | undefined): number | undefined {
-  return value !== undefined && Number.isSafeInteger(value) && value >= 0
-    ? Math.min(value, 2_147_483_647)
-    : undefined;
-}
-
-function owner(input: TurnInput) {
-  return { organizationId: input.organizationId, userId: input.userId };
-}
 
 /**
  * Opens the execution the runtime reports to, then records the user's
@@ -52,19 +47,25 @@ function owner(input: TurnInput) {
  * executions_conversation_active_unique), so a retried or duplicated request
  * for a turn already in flight is rejected here, before it can persist
  * another copy of the user's message.
+ *
+ * A regenerate or continue reuses the existing user message instead of
+ * creating a new one — `reuseUserMessageId` skips the insert and carries
+ * that id through.
  */
-async function beginTurn(input: TurnInput) {
+async function beginTurn(input: TurnInput, reuseUserMessageId?: string) {
   const execution = await startExecution({
     organizationId: input.organizationId,
     workerId: input.agent.id,
     conversationId: input.conversationId,
   });
   if (!execution) throw new Error("Pilot could not start this turn.");
-  const userMessage = await createConversationMessage(owner(input), {
-    conversationId: input.conversationId,
-    role: "user",
-    content: input.message,
-  });
+  const userMessage = reuseUserMessageId
+    ? { id: reuseUserMessageId }
+    : await createConversationMessage(owner(input), {
+        conversationId: input.conversationId,
+        role: "user",
+        content: input.message,
+      });
   if (!userMessage) {
     // The execution already reserved this conversation; leaving it "running"
     // with no message behind it would permanently block every future turn
@@ -83,6 +84,7 @@ async function runtimeRequest(
   input: TurnInput,
   executionId: string,
   modelId: string,
+  capabilities: OrganizationCapabilities,
 ): Promise<RuntimeRequest> {
   const scope = {
     organizationId: input.organizationId,
@@ -109,7 +111,7 @@ async function runtimeRequest(
     conversationId: input.conversationId,
     message: input.message,
     executionId,
-    allowedToolIds: allowedToolIds(input.agent),
+    allowedToolIds: allowedToolIds(input.agent, capabilities),
     project: project && {
       id: project.id,
       instructions: project.instructions ?? undefined,
@@ -118,7 +120,7 @@ async function runtimeRequest(
   };
 }
 
-type Turn = Awaited<ReturnType<typeof beginTurn>>;
+export type Turn = Awaited<ReturnType<typeof beginTurn>>;
 
 async function persistQuestion(
   input: TurnInput,
@@ -161,17 +163,24 @@ async function persistReply(
   ) {
     throw new Error("Pilot returned an invalid response.");
   }
-  const message = await createConversationMessage(owner(input), {
-    conversationId: input.conversationId,
-    role: "worker",
-    content: cleaned.text,
-    modelId: reply.modelId,
-    runtimeRunId: reply.runId ?? undefined,
-    latencyMs: storedCount(Math.round(performance.now() - turn.startedAt)),
-    inputTokens: storedCount(reply.usage.inputTokens),
-    outputTokens: storedCount(reply.usage.outputTokens),
-    totalTokens: storedCount(reply.usage.totalTokens),
-  });
+  const message = input.appendToMessageId
+    ? await appendConversationMessageContent(
+        owner(input),
+        input.appendToMessageId,
+        ` ${cleaned.text}`,
+        false,
+      )
+    : await createConversationMessage(owner(input), {
+        conversationId: input.conversationId,
+        role: "worker",
+        content: cleaned.text,
+        modelId: reply.modelId,
+        runtimeRunId: reply.runId ?? undefined,
+        latencyMs: storedCount(Math.round(performance.now() - turn.startedAt)),
+        inputTokens: storedCount(reply.usage.inputTokens),
+        outputTokens: storedCount(reply.usage.outputTokens),
+        totalTokens: storedCount(reply.usage.totalTokens),
+      });
   if (!message) throw new Error("This conversation is unavailable.");
   await saveMessageSources({
     ...owner(input),
@@ -189,36 +198,11 @@ async function persistReply(
 }
 
 /**
- * Records why a turn failed. A worker-role reply is persisted alongside the
- * user's message so a reload shows a clear, styleable failure instead of an
- * orphaned message with no answer.
- */
-async function failTurn(
-  input: TurnInput,
-  turn: Turn,
-  reason: "Generation cancelled" | "Runtime generation failed",
-) {
-  const isCancelled = reason === "Generation cancelled";
-  const message = await createConversationMessage(owner(input), {
-    conversationId: input.conversationId,
-    role: "worker",
-    content: isCancelled
-      ? "Generation was stopped."
-      : "Pilot couldn't complete this response. Try sending it again.",
-    isError: !isCancelled,
-    latencyMs: storedCount(Math.round(performance.now() - turn.startedAt)),
-  });
-  await finishExecution({
-    organizationId: input.organizationId,
-    executionId: turn.execution.id,
-    conversationMessageId: message?.id,
-    errorMessage: reason,
-  });
-}
-
-/**
  * Runs one attempt of a streaming turn. Returns the terminal event, and the
- * accumulated text for a completion.
+ * accumulated text for a completion. On any failure (an error or an abort),
+ * throws a `StreamAttemptError` carrying whatever text had streamed so far,
+ * so a user-initiated stop can keep it instead of losing it — see
+ * `conversation-turn-failure.ts`.
  */
 async function streamAttempt(
   request: RuntimeRequest,
@@ -226,15 +210,22 @@ async function streamAttempt(
   onText: (text: string) => void,
 ) {
   let text = "";
-  for await (const event of streamReply(request, signal)) {
-    if (event.type === "text") {
-      text += event.text;
-      onText(event.text);
-      continue;
+  try {
+    for await (const event of streamReply(request, signal)) {
+      if (event.type === "text") {
+        text += event.text;
+        onText(event.text);
+        continue;
+      }
+      return { event, text };
     }
-    return { event, text };
+    throw new PilotAiRuntimeError(
+      "Pilot couldn't complete this response. Try sending it again.",
+      { cause: "Runtime stream ended before a terminal event." },
+    );
+  } catch (error) {
+    throw new StreamAttemptError(text, { cause: error });
   }
-  throw new PilotAiRuntimeError("Pilot AI ended before completing the reply.");
 }
 
 async function runStreamingTurn(
@@ -249,7 +240,12 @@ async function runStreamingTurn(
     : [policy.primaryModelId];
 
   for (const [attempt, modelId] of models.entries()) {
-    const request = await runtimeRequest(input, turn.execution.id, modelId);
+    const request = await runtimeRequest(
+      input,
+      turn.execution.id,
+      modelId,
+      policy,
+    );
     const isUsesWeb = request.allowedToolIds.includes("web-search");
     const isLastAttempt = attempt === models.length - 1;
     // An attempt that could still be retried must not leak its text into the
@@ -261,7 +257,6 @@ async function runStreamingTurn(
     const result = await streamAttempt(request, signal, (text) => {
       if (canStreamLive) write(text);
     });
-    if (result.event.type === "suspended") return;
     if (result.event.type === "user_input_required") {
       await persistQuestion(input, turn, result.event);
       return;
@@ -289,8 +284,9 @@ async function runStreamingTurn(
 export async function streamMessage(
   input: TurnInput,
   clientSignal: AbortSignal,
+  reuseUserMessageId?: string,
 ): Promise<ReadableStream<Uint8Array>> {
-  const turn = await beginTurn(input);
+  const turn = await beginTurn(input, reuseUserMessageId);
   const encoder = new TextEncoder();
   const controller = new AbortController();
   const abort = () => {
@@ -307,16 +303,20 @@ export async function streamMessage(
         });
         stream.close();
       } catch (error) {
+        const partialText =
+          error instanceof StreamAttemptError ? error.partialText : "";
+        const cause = error instanceof StreamAttemptError ? error.cause : error;
         await failTurn(
           input,
           turn,
           clientSignal.aborted
             ? "Generation cancelled"
             : "Runtime generation failed",
+          partialText,
         );
         stream.error(
-          error instanceof PilotAiRuntimeError
-            ? error
+          cause instanceof PilotAiRuntimeError
+            ? cause
             : new Error("Pilot could not complete this message."),
         );
       } finally {

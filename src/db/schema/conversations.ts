@@ -64,6 +64,11 @@ export const conversationMessages = pgTable(
     // A worker-role reply Pilot generated after a turn failed, so the client
     // can style it distinctly instead of leaving the user's message orphaned.
     isError: boolean("is_error").notNull().default(false),
+    // A worker-role reply cut short by a user-initiated stop, holding
+    // whatever text had streamed so far. The client offers a Continue action
+    // only while this is true and the message is still the last in the
+    // conversation; a completed continuation clears it.
+    isPartial: boolean("is_partial").notNull().default(false),
     userQuestionOptions: jsonb("user_question_options").$type<
       { label: string; description?: string }[]
     >(),

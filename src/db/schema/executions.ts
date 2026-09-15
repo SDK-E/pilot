@@ -30,7 +30,7 @@ export const executions = pgTable(
       .references(() => conversations.id, { onDelete: "cascade" }),
     runtimeRunId: text("runtime_run_id"),
     status: text("status")
-      .$type<"running" | "awaiting_approval" | "completed" | "failed">()
+      .$type<"running" | "completed" | "failed">()
       .notNull(),
     errorMessage: text("error_message"),
     startedAt: timestamp("started_at", { withTimezone: true })
@@ -54,7 +54,7 @@ export const executions = pgTable(
     // one has completed or failed.
     uniqueIndex("executions_conversation_active_unique")
       .on(table.conversationId)
-      .where(sql`${table.status} in ('running', 'awaiting_approval')`),
+      .where(sql`${table.status} = 'running'`),
   ],
 );
 
@@ -81,12 +81,12 @@ export const activityEvents = pgTable(
         | "tool.started"
         | "tool.completed"
         | "tool.failed"
-        | "tool.awaiting_approval"
       >()
       .notNull(),
     toolId: text("tool_id"),
     toolCallId: text("tool_call_id"),
     summary: text("summary").notNull(),
+    detail: text("detail"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

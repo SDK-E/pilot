@@ -32,12 +32,15 @@ Implemented:
 - A fifth tool, `code-sandbox`, runs shell commands in a fresh Vercel Sandbox
   (`@vercel/sandbox`, isolated Linux microVM, no access to Pilot's own
   systems, secrets, or data) so an agent can actually execute code instead of
-  only describing it. Approvable like web search; gated behind
-  `PILOT_ENABLE_CODE_SANDBOX` on both sides of the runtime boundary
-  (`src/conversations/tool-authorization.ts`, pilot-ai's
-  `runtime-selection.ts`). Requires `VERCEL_OIDC_TOKEN`, which Vercel injects
-  automatically for pilot-ai's own production deployment; there is no local
-  fallback (see the OIDC limitation below).
+  only describing it. Approvable like web search; gated behind the
+  organization's `codeSandboxEnabled` preference on pilot's side
+  (`src/conversations/tool-authorization.ts`, editable from Settings, no
+  deploy required) and pilot-ai's own `PILOT_ENABLE_CODE_SANDBOX` env flag on
+  its side (`runtime-selection.ts`), kept as a platform-level circuit
+  breaker independent of any org's setting. Actually provisioning a sandbox
+  (`@vercel/sandbox`) still needs Vercel's own OIDC or a `VERCEL_TOKEN`
+  fallback and has no local equivalent — that's `@vercel/sandbox` itself
+  authenticating to Vercel, unrelated to the pilot↔pilot-ai boundary below.
 
 Verified on 2026-09-14 (local): `tsc --noEmit`, `eslint .` (0 problems),
 `knip`, `prettier --check`, `pnpm build`, `pnpm test` (24 Playwright checks),
@@ -57,10 +60,14 @@ Not yet available:
 
 Pilot AI's service-to-service activity and scratchpad callbacks intentionally
 bypass the human WorkOS proxy. Each callback route rejects browser requests
-with `401` unless it carries a valid Vercel OIDC token, which is verified before
+with `401` unless it carries a valid WorkOS M2M token — the same token Pilot
+minted for the original request, relayed back and reverified — checked before
 the request body is read. Routing those callbacks through the human-session
 proxy redirected the runtime to WorkOS and prevented safe tool activity from
-being persisted.
+being persisted. This boundary used to run on short-lived Vercel OIDC tokens,
+which only worked when both sides were actually deployed on Vercel; see
+[ADR-0017](decisions/0017-workos-m2m-runtime-auth.md) for why it moved to
+WorkOS M2M — the same mechanism now works identically in local development.
 
 Local ignored investigation scripts are excluded from the application
 TypeScript and ESLint scopes. A committed session helper that printed session

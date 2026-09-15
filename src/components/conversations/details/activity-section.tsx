@@ -1,25 +1,18 @@
 import {
-  RiCheckboxCircleLine,
-  RiErrorWarningLine,
-  RiLoader4Line,
-} from "@remixicon/react";
-
-import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { EXECUTION_BOOKEND_TYPES } from "@/executions/activity-event";
 import {
-  EXECUTION_BOOKEND_TYPES,
-  type ActivityEventType,
-} from "@/executions/activity-event";
-import {
+  buildActivitySteps,
   groupActivityTimeline,
-  groupConsecutiveActivity,
   type ActivityTimelineRun as ActivityRun,
   type TimelineActivity,
 } from "@/executions/activity-timeline";
+
+import { ActivityStepRow } from "../activity-step-row";
 
 function runSteps(run: ActivityRun) {
   return run.events.filter(
@@ -27,41 +20,19 @@ function runSteps(run: ActivityRun) {
   );
 }
 
-function activityIcon(type: ActivityEventType, isRunFinished: boolean) {
-  if (!isRunFinished && type === "tool.started") {
-    return (
-      <RiLoader4Line
-        aria-hidden="true"
-        className="mt-0.5 shrink-0 animate-spin text-primary"
-      />
-    );
-  }
-  if (type === "execution.failed" || type === "tool.failed") {
-    return (
-      <RiErrorWarningLine
-        aria-hidden="true"
-        className="mt-0.5 shrink-0 text-destructive"
-      />
-    );
-  }
-  return (
-    <RiCheckboxCircleLine
-      aria-hidden="true"
-      className="mt-0.5 shrink-0 text-primary"
-    />
-  );
-}
-
 function runStatusLabel(run: ActivityRun) {
   if (run.isFailed) return "Response failed";
-  if (run.isWaitingForApproval) return "Waiting for approval";
   if (run.isComplete) return "Response completed";
   return "Pilot is working";
 }
 
+/**
+ * The same step presentation the main chat trace uses (`ActivityStepRow`)
+ * — human-readable labels, not the raw persisted `summary`, and a real
+ * command's captured detail is expandable here too instead of discarded.
+ */
 function RunStepList({ run }: { run: ActivityRun }) {
-  const isRunFinished = run.isComplete || run.isFailed;
-  const steps = groupConsecutiveActivity(runSteps(run));
+  const steps = buildActivitySteps(runSteps(run));
   if (steps.length === 0) {
     return (
       <p className="text-xs text-muted-foreground">
@@ -70,22 +41,16 @@ function RunStepList({ run }: { run: ActivityRun }) {
     );
   }
   return (
-    <ol className="space-y-2 border-l pl-3">
+    <div className="space-y-2 border-l pl-3">
       {steps.map((step) => (
-        <li className="flex gap-2 text-muted-foreground" key={step.id}>
-          {activityIcon(step.type, isRunFinished)}
-          <span>
-            {step.summary}
-            {step.count > 1 ? ` ×${String(step.count)}` : null}
-          </span>
-        </li>
+        <ActivityStepRow key={step.id} step={step} />
       ))}
-    </ol>
+    </div>
   );
 }
 
 function runStepCount(run: ActivityRun) {
-  return groupConsecutiveActivity(runSteps(run)).length;
+  return buildActivitySteps(runSteps(run)).length;
 }
 
 function ActivityRunItem({ run }: { run: ActivityRun }) {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { isVerifiedRuntimeCallback } from "@/ai/pilot-runtime-oidc";
+import { isVerifiedPilotRuntimeCallback } from "@/ai/workos-m2m";
 import { readJsonBody } from "@/lib/http";
 
 export const runtime = "nodejs";
@@ -32,7 +32,7 @@ const inputSchema = z
   });
 
 export async function POST(request: Request) {
-  if (!(await isVerifiedRuntimeCallback(request))) {
+  if (!(await isVerifiedPilotRuntimeCallback(request))) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
   const input = inputSchema.safeParse(await readJsonBody(request));

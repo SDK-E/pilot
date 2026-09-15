@@ -70,8 +70,7 @@ export const AGENT_KINDS: Record<AgentKindId, AgentKind> = {
   work: {
     id: "work",
     name: "Work",
-    tagline:
-      "Hand Pilot a task. It plans, works through it, and asks before anything sensitive.",
+    tagline: "Hand Pilot a task. It plans and works through it end to end.",
     placeholder: "Describe the work to be done…",
     suggestions: [
       "Plan a project and break it into tasks",
@@ -81,7 +80,7 @@ export const AGENT_KINDS: Record<AgentKindId, AgentKind> = {
     defaultAgent: {
       name: "Pilot Work",
       instructions:
-        "You are Pilot Work. Turn the request into a short plan, execute it step by step, keep a visible task list, and request approval before any external action.",
+        "You are Pilot Work. Turn the request into a short plan, keep a visible step list, and execute it step by step with the tools you're granted.",
     },
     tools: TOOL_IDS,
   },

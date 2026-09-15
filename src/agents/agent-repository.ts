@@ -7,9 +7,7 @@ import { firstRow } from "@/db/first-row";
 import { members, organizations, workers } from "@/db/schema";
 
 import { AGENT_KINDS, type AgentKindId } from "./agent-kinds";
-import { defaultApprovalRules, defaultEnabledToolIds } from "./agent-tools";
-
-import type { ApprovalRules } from "./agent-tools";
+import { defaultEnabledToolIds } from "./agent-tools";
 
 export const DEFAULT_MODEL_ID = "kilo/kilo-auto/free";
 
@@ -22,7 +20,6 @@ export interface AgentConfiguration {
   tone?: string | null;
   outputFormat?: string | null;
   enabledToolIds: string[];
-  approvalRules: ApprovalRules;
 }
 
 export interface OrganizationContext {
@@ -41,7 +38,6 @@ const agentColumns = {
   tone: workers.tone,
   outputFormat: workers.outputFormat,
   enabledToolIds: workers.enabledToolIds,
-  approvalRules: workers.approvalRules,
   archived: workers.archived,
   createdAt: workers.createdAt,
   updatedAt: workers.updatedAt,
@@ -224,7 +220,6 @@ export async function ensureDefaultAgent(
       modelId: DEFAULT_MODEL_ID,
       baseAgentId: kind,
       enabledToolIds: [...defaultEnabledToolIds],
-      approvalRules: defaultApprovalRules(),
     });
   } catch (error) {
     if (!isUniqueViolation(error)) throw error;

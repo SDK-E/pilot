@@ -2,7 +2,6 @@
 
 import { RiArrowDownSLine } from "@remixicon/react";
 import { cn } from "cn";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { AGENT_KINDS, modeHref, type AgentKindId } from "@/agents/agent-kinds";
@@ -37,8 +36,6 @@ interface ConversationShellProps {
   agent: { id: string; name: string };
   messages: PersistedMessage[];
   activities: PersistedActivity[];
-  tasks: { id: string; title: string; status: string }[];
-  approvals: { id: string; summary: string; status: string }[];
   project?: { id: string; name: string; sharedMemoryEnabled: boolean };
   projects: { id: string; name: string }[];
   attachments: { id: string; filename: string }[];
@@ -157,12 +154,11 @@ function MobileDetailsDisclosure({ children }: { children: React.ReactNode }) {
 
 /**
  * An open conversation: header, transcript with the docked composer, and the
- * details rail (activity, notes, tasks, approvals) — a resizable side panel
- * on desktop, a collapsed-by-default drawer above the composer on mobile.
+ * details rail (activity, notes) — a resizable side panel on desktop, a
+ * collapsed-by-default drawer above the composer on mobile.
  */
 export function ConversationShell(props: ConversationShellProps) {
   const { kind, conversation, agent, project } = props;
-  const router = useRouter();
   const stream = useConversationStream({
     conversationId: conversation.id,
     initialMessages: props.messages,
@@ -174,16 +170,9 @@ export function ConversationShell(props: ConversationShellProps) {
   const renderDetailsPanel = (shouldFillHeight: boolean) => (
     <ConversationDetailsPanel
       activities={stream.activities}
-      approvals={props.approvals}
-      conversationId={conversation.id}
       fillHeight={shouldFillHeight}
-      kind={kind}
-      onTaskCreated={() => {
-        router.refresh();
-      }}
       plan={props.plan}
       scratchpad={props.scratchpad}
-      tasks={props.tasks}
     />
   );
 
@@ -195,6 +184,9 @@ export function ConversationShell(props: ConversationShellProps) {
       isLoading={stream.isLoading}
       messages={stream.messages}
       onAnswer={stream.send}
+      onContinue={stream.continueMessage}
+      onEditMessage={stream.editMessage}
+      onRegenerate={stream.regenerate}
       pendingPrompt={stream.pendingPrompt}
       streamActivities={stream.currentStreamActivities}
       transientTurns={stream.transientTurns}

@@ -1,10 +1,8 @@
 import {
   PilotAiRuntimeError,
   runIdOf,
-  streamApprovalSchema,
   streamChunkSchema,
   streamUserInputSchema,
-  toSuspended,
   toUserInput,
   usageOf,
   type RuntimeEvent,
@@ -23,8 +21,6 @@ function parseStreamEvent(event: string): RuntimeEvent | undefined {
   if (!data || data === "[DONE]") return undefined;
 
   const raw: unknown = JSON.parse(data);
-  const approval = streamApprovalSchema.safeParse(raw);
-  if (approval.success) return toSuspended(approval.data.pilot);
   const userInput = streamUserInputSchema.safeParse(raw);
   if (userInput.success) return toUserInput(userInput.data.pilot);
 
@@ -67,8 +63,8 @@ async function* sseEvents(
 }
 
 /**
- * Yields text as it arrives, then exactly one terminal event: a suspension,
- * a user-input request, or the completion with usage.
+ * Yields text as it arrives, then exactly one terminal event: a user-input
+ * request, or the completion with usage.
  */
 export async function* parseRuntimeStream(
   body: ReadableStream<Uint8Array>,
@@ -82,7 +78,8 @@ export async function* parseRuntimeStream(
   }
   if (!terminal) {
     throw new PilotAiRuntimeError(
-      "Pilot AI ended before completing the reply.",
+      "Pilot couldn't complete this response. Try sending it again.",
+      { cause: "Runtime stream ended before a terminal event." },
     );
   }
   yield terminal;

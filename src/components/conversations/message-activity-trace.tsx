@@ -2,21 +2,22 @@ import {
   ChainOfThought,
   ChainOfThoughtContent,
   ChainOfThoughtHeader,
-  ChainOfThoughtStep,
 } from "@/components/ai-elements/chain-of-thought";
 import { buildActivitySteps } from "@/executions/activity-timeline";
 
-import { describeActivityStep } from "./activity-step-presentation";
+import { ActivityStepRow } from "./activity-step-row";
 
 import type { PersistedActivity } from "./conversation-types";
 
 /**
- * A per-response trace of Pilot's verified, sanitized steps — collapsed by
- * default and independent per message, so a long conversation reads as many
- * small disclosures rather than one growing chain-of-thought log. Every
- * step here already finished, so nothing in this trace ever spins. A tool
- * call's start and outcome are one merged step (see buildActivitySteps),
- * not two separate "running" and "ran" lines.
+ * A per-response trace of Pilot's verified steps — collapsed by default and
+ * independent per message, so a long conversation reads as many small
+ * disclosures rather than one growing chain-of-thought log. Every step here
+ * already finished, so nothing in this trace ever spins. A tool call's start
+ * and outcome are one merged step (see buildActivitySteps), not two separate
+ * "running" and "ran" lines. A step carrying real captured content (the
+ * command that ran, its output, search results) is itself independently
+ * expandable via ActivityStepRow.
  */
 export function MessageActivityTrace({
   events,
@@ -36,29 +37,14 @@ export function MessageActivityTrace({
     : `Worked through ${stepCount} ${stepNoun}`;
 
   return (
-    <ChainOfThought
-      className="max-w-xl rounded-lg border bg-muted/25 px-3 py-2"
-      defaultOpen={false}
-    >
+    <ChainOfThought className="max-w-xl" defaultOpen={false}>
       <ChainOfThoughtHeader className="text-xs">
         {headerLabel}
       </ChainOfThoughtHeader>
-      <ChainOfThoughtContent className="border-t pt-3">
+      <ChainOfThoughtContent>
         <div className="space-y-2">
           {steps.length > 0 ? (
-            steps.map((step) => {
-              const { label, icon } = describeActivityStep(step);
-              return (
-                <ChainOfThoughtStep
-                  icon={icon}
-                  key={step.id}
-                  label={
-                    step.count > 1 ? `${label} ×${String(step.count)}` : label
-                  }
-                  status={step.status === "active" ? "active" : "complete"}
-                />
-              );
-            })
+            steps.map((step) => <ActivityStepRow key={step.id} step={step} />)
           ) : (
             <p className="text-xs text-muted-foreground">
               No additional steps were recorded before this failed.

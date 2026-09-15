@@ -24,12 +24,6 @@ import type { Agent } from "@/agents/agent-repository";
 
 const initialState: AgentFormState = { status: "idle" };
 
-const APPROVAL_OPTIONS = [
-  { value: "ask", label: "Ask me first" },
-  { value: "allow", label: "Allow automatically" },
-  { value: "deny", label: "Never" },
-] as const;
-
 function KindPicker({
   value,
   onChange,
@@ -99,20 +93,6 @@ function ToolRules({ kind, agent }: { kind: AgentKindId; agent?: Agent }) {
                   <span className="block text-xs text-muted-foreground">
                     {tool.description}
                   </span>
-                  {tool.approvable ? (
-                    <select
-                      aria-label={`${tool.name} approval`}
-                      className="mt-2 h-8 rounded-md border border-input bg-background px-2 text-xs"
-                      defaultValue={agent?.approvalRules[toolId] ?? "ask"}
-                      name={`approvalRule.${toolId}`}
-                    >
-                      {APPROVAL_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : null}
                 </span>
               </div>
             );

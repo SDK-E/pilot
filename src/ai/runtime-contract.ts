@@ -11,22 +11,11 @@ import { AGENT_KIND_IDS, TOOL_IDS } from "@/agents/agent-kinds";
  */
 
 const toolIdSchema = z.enum(TOOL_IDS);
-export const approvableToolIdSchema = z.enum([
-  "web-search",
-  "scratchpad",
-  "code-sandbox",
-]);
 
 export const usageSchema = z.object({
   prompt_tokens: z.number().int().nonnegative(),
   completion_tokens: z.number().int().nonnegative(),
   total_tokens: z.number().int().nonnegative(),
-});
-
-export const approvalRequiredSchema = z.object({
-  run_id: z.string().min(1),
-  tool_call_id: z.string().min(1),
-  tool_id: approvableToolIdSchema,
 });
 
 export const userInputRequiredSchema = z.object({
@@ -46,24 +35,6 @@ export const userInputRequiredSchema = z.object({
   selection_mode: z.enum(["single_select", "multi_select"]).optional(),
 });
 
-export const completionSchema = z.object({
-  id: z.string().min(1),
-  object: z.literal("chat.completion"),
-  model: z.string().min(1).max(200),
-  choices: z
-    .array(
-      z.object({
-        message: z.object({
-          role: z.literal("assistant"),
-          content: z.string().min(1),
-        }),
-        finish_reason: z.string(),
-      }),
-    )
-    .min(1),
-  usage: usageSchema,
-});
-
 export const streamChunkSchema = z.object({
   id: z.string().min(1),
   object: z.literal("chat.completion.chunk"),
@@ -80,10 +51,6 @@ export const streamChunkSchema = z.object({
 /**
  * Streaming terminal events wrap the payload under `pilot`.
  */
-export const streamApprovalSchema = z.object({
-  object: z.literal("pilot.approval.required"),
-  pilot: approvalRequiredSchema,
-});
 export const streamUserInputSchema = z.object({
   object: z.literal("pilot.user_input.required"),
   pilot: userInputRequiredSchema,
@@ -100,7 +67,6 @@ export const runtimeRequestSchema = z.object({
       .max(200),
     baseAgentId: z.enum(AGENT_KIND_IDS),
     enabledToolIds: z.array(z.string()).max(20),
-    approvalRules: z.record(z.string(), z.string()),
   }),
   conversationId: z.uuid(),
   message: z.string().min(1).max(10_000),
@@ -116,7 +82,6 @@ export const runtimeRequestSchema = z.object({
 });
 
 export type RuntimeRequest = z.infer<typeof runtimeRequestSchema>;
-export type ApprovableToolId = z.infer<typeof approvableToolIdSchema>;
 
 export interface Usage {
   inputTokens: number;
@@ -126,12 +91,6 @@ export interface Usage {
 
 export type RuntimeEvent =
   | { type: "text"; text: string }
-  | {
-      type: "suspended";
-      runId: string;
-      toolCallId: string;
-      toolId: ApprovableToolId;
-    }
   | {
       type: "user_input_required";
       runId: string;
@@ -178,17 +137,6 @@ export function runIdOf(id: string): string | null {
   return id.replace(/^chatcmpl_/, "") || null;
 }
 
-export function toSuspended(
-  data: z.infer<typeof approvalRequiredSchema>,
-): RuntimeEvent {
-  return {
-    type: "suspended",
-    runId: data.run_id,
-    toolCallId: data.tool_call_id,
-    toolId: data.tool_id,
-  };
-}
-
 export function toUserInput(
   data: z.infer<typeof userInputRequiredSchema>,
 ): RuntimeEvent {
@@ -199,20 +147,5 @@ export function toUserInput(
     question: data.question,
     options: data.options,
     selectionMode: data.selection_mode,
-  };
-}
-
-export function toCompleted(
-  completion: z.infer<typeof completionSchema>,
-): CompletedReply {
-  const [choice] = completion.choices;
-  if (!choice) throw new Error("The runtime returned a reply with no choices.");
-  return {
-    type: "completed",
-    text: choice.message.content,
-    finishReason: choice.finish_reason,
-    modelId: completion.model,
-    runId: runIdOf(completion.id),
-    usage: usageOf(completion.usage),
   };
 }

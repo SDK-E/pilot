@@ -16,8 +16,8 @@
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
     "db:migrate:deploy": "tsx scripts/migrate.mts",
     "test": "playwright test",
-    "test:server": "NODE_OPTIONS='--conditions=react-server' dotenv -e .env.local -- tsx --test server-tests/pilot-ai-stream.test.ts src/ai/pilot-runtime-oidc.test.ts tests/stream-contract.test.ts tests/attachment-text-extraction.test.ts tests/message-submit-shortcut.test.ts tests/agent-tools.test.ts tests/agent-instructions.test.ts tests/agent-name.test.ts tests/message-sources.test.ts tests/conversation-export.test.ts tests/activity-timeline.test.ts tests/conversation-title.test.ts tests/html-document-guard.test.ts",
-    "test:db": "NODE_OPTIONS='--conditions=react-server' dotenv -e .env.local -- tsx --test tests/agent-repository.integration.test.ts tests/conversation-search.integration.test.ts",
+    "test:server": "NODE_OPTIONS='--conditions=react-server' dotenv -e .env.local -- tsx --test server-tests/pilot-ai-stream.test.ts src/ai/workos-m2m.test.ts tests/stream-contract.test.ts tests/attachment-text-extraction.test.ts tests/message-submit-shortcut.test.ts tests/agent-tools.test.ts tests/agent-instructions.test.ts tests/agent-name.test.ts tests/message-sources.test.ts tests/conversation-export.test.ts tests/activity-timeline.test.ts tests/conversation-title.test.ts tests/html-document-guard.test.ts tests/continuation-prompt.test.ts",
+    "test:db": "NODE_OPTIONS='--conditions=react-server' dotenv -e .env.local -- tsx --test tests/agent-repository.integration.test.ts tests/conversation-search.integration.test.ts tests/conversation-mutations.integration.test.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm format:check && pnpm knip"
   },
   "dependencies": {
@@ -31,7 +31,6 @@
     "@streamdown/math": "^1.0.2",
     "@streamdown/mermaid": "^1.0.2",
     "@vercel/blob": "^2.8.0",
-    "@vercel/oidc": "3.8.5",
     "@workos-inc/authkit-nextjs": "4.3.1",
     "@workos-inc/node": "10.13.0",
     "ai": "^7.0.93",

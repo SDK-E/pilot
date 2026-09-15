@@ -130,6 +130,7 @@ export interface NewConversationMessage {
   role: "user" | "worker";
   content: string;
   isError?: boolean;
+  isPartial?: boolean;
   userQuestionOptions?: { label: string; description?: string }[];
   userQuestionSelectionMode?: "single_select" | "multi_select";
   modelId?: string;
@@ -177,6 +178,7 @@ export async function listConversationMessages(
       role: conversationMessages.role,
       content: conversationMessages.content,
       isError: conversationMessages.isError,
+      isPartial: conversationMessages.isPartial,
       userQuestionOptions: conversationMessages.userQuestionOptions,
       userQuestionSelectionMode: conversationMessages.userQuestionSelectionMode,
       createdAt: conversationMessages.createdAt,

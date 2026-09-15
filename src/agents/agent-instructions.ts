@@ -14,8 +14,8 @@ function section(label: string, value: string | null) {
 
 /**
  * Builds the saved agent settings into one server-owned runtime instruction.
- * Every runtime boundary (new chat, follow-up, approval resume) uses this so
- * the browser never supplies instructions.
+ * Every runtime boundary (new chat, follow-up) uses this so the browser never
+ * supplies instructions.
  */
 export function buildAgentInstructions(agent: AgentConfiguration) {
   return [

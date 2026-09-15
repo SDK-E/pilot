@@ -1,3 +1,4 @@
+import { MessageResponse } from "@/components/ai-elements/message";
 import {
   Accordion,
   AccordionContent,
@@ -5,8 +6,16 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+import {
+  MESSAGE_RESPONSE_COMPONENTS,
+  MESSAGE_RESPONSE_CONTROLS,
+} from "../message-response-controls";
+
 /**
- * The private scratchpad the agent may save for this chat.
+ * The private scratchpad the agent may save for this chat. Rendered through
+ * the same Markdown component as a reply, not a raw `<pre>` — the agent
+ * writes these as normal prose (headings, lists, bold), and a literal `##`
+ * or `**` on screen would read as broken, not "working notes."
  */
 export function NotesSection({ scratchpad }: { scratchpad: string }) {
   return (
@@ -22,9 +31,14 @@ export function NotesSection({ scratchpad }: { scratchpad: string }) {
           <AccordionItem value="notes">
             <AccordionTrigger>View saved notes</AccordionTrigger>
             <AccordionContent>
-              <pre className="max-h-60 overflow-auto whitespace-pre-wrap text-muted-foreground">
-                {scratchpad}
-              </pre>
+              <div className="max-h-60 overflow-auto text-xs text-muted-foreground">
+                <MessageResponse
+                  components={MESSAGE_RESPONSE_COMPONENTS}
+                  controls={MESSAGE_RESPONSE_CONTROLS}
+                >
+                  {scratchpad}
+                </MessageResponse>
+              </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>

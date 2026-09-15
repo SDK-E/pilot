@@ -43,6 +43,16 @@ export function useTranscript(
     [],
   );
 
+  // Drops a message and everything after it as soon as an edit or
+  // regenerate is submitted, so the stale content disappears immediately
+  // instead of sitting alongside the new streaming reply until `sync` runs.
+  const truncateFrom = useCallback((messageId: string) => {
+    setMessages((current) => {
+      const index = current.findIndex((message) => message.id === messageId);
+      return index === -1 ? current : current.slice(0, index);
+    });
+  }, []);
+
   const sync = useCallback(async () => {
     try {
       const response = await fetch(
@@ -62,5 +72,5 @@ export function useTranscript(
     }
   }, [conversationId]);
 
-  return { messages, transientTurns, keepTurn, sync };
+  return { messages, transientTurns, keepTurn, sync, truncateFrom };
 }

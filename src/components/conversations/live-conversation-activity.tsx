@@ -10,15 +10,23 @@ import {
 import { buildActivitySteps } from "@/executions/activity-timeline";
 
 import { describeActivityStep } from "./activity-step-presentation";
+import { ActivityStepRow } from "./activity-step-row";
 
 import type { TimelineActivity } from "@/executions/activity-timeline";
 
 /**
- * A readable activity trace backed only by Pilot's sanitized server events.
- * It deliberately excludes private model reasoning, prompts, tool inputs,
- * outputs, URLs, errors, and credentials. A tool call's start and outcome
- * render as one step that moves from "active" to its result in place
- * (see buildActivitySteps), instead of a new line appearing for each.
+ * A readable activity trace backed only by Pilot's sanitized server events —
+ * a step's real command, output, or search results are shown (via
+ * `ActivityStepRow`), but nothing about the model's own reasoning, since
+ * that is never captured anywhere in this pipeline. A tool call's start and
+ * outcome render as one step that moves from "active" to its result in
+ * place (see buildActivitySteps), instead of a new line appearing for each.
+ *
+ * Open by default while the turn is live, so a step (e.g. "Running a
+ * command…") is visible the moment it starts rather than hidden behind a
+ * click — the same "watch it work" moment Claude Code gives for tool calls.
+ * Once the turn finishes this component unmounts in favor of
+ * MessageActivityTrace, which is collapsed by default for finished history.
  */
 export function LiveConversationActivity({
   events = [],
@@ -33,10 +41,7 @@ export function LiveConversationActivity({
     : "Pilot is responding…";
 
   return (
-    <ChainOfThought
-      className="mt-3 max-w-xl rounded-md border bg-muted/35 px-3 py-2"
-      defaultOpen={false}
-    >
+    <ChainOfThought className="mt-3 max-w-xl" defaultOpen>
       <ChainOfThoughtHeader className="text-foreground">
         <span className="flex items-center gap-2">
           <RiLoader4Line
@@ -46,30 +51,23 @@ export function LiveConversationActivity({
           {header}
         </span>
       </ChainOfThoughtHeader>
-      <ChainOfThoughtContent className="border-t pt-3">
+      <ChainOfThoughtContent>
         <p className="text-xs leading-5 text-muted-foreground">
-          Verified steps for this response. Private model reasoning and tool
-          data stay private.
+          What Pilot is doing for this response — expand a step to see the real
+          command, output, or results.
         </p>
         <div className="space-y-2">
-          {steps.map((step) => {
-            const { label, icon } = describeActivityStep(step);
-            return (
-              <ChainOfThoughtStep
-                className={
-                  step.status === "active"
-                    ? "[&>div:first-child>div]:hidden"
-                    : undefined
-                }
-                icon={icon}
-                key={step.id}
-                label={
-                  step.count > 1 ? `${label} ×${String(step.count)}` : label
-                }
-                status={step.status === "active" ? "active" : "complete"}
-              />
-            );
-          })}
+          {steps.map((step) => (
+            <ActivityStepRow
+              className={
+                step.status === "active"
+                  ? "[&>div:first-child>div]:hidden"
+                  : undefined
+              }
+              key={step.id}
+              step={step}
+            />
+          ))}
           {isStepActive ? null : (
             <ChainOfThoughtStep
               className="[&>div:first-child>div]:hidden"

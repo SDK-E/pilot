@@ -7,6 +7,7 @@ export interface TimelineActivity {
   id: string;
   executionId: string;
   summary: string;
+  detail?: string | null;
   type: ActivityEventType;
   toolId?: string | null;
   toolCallId?: string | null;
@@ -18,7 +19,6 @@ export interface ActivityTimelineRun {
   events: TimelineActivity[];
   isComplete: boolean;
   isFailed: boolean;
-  isWaitingForApproval: boolean;
 }
 
 /**
@@ -34,26 +34,10 @@ export function groupActivityTimeline(
       events: [],
       isComplete: false,
       isFailed: false,
-      isWaitingForApproval: false,
     };
     current.events.push(activity);
     current.isComplete ||= activity.type === "execution.completed";
     current.isFailed ||= activity.type === "execution.failed";
-    // Tracks the *latest* approval state rather than sticking forever, so a
-    // run that resumed after approval stops reading as still waiting.
-    if (activity.type === "tool.awaiting_approval") {
-      current.isWaitingForApproval = true;
-    } else if (
-      (
-        [
-          "tool.completed",
-          "execution.completed",
-          "execution.failed",
-        ] as ActivityEventType[]
-      ).includes(activity.type)
-    ) {
-      current.isWaitingForApproval = false;
-    }
     runs.set(activity.executionId, current);
   }
   return runs.values().toArray();
@@ -64,6 +48,7 @@ export interface GroupedActivity {
   type: ActivityEventType;
   toolId?: string | null;
   summary: string;
+  detail?: string | null;
   count: number;
 }
 
@@ -71,7 +56,10 @@ export interface GroupedActivity {
 Collapses a run of consecutive events sharing a type and summary (e.g. the
 same tool starting three times in a row) into one entry with a count, so
 a repeated step reads as "Searching the web… ×3" rather than three
-identical lines. Events that aren't adjacent duplicates are left alone.
+identical lines. Events that aren't adjacent duplicates are left alone. A
+step carrying real captured content (`detail`) never collapses into a
+count with its neighbors, even when type/summary match — each real command
+or search stays its own visible, individually-expandable row.
 */
 export function groupConsecutiveActivity(
   events: TimelineActivity[],
@@ -79,7 +67,12 @@ export function groupConsecutiveActivity(
   const grouped: GroupedActivity[] = [];
   for (const event of events) {
     const last = grouped.at(-1);
-    if (last?.type === event.type && last.summary === event.summary) {
+    const canMerge =
+      last?.type === event.type &&
+      last.summary === event.summary &&
+      !last.detail &&
+      !event.detail;
+    if (canMerge) {
       last.count += 1;
     } else {
       grouped.push({
@@ -87,6 +80,7 @@ export function groupConsecutiveActivity(
         type: event.type,
         toolId: event.toolId,
         summary: event.summary,
+        detail: event.detail,
         count: 1,
       });
     }
@@ -94,8 +88,7 @@ export function groupConsecutiveActivity(
   return grouped;
 }
 
-type ActivityStepStatus =
-  "active" | "complete" | "failed" | "awaiting_approval";
+type ActivityStepStatus = "active" | "complete" | "failed";
 
 export interface ActivityStep {
   id: string;
@@ -103,6 +96,7 @@ export interface ActivityStep {
   toolId?: string | null;
   status: ActivityStepStatus;
   summary: string;
+  detail?: string | null;
   count: number;
 }
 
@@ -111,7 +105,6 @@ const TOOL_OUTCOME_STATUS: Partial<
 > = {
   "tool.completed": "complete",
   "tool.failed": "failed",
-  "tool.awaiting_approval": "awaiting_approval",
 };
 
 /**
@@ -129,7 +122,12 @@ function didFoldToolOutcome(
   if (openIndex === undefined) return false;
   const started = paired[openIndex];
   if (!started) return false;
-  paired[openIndex] = { ...started, type: event.type, summary: event.summary };
+  paired[openIndex] = {
+    ...started,
+    type: event.type,
+    summary: event.summary,
+    detail: event.detail,
+  };
   openIndexByCallId.delete(event.toolCallId);
   return true;
 }
@@ -173,6 +171,7 @@ export function buildActivitySteps(events: TimelineActivity[]): ActivityStep[] {
     toolId: step.toolId,
     status: activityStepStatus(step.type),
     summary: step.summary,
+    detail: step.detail,
     count: step.count,
   }));
 }

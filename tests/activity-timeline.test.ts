@@ -159,6 +159,62 @@ test("a still-running tool call stays a single active step with no outcome yet",
   assert.equal(step.status, "active");
 });
 
+test("a completed tool call's real detail carries onto the merged step", () => {
+  const steps = buildActivitySteps([
+    {
+      id: "event-1",
+      executionId: "execution-a",
+      summary: "Running code in the sandbox…",
+      type: "tool.started",
+      toolId: "code-sandbox",
+      toolCallId: "call-1",
+    },
+    {
+      id: "event-2",
+      executionId: "execution-a",
+      summary: "Running code in the sandbox completed",
+      type: "tool.completed",
+      toolId: "code-sandbox",
+      toolCallId: "call-1",
+      detail: "```bash\n$ echo hi\n```",
+    },
+  ]);
+
+  const [step] = steps;
+  assert.ok(step);
+  assert.equal(steps.length, 1);
+  assert.equal(step.detail, "```bash\n$ echo hi\n```");
+});
+
+test("a step carrying real detail never collapses into a counted group", () => {
+  const grouped = groupConsecutiveActivity([
+    {
+      id: "event-1",
+      executionId: "execution-a",
+      summary: "Ran a command",
+      type: "tool.completed",
+      detail: "```bash\n$ ls\n```",
+    },
+    {
+      id: "event-2",
+      executionId: "execution-a",
+      summary: "Ran a command",
+      type: "tool.completed",
+      detail: "```bash\n$ pwd\n```",
+    },
+  ]);
+
+  assert.equal(grouped.length, 2);
+  assert.deepEqual(
+    grouped.map((step) => step.count),
+    [1, 1],
+  );
+  assert.deepEqual(
+    grouped.map((step) => step.detail),
+    ["```bash\n$ ls\n```", "```bash\n$ pwd\n```"],
+  );
+});
+
 test("execution bookends never surface as their own step", () => {
   const steps = buildActivitySteps([
     {
