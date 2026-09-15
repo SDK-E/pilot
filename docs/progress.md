@@ -33,6 +33,23 @@ logos, or usage stats — undisclosed fake customer quotes are deceptive
 advertising, so it instead runs on honest signals (a blog link, a
 direct-contact CTA) with a slot ready for real testimonials later.
 
+### Legal content review (2026-09-15)
+
+Terms of Service and Privacy Policy were expanded against externally
+researched requirements (GDPR compliance checklists, French LCEN legal-notice
+rules, standard SaaS ToS clauses, EU consumer right-of-withdrawal rules):
+added intellectual property, limitation of liability, indemnification, and
+right-of-withdrawal clauses to Terms; added per-purpose legal basis,
+international-transfer safeguards, and a DPA-on-request line to Privacy.
+A new `/legal/mentions-legales` page was added — French law (LCEN) requires
+this as a page separate from Terms/Privacy — with SDK Enterprises' real
+registration details (SIREN, SIRET, VAT, registered office, publication
+director) supplied by the business owner, and Vercel's publicly documented
+hosting-provider address. `src/marketing/site-config.ts` now exports
+`LEGAL_ENTITY` and `HOSTING_PROVIDER` for this. This content is still
+standard drafted language, not a substitute for actual legal counsel
+review — the public pages just never say so, per instruction.
+
 Technical SEO: `src/app/sitemap.ts` and `src/app/robots.ts` (both at the
 app root, disallowing the authenticated app and API routes), a generated
 `opengraph-image.tsx`, per-route `generateMetadata`/`metadata` with

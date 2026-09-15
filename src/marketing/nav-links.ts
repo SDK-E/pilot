@@ -24,5 +24,6 @@ export const MARKETING_FOOTER_LINKS = {
   Legal: [
     { href: "/legal/terms", label: "Terms of Service" },
     { href: "/legal/privacy", label: "Privacy Policy" },
+    { href: "/legal/mentions-legales", label: "Mentions légales" },
   ],
 } as const;
