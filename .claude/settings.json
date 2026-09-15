@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm dev)",
+      "Bash(pnpm build)",
+      "Bash(pnpm start)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm lint:fix)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm format)",
+      "Bash(pnpm format:check)",
+      "Bash(pnpm knip)",
+      "Bash(pnpm check)",
+      "Bash(pnpm db:generate)",
+      "Bash(pnpm db:migrate)",
+      "Bash(pnpm db:migrate:deploy)",
+      "Bash(pnpm test)",
+      "Bash(pnpm test:server)",
+      "Bash(pnpm test:db)",
+      "Bash(pnpm install)",
+      "Bash(pnpm install --frozen-lockfile)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm install --frozen-lockfile && pnpm typecheck"
+          }
+        ]
+      }
+    ]
+  }
+}
