@@ -19,7 +19,13 @@
     "test": "playwright test",
     "test:server": "NODE_OPTIONS='--conditions=react-server' dotenv -e .env.local -- tsx --test 'server-tests/**/*.test.ts' 'src/ai/**/*.test.ts' 'tests/unit/**/*.test.ts'",
     "test:db": "NODE_OPTIONS='--conditions=react-server' dotenv -e .env.local -- tsx --test 'tests/integration/**/*.test.ts'",
-    "check": "pnpm lint && pnpm typecheck && pnpm format:check && pnpm knip"
+    "check": "pnpm lint && pnpm typecheck && pnpm format:check && pnpm knip",
+    "env:pull": "vercel env pull .env.local",
+    "env:pull:preview": "vercel env pull --environment=preview .env.local",
+    "env:pull:production": "vercel env pull --environment=production .env.local",
+    "env:push": "bash scripts/push-env.sh .env.local development",
+    "env:push:preview": "bash scripts/push-env.sh .env.local preview",
+    "env:push:production": "bash scripts/push-env.sh .env.local production"
   },
   "dependencies": {
     "@ai-sdk/react": "4.0.96",
