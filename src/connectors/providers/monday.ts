@@ -26,7 +26,9 @@ async function exchangeCode({
     accessToken: data.access_token,
     refreshToken: null,
     expiresAt: null,
-    grantedScopes: data.scope ? data.scope.split(" ") : [],
+    // monday.com returns granted scopes comma-separated, like GitHub and
+    // Linear in this file's siblings — not space-separated.
+    grantedScopes: data.scope ? data.scope.split(",") : [],
   };
 }
 
@@ -41,7 +43,10 @@ async function fetchAccountIdentifier(accessToken: string) {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: accessToken,
+      // monday.com's GraphQL API expects the Bearer scheme for OAuth-issued
+      // tokens (only personal API tokens omit it) — every other provider in
+      // this codebase already sends `Bearer ${accessToken}`.
+      authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ query: "query { me { email } }" }),
   });

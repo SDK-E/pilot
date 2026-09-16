@@ -41,8 +41,22 @@ export interface ConnectorProvider {
   authorizeUrl: string;
   tokenUrl: string;
   scopes: readonly string[];
+  /**
+   * Delimiter used when joining `scopes` for the authorize request.
+   * Defaults to a space (GitHub, Google). Slack and Linear's APIs expect
+   * comma-separated scopes on the request side too, matching how their
+   * `exchangeCode` already parses the response.
+   */
+  scopeDelimiter?: string;
   clientIdEnvVar: string;
   clientSecretEnvVar: string;
+  /**
+   * Overrides the generic `authorizeUrl?client_id=...&redirect_uri=...`
+   * construction for a provider whose authorize step doesn't follow the
+   * standard OAuth2 shape (e.g. Vercel's slug-based integration URL). Most
+   * providers omit this and use the shared route's default behavior.
+   */
+  buildAuthorizeUrl?(context: { redirectUri: string; state: string }): string;
   exchangeCode(input: {
     code: string;
     redirectUri: string;

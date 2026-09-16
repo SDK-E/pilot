@@ -2,10 +2,37 @@ import { envValue, postForm } from "@/connectors/connector-provider-types";
 
 import type { ConnectorProvider } from "@/connectors/connector-provider-types";
 
-const AUTHORIZE_URL = "https://vercel.com/oauth/authorize";
+// The public URL slug of the "Pilot" OAuth2 integration in the Vercel
+// Integrations Console — not secret, it's part of the public marketplace
+// URL. Update this if the integration is ever renamed/recreated with a
+// different slug.
+const INTEGRATION_SLUG = "pilot";
 const TOKEN_URL = "https://api.vercel.com/v2/oauth/access_token";
 const CLIENT_ID_ENV = "CONNECTOR_VERCEL_CLIENT_ID";
 const CLIENT_SECRET_ENV = "CONNECTOR_VERCEL_CLIENT_SECRET";
+
+/**
+ * Vercel's OAuth2 integrations don't use a standard authorize endpoint —
+ * there's no `authorize?client_id=...` shape at all. The "external
+ * installation flow" starts at a slug-based URL and Vercel appends `code`,
+ * `teamId`, `configurationId`, `state`, and `source` to the caller-supplied
+ * `next` URL when redirecting back
+ * (https://vercel.com/docs/integrations/create-integration/submit-integration#external-installation-flow).
+ */
+function buildAuthorizeUrl({
+  redirectUri,
+  state,
+}: {
+  redirectUri: string;
+  state: string;
+}): string {
+  const url = new URL(
+    `https://vercel.com/integrations/${INTEGRATION_SLUG}/new`,
+  );
+  url.searchParams.set("next", redirectUri);
+  url.searchParams.set("state", state);
+  return url.href;
+}
 
 async function exchangeCode({
   code,
@@ -48,21 +75,18 @@ async function fetchAccountIdentifier(accessToken: string) {
   return identifier;
 }
 
-// eslint-disable-next-line sonarjs/todo-tag -- intentional, tracked flag for an unverified API detail, not a stray note
-// TODO(connectors): verify against Vercel's current OAuth integration docs
-// before enabling in production — the authorize/token endpoints and the
-// lack of a `scope` request param (scopes are fixed by the integration's
-// configuration, not requested per-authorization) are drawn from Vercel's
-// general integration pattern, not confirmed against live docs here.
 export const vercelProvider: ConnectorProvider = {
   id: "vercel",
   displayName: "Vercel",
   supportsOrgScope: true,
-  authorizeUrl: AUTHORIZE_URL,
+  // Vestigial for Vercel — buildAuthorizeUrl below is what's actually used,
+  // but the shared ConnectorProvider shape still expects a base URL.
+  authorizeUrl: `https://vercel.com/integrations/${INTEGRATION_SLUG}/new`,
   tokenUrl: TOKEN_URL,
   scopes: [],
   clientIdEnvVar: CLIENT_ID_ENV,
   clientSecretEnvVar: CLIENT_SECRET_ENV,
+  buildAuthorizeUrl,
   exchangeCode,
   refreshAccessToken,
   fetchAccountIdentifier,

@@ -60,7 +60,9 @@ export async function POST(request: Request, { params }: RouteContext) {
     });
     if (!saved) throw new Error("Project file metadata could not be saved.");
     return Response.json({ id: saved.id }, { status: 201 });
-  } catch {
+  } catch (error_) {
+    // eslint-disable-next-line no-console -- only path to surface this server-side
+    console.error("Project file upload failed:", error_);
     await deleteBlobQuietly(blob.url);
     return error("Pilot could not save this project file.", 500);
   }

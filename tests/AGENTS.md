@@ -4,12 +4,18 @@
 
 - `tests/*.spec.ts` — Playwright checks of the public page and every
   unauthenticated boundary (`pnpm test`; needs a fresh `pnpm build`).
-- `tests/*.test.ts` — Pure unit tests run with node:test (`pnpm test:server`).
-- `tests/*.integration.test.ts` — Neon-backed tests (`pnpm test:db`; needs
-  `.env.local` with the development database).
+- `tests/unit/*.test.ts` — Pure unit tests, no DB, auto-discovered by
+  `pnpm test:server` (along with `server-tests/` and `src/ai/`).
+- `tests/integration/*.test.ts` — Neon-backed tests, auto-discovered by
+  `pnpm test:db` (needs `.env.local` with the development database).
 - `server-tests/` — The runtime stream parser under `--conditions=react-server`.
 - `tests/helpers/` — Shared helpers for the Playwright specs.
 - `pilot-ai/src/**/*.test.ts` — Runtime tests (vitest).
+
+A new test file placed in `tests/unit/` or `tests/integration/` runs
+automatically — `test:server`/`test:db` glob-discover, they don't list
+files by name. Don't add a file matching `*.test.ts` to `tests/unit/` or
+`tests/integration/` unless you mean for it to run in that suite.
 
 ## Conventions
 

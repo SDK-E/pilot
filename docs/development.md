@@ -90,18 +90,19 @@ placeholder tests for them, record the gap in `docs/progress.md` instead.
 
 ### Unit tests (`pnpm test:server`)
 
-Runs the explicit file list in `package.json`'s `test:server` script
-(`server-tests/pilot-ai-stream.test.ts` plus several `tests/*.test.ts` and
-`src/ai/workos-m2m.test.ts`) under
+Discovers every `*.test.ts` file under `server-tests/`, `src/ai/`, and
+`tests/unit/` — no DB, no manual file list to keep in sync; a new test file
+placed in one of those directories runs automatically. Runs under
 `NODE_OPTIONS='--conditions=react-server'`, using `.env.local`.
 
 ### Neon integration tests (`pnpm test:db`)
 
-Uses the development Neon database to verify worker persistence and
-organization isolation (`tests/*.integration.test.ts`), then removes its
-own randomized fixtures. Needs `.env.local` with `DATABASE_URL` pointing at
-the isolated development database — never a preview or production one.
-Apply committed schema changes first with `pnpm db:migrate`.
+Discovers every `*.test.ts` file under `tests/integration/` (same
+auto-discovery as above). Uses the development Neon database to verify
+worker persistence and organization isolation, then removes its own
+randomized fixtures. Needs `.env.local` with `DATABASE_URL` pointing at the
+isolated development database — never a preview or production one. Apply
+committed schema changes first with `pnpm db:migrate`.
 
 ### CI
 

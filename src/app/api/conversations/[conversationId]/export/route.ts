@@ -61,6 +61,10 @@ export async function GET(request: Request, { params }: RouteContext) {
     messages,
     sources,
   });
+  // @react-pdf/renderer's `createElement` return type and `renderToBuffer`'s
+  // expected `ReactElement<DocumentProps>` param are structurally
+  // compatible but nominally distinct types from this library's own
+  // typings — a direct cast fails, so this goes through `unknown` first.
   const pdf = await renderToBuffer(
     document as unknown as ReactElement<DocumentProps>,
   );

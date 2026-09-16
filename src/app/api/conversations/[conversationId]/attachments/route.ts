@@ -61,7 +61,9 @@ export async function POST(request: Request, { params }: RouteContext) {
     });
     if (!attachment) throw new Error("Attachment metadata could not be saved.");
     return Response.json({ id: attachment.id }, { status: 201 });
-  } catch {
+  } catch (error_) {
+    // eslint-disable-next-line no-console -- only path to surface this server-side
+    console.error("Conversation attachment upload failed:", error_);
     await deleteBlobQuietly(blob.url);
     return error("Pilot could not attach this file.", 500);
   }
