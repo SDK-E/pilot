@@ -26,26 +26,26 @@ jobs:
       NEXT_PUBLIC_WORKOS_REDIRECT_URI: http://localhost:3100/auth/callback
     steps:
       - name: Check out source
-        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        if: ${{ env.DATABASE_URL != '' }}
         uses: actions/checkout@v6
 
       - name: Set up pnpm
-        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        if: ${{ env.DATABASE_URL != '' }}
         uses: pnpm/action-setup@v6
 
       - name: Set up Node.js
-        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        if: ${{ env.DATABASE_URL != '' }}
         uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: pnpm
 
       - name: Install dependencies
-        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        if: ${{ env.DATABASE_URL != '' }}
         run: pnpm install --frozen-lockfile
 
       - name: Write CI .env.local for test:db
-        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        if: ${{ env.DATABASE_URL != '' }}
         run: |
           cat <<EOF > .env.local
           DATABASE_URL=$DATABASE_URL
@@ -56,13 +56,13 @@ jobs:
           EOF
 
       - name: Apply pending migrations
-        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        if: ${{ env.DATABASE_URL != '' }}
         run: pnpm db:migrate
 
       - name: Run Neon-backed integration tests
-        if: ${{ secrets.DATABASE_URL_TEST != '' }}
+        if: ${{ env.DATABASE_URL != '' }}
         run: pnpm test:db
 
       - name: Skipped (no DATABASE_URL_TEST secret configured)
-        if: ${{ secrets.DATABASE_URL_TEST == '' }}
+        if: ${{ env.DATABASE_URL == '' }}
         run: echo "DATABASE_URL_TEST is not set; skipping pnpm test:db. Configure a dedicated, isolated Neon database URL as a repo secret to enable this job."

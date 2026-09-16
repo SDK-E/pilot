@@ -25,6 +25,10 @@ export default defineConfig([
     // the registry CLI, not edited by hand. Linted like generated code.
     "src/components/ui/**",
     "src/components/ai-elements/**",
+    // Vendored agent skill packages, each with its own package.json and
+    // node:test runner outside this project's tsconfig.
+    ".agents/skills/**",
+    ".claude/skills/**",
   ]),
 
   js.configs.recommended,

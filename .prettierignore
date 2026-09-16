@@ -7,3 +7,7 @@ test-results
 storage
 drizzle
 next-env.d.ts
+
+# Vendored agent skill packages, not edited by hand.
+.agents/skills
+.claude/skills

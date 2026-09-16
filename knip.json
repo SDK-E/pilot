@@ -1,4 +1,5 @@
 {
+  "ignore": [".agents/skills/**"],
   "ignoreIssues": {
     "src/components/ai-elements/**": ["exports", "types"],
     "src/components/ui/**": ["exports"]
