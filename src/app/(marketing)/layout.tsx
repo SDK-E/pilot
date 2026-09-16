@@ -1,8 +1,7 @@
-import { withAuth } from "@workos-inc/authkit-nextjs";
-
 import { JsonLd } from "@/components/marketing/json-ld";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteNav } from "@/components/marketing/site-nav";
+import { marketingSession } from "@/marketing/marketing-auth";
 import {
   ORGANIZATION_NAME,
   SITE_NAME,
@@ -14,11 +13,11 @@ export default async function MarketingLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = await withAuth();
+  const { isSignedIn } = await marketingSession();
 
   return (
     <div className="flex min-h-svh flex-col">
-      <SiteNav isSignedIn={Boolean(user)} />
+      <SiteNav isSignedIn={isSignedIn} />
       <main className="flex-1">{children}</main>
       <SiteFooter />
       <JsonLd

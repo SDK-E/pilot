@@ -1,11 +1,10 @@
-import { withAuth } from "@workos-inc/authkit-nextjs";
-
 import { CtaBand } from "@/components/marketing/cta-band";
 import { FaqSection } from "@/components/marketing/faq-section";
 import { FeatureGrid } from "@/components/marketing/feature-grid";
 import { Hero } from "@/components/marketing/hero";
 import { SocialProof } from "@/components/marketing/social-proof";
 import { HOME_FAQ } from "@/marketing/faq";
+import { marketingSession } from "@/marketing/marketing-auth";
 import { SITE_URL } from "@/marketing/site-config";
 
 import type { Metadata } from "next";
@@ -18,8 +17,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const { user } = await withAuth();
-  const isSignedIn = Boolean(user);
+  const { isSignedIn } = await marketingSession();
 
   return (
     <>

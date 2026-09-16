@@ -39,7 +39,10 @@ import { getProjectMemoryContextForConversation } from "@/projects/project-repos
 export type { TurnInput } from "@/conversations/turn-shared";
 
 const MAX_INSTRUCTIONS_LENGTH = 20_000;
-const STREAM_TIMEOUT_MS = 90_000;
+// pilot-ai's own `maxDuration` for /v1/chat/completions is 90s (pilot-ai/vercel.json).
+// Stay clearly under that so Pilot never races pilot-ai's hard cutoff and tears
+// down a response pilot-ai would otherwise have delivered in time.
+const STREAM_TIMEOUT_MS = 75_000;
 const FALLBACK_MODEL_ID = "kilo/kilo-auto/free";
 
 /**
