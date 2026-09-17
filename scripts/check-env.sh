@@ -21,6 +21,9 @@ REQUIRED_RUNTIME=(
   WORKOS_M2M_CLIENT_ID
   WORKOS_M2M_CLIENT_SECRET
 )
+REQUIRED_PLATFORM=(
+  MODEL_GATEWAY_ENCRYPTION_KEY
+)
 REQUIRED_CONNECTORS=(
   CONNECTOR_TOKEN_ENCRYPTION_KEY
   CONNECTOR_STATE_SIGNING_SECRET
@@ -86,6 +89,7 @@ check_group() {
 
 check_group "Core (auth, database) — every request needs these" "${REQUIRED_CORE[@]}"
 check_group "Chat/Work/Code runtime (pilot-ai M2M call)" "${REQUIRED_RUNTIME[@]}"
+check_group "Platform admin (model gateways)" "${REQUIRED_PLATFORM[@]}"
 check_group "Connectors" "${REQUIRED_CONNECTORS[@]}"
 
 echo "-- Optional / platform-managed --"
