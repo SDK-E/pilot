@@ -16,7 +16,7 @@ for (const viewport of [
 
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      "Give your team a place to chat",
+      "Ask fast. Ship faster.",
     );
     expect(
       await page.evaluate(

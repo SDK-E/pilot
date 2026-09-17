@@ -17,7 +17,7 @@ test("public home does not prepopulate example organization data", async ({
   await page.goto("/");
 
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Give your team a place to chat",
+    "Ask fast. Ship faster.",
   );
   const content = await page.content();
   expect(content).not.toContain("sample data");

@@ -10,7 +10,7 @@ test("public page renders with usable mobile navigation", async ({ page }) => {
   });
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
-    "Give your team a place to chat",
+    "Ask fast. Ship faster.",
   );
   await expect(
     page.getByRole("link", { name: "Sign in to Pilot" }),
