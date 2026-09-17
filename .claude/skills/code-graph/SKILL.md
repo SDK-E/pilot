@@ -24,3 +24,7 @@ A plain `grep` for an import string misses NodeNext-style specifiers (`./foo.js`
 ## When to reach for this first
 
 Before editing a shared type, a widely-imported util, or an agent tool definition, run this to see the actual importer list rather than assuming from the file's location. It's meant to replace "grep + open five files to check" with one command.
+
+## Invocation
+
+Call it plainly — `pnpm graph src/foo.ts`, no `--` separator needed. If `--` output ever looks odd (e.g. the target reads as `--`), drop it; it isn't part of the documented syntax above.
