@@ -140,22 +140,11 @@ export function ActivitySection({
   collapsibleRuns?: boolean;
 }) {
   const runs = groupActivityTimeline(activities);
+  if (runs.length === 0) return null;
   return (
     <section className="space-y-2">
-      <div>
-        <h2 className="text-xs font-medium">Agent activity</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Verified events from Pilot while it works in this chat.
-        </p>
-      </div>
-      {runs.length > 0 ? (
-        <ActivityRuns collapsibleRuns={collapsibleRuns} runs={runs} />
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          Activity appears here while Pilot uses a supported capability. Send a
-          message to begin.
-        </p>
-      )}
+      <h2 className="text-xs font-medium">Agent activity</h2>
+      <ActivityRuns collapsibleRuns={collapsibleRuns} runs={runs} />
     </section>
   );
 }

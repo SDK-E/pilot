@@ -1,9 +1,13 @@
 import "server-only";
 
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNotNull } from "drizzle-orm";
 
 import { db } from "@/db/client";
-import { conversationAttachments, conversations } from "@/db/schema";
+import {
+  conversationAttachments,
+  conversationMessages,
+  conversations,
+} from "@/db/schema";
 
 export async function listConversationAttachments(input: {
   organizationId: string;
@@ -13,6 +17,7 @@ export async function listConversationAttachments(input: {
   return db
     .select({
       id: conversationAttachments.id,
+      messageId: conversationAttachments.messageId,
       filename: conversationAttachments.filename,
       contentType: conversationAttachments.contentType,
       byteSize: conversationAttachments.byteSize,
@@ -133,4 +138,82 @@ export async function deleteConversationAttachment(input: {
     )
     .returning({ pathname: conversationAttachments.pathname });
   return attachment;
+}
+
+/**
+ * The blob pathnames of attachments still parented to a message at or after
+ * `cutoff`, about to be truncated. A caller detaches (see
+ * `detachConversationAttachments`) anything it wants to keep before calling
+ * this, so only genuinely-removed attachments' blobs get cleaned up here.
+ */
+export function listMessageAttachmentPathnamesFrom(input: {
+  organizationId: string;
+  conversationId: string;
+  cutoff: Date;
+}) {
+  return db
+    .select({ pathname: conversationAttachments.pathname })
+    .from(conversationAttachments)
+    .innerJoin(
+      conversationMessages,
+      eq(conversationAttachments.messageId, conversationMessages.id),
+    )
+    .where(
+      and(
+        eq(conversationAttachments.organizationId, input.organizationId),
+        eq(conversationAttachments.conversationId, input.conversationId),
+        isNotNull(conversationAttachments.messageId),
+        gte(conversationMessages.createdAt, input.cutoff),
+      ),
+    );
+}
+
+/**
+ * Detaches attachments from whatever message they currently belong to
+ * (`messageId` -> null), so an edit that keeps them survives the old
+ * message being deleted out from under them.
+ */
+export async function detachConversationAttachments(input: {
+  organizationId: string;
+  userId: string;
+  conversationId: string;
+  attachmentIds: readonly string[];
+}) {
+  if (input.attachmentIds.length === 0) return;
+  await db
+    .update(conversationAttachments)
+    .set({ messageId: null })
+    .where(
+      and(
+        eq(conversationAttachments.organizationId, input.organizationId),
+        eq(conversationAttachments.conversationId, input.conversationId),
+        eq(conversationAttachments.createdByWorkosUserId, input.userId),
+        inArray(conversationAttachments.id, [...input.attachmentIds]),
+      ),
+    );
+}
+
+/**
+ * Parents attachments the caller owns onto the message just created — for
+ * newly-uploaded files, and for ones detached above during an edit.
+ */
+export async function attachConversationAttachmentsToMessage(input: {
+  organizationId: string;
+  userId: string;
+  conversationId: string;
+  messageId: string;
+  attachmentIds: readonly string[];
+}) {
+  if (input.attachmentIds.length === 0) return;
+  await db
+    .update(conversationAttachments)
+    .set({ messageId: input.messageId })
+    .where(
+      and(
+        eq(conversationAttachments.organizationId, input.organizationId),
+        eq(conversationAttachments.conversationId, input.conversationId),
+        eq(conversationAttachments.createdByWorkosUserId, input.userId),
+        inArray(conversationAttachments.id, [...input.attachmentIds]),
+      ),
+    );
 }

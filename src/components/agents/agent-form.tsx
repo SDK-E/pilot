@@ -65,6 +65,48 @@ function KindPicker({
   );
 }
 
+function SkillRules({
+  skills,
+  agent,
+}: {
+  skills: { id: string; name: string; description: string }[];
+  agent?: Agent;
+}) {
+  if (skills.length === 0) return null;
+  return (
+    <div className="space-y-3">
+      <Label>Skills</Label>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {skills.map((skill) => {
+          const isEnabled = agent
+            ? agent.enabledSkillIds.includes(skill.id)
+            : false;
+          return (
+            <div
+              className="flex items-start gap-2 rounded-xl border border-border p-3 text-sm"
+              key={skill.id}
+            >
+              <input
+                className="mt-0.5 size-4 accent-primary"
+                defaultChecked={isEnabled}
+                name="enabledSkillIds"
+                type="checkbox"
+                value={skill.id}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium">{skill.name}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {skill.description || "No description yet."}
+                </span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ToolRules({ kind, agent }: { kind: AgentKindId; agent?: Agent }) {
   return (
     <div className="space-y-3">
@@ -110,9 +152,11 @@ function ToolRules({ kind, agent }: { kind: AgentKindId; agent?: Agent }) {
 export function AgentForm({
   agent,
   defaultKind,
+  skills = [],
 }: {
   agent?: Agent;
   defaultKind: AgentKindId;
+  skills?: { id: string; name: string; description: string }[];
 }) {
   const router = useRouter();
   const [kind, setKind] = useState<AgentKindId>(defaultKind);
@@ -131,6 +175,7 @@ export function AgentForm({
       <KindPicker disabled={Boolean(agent)} onChange={setKind} value={kind} />
       <PersonaFields agent={agent} kind={kind} />
       <ToolRules agent={agent} kind={kind} />
+      <SkillRules agent={agent} skills={skills} />
       {state.message ? (
         <p
           aria-live="polite"

@@ -1,6 +1,12 @@
 "use client";
 
-import { RiFolder3Line, RiRobot2Line, RiSettings3Line } from "@remixicon/react";
+import {
+  RiFolder3Line,
+  RiRobot2Line,
+  RiSettings3Line,
+  RiShieldStarLine,
+  RiSparklingLine,
+} from "@remixicon/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -26,6 +32,11 @@ import {
 import { AccountMenu } from "@/components/workspace/account-menu";
 import { ConversationSearch } from "@/components/workspace/conversation-search";
 import { ModeIcon } from "@/components/workspace/mode-icon";
+import {
+  conversationLabel,
+  groupRecentConversations,
+} from "@/components/workspace/recent-conversations";
+import { useWorkspaceHeaderContent } from "@/components/workspace/workspace-header-slot";
 
 import type { AgentKindId } from "@/agents/agent-kinds";
 
@@ -41,6 +52,7 @@ export interface RecentConversation {
 interface WorkspaceShellProps {
   activeOrganizationId?: string;
   children: React.ReactNode;
+  isPlatformAdmin?: boolean;
   organizations: { id: string; name: string }[];
   recentConversations: RecentConversation[];
   user: { email: string; name?: string | null };
@@ -49,6 +61,7 @@ interface WorkspaceShellProps {
 const SECONDARY_LINKS = [
   { href: "/projects", label: "Projects", icon: RiFolder3Line },
   { href: "/agents", label: "Agents", icon: RiRobot2Line },
+  { href: "/skills", label: "Skills", icon: RiSparklingLine },
 ] as const;
 
 function currentMode(pathname: string): AgentKindId | undefined {
@@ -92,45 +105,54 @@ function RecentList({
       </p>
     );
   }
+  const groups = groupRecentConversations(conversations);
   return (
-    <SidebarMenu>
-      {conversations.map((conversation) => {
-        const href = modeHref(conversation.kind, conversation.id);
-        return (
-          <SidebarMenuItem key={conversation.id}>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === href}
-              tooltip={conversation.title ?? "New conversation"}
-            >
-              <Link href={href}>
-                <ModeIcon
-                  className="text-muted-foreground"
-                  kind={conversation.kind}
-                />
-                <span>{conversation.title ?? "New conversation"}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        );
-      })}
-    </SidebarMenu>
+    <div className="flex flex-col gap-3">
+      {groups.map((group) => (
+        <div key={group.label}>
+          <p className="px-2 pb-1 text-xs font-medium text-sidebar-foreground/50">
+            {group.label}
+          </p>
+          <SidebarMenu>
+            {group.conversations.map((conversation) => {
+              const href = modeHref(conversation.kind, conversation.id);
+              const label = conversationLabel(conversation);
+              return (
+                <SidebarMenuItem key={conversation.id}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === href}
+                    tooltip={label}
+                  >
+                    <Link href={href}>
+                      <ModeIcon
+                        className="text-muted-foreground"
+                        kind={conversation.kind}
+                      />
+                      <span>{label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </div>
+      ))}
+    </div>
   );
 }
 
-/**
- * The app frame: modes at the top of the sidebar (Chat, Work, Code), then
- * Projects and Agents, then recent conversations, then account and settings.
- */
 export function WorkspaceShell({
   activeOrganizationId,
   children,
+  isPlatformAdmin,
   organizations,
   recentConversations,
   user,
 }: WorkspaceShellProps) {
   const pathname = usePathname();
   const mode = currentMode(pathname);
+  const headerContent = useWorkspaceHeaderContent();
 
   return (
     <SidebarProvider>
@@ -198,6 +220,20 @@ export function WorkspaceShell({
 
         <SidebarFooter>
           <SidebarMenu>
+            {isPlatformAdmin ? (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/admin")}
+                  tooltip="Admin"
+                >
+                  <Link href="/admin">
+                    <RiShieldStarLine aria-hidden="true" />
+                    <span>Admin</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ) : null}
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
@@ -228,13 +264,15 @@ export function WorkspaceShell({
             className="mr-1 data-[orientation=vertical]:h-4"
             orientation="vertical"
           />
-          <span className="flex items-center gap-2 text-sm font-medium">
-            {mode ? <ModeIcon className="size-4" kind={mode} /> : null}
-            {mode ? AGENT_KINDS[mode].name : "Workspace"}
-          </span>
-          <div className="ml-auto">
-            <ThemeSwitcher />
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            {headerContent ?? (
+              <span className="flex items-center gap-2 text-sm font-medium">
+                {mode ? <ModeIcon className="size-4" kind={mode} /> : null}
+                {mode ? AGENT_KINDS[mode].name : "Workspace"}
+              </span>
+            )}
           </div>
+          <ThemeSwitcher />
         </header>
         {children}
       </SidebarInset>

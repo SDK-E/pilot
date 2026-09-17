@@ -32,6 +32,7 @@ export function ConversationDetailsPanel({
   plan,
   fillHeight = true,
 }: ConversationDetailsPanelProps) {
+  const isEmpty = plan.length === 0 && activities.length === 0 && !scratchpad;
   return (
     <aside
       aria-label="Agent activity and chat controls"
@@ -40,11 +41,20 @@ export function ConversationDetailsPanel({
         fillHeight ? "h-full" : "h-auto",
       )}
     >
-      <div className="space-y-6">
-        <PlanSection steps={plan} />
-        <ActivitySection activities={activities} collapsibleRuns={fillHeight} />
-        <NotesSection scratchpad={scratchpad} />
-      </div>
+      {isEmpty ? (
+        <p className="text-xs text-muted-foreground">
+          Pilot&apos;s plan, activity, and notes for this chat will appear here.
+        </p>
+      ) : (
+        <div className="space-y-6">
+          <PlanSection steps={plan} />
+          <ActivitySection
+            activities={activities}
+            collapsibleRuns={fillHeight}
+          />
+          <NotesSection scratchpad={scratchpad} />
+        </div>
+      )}
     </aside>
   );
 }

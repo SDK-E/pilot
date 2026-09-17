@@ -1,21 +1,23 @@
+/**
+ * Signed OAuth `state` for the custom-connector flow — the same HMAC
+ * mechanism as `oauth-state.ts`, kept as a separate module (rather than
+ * widening that one's `ConnectorProviderId`-typed payload) since a custom
+ * connector is identified by a `connectorDefinitionId`, not a fixed provider
+ * id. Reuses `CONNECTOR_STATE_SIGNING_SECRET`.
+ */
 import "server-only";
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-import { isConnectorProviderId } from "@/connectors/connector-providers";
-
-import type { ConnectorProviderId } from "@/connectors/connector-providers";
-
 const MAX_AGE_MS = 10 * 60 * 1000;
 
-export interface OAuthStatePayload {
+export interface CustomOAuthStatePayload {
   organizationId: string;
   userId: string;
-  providerId: ConnectorProviderId;
-  ownerScope: "organization" | "user";
+  connectorDefinitionId: string;
 }
 
-interface SignedOAuthState extends OAuthStatePayload {
+interface SignedCustomOAuthState extends CustomOAuthStatePayload {
   issuedAt: number;
 }
 
@@ -39,27 +41,28 @@ function sign(encodedPayload: string): string {
   );
 }
 
-export function signOAuthState(payload: OAuthStatePayload): string {
-  const signed: SignedOAuthState = { ...payload, issuedAt: Date.now() };
+export function signCustomOAuthState(payload: CustomOAuthStatePayload): string {
+  const signed: SignedCustomOAuthState = { ...payload, issuedAt: Date.now() };
   const encodedPayload = base64url(JSON.stringify(signed));
   return `${encodedPayload}.${sign(encodedPayload)}`;
 }
 
-function isSignedOAuthState(value: unknown): value is SignedOAuthState {
+function isSignedCustomOAuthState(
+  value: unknown,
+): value is SignedCustomOAuthState {
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Record<string, unknown>;
   return (
     typeof candidate.organizationId === "string" &&
     typeof candidate.userId === "string" &&
-    typeof candidate.providerId === "string" &&
-    isConnectorProviderId(candidate.providerId) &&
-    (candidate.ownerScope === "organization" ||
-      candidate.ownerScope === "user") &&
+    typeof candidate.connectorDefinitionId === "string" &&
     typeof candidate.issuedAt === "number"
   );
 }
 
-export function verifyOAuthState(token: string): SignedOAuthState | null {
+export function verifyCustomOAuthState(
+  token: string,
+): SignedCustomOAuthState | null {
   const [encodedPayload, encodedSignature] = token.split(".", 2);
   if (!encodedPayload || !encodedSignature) return null;
 
@@ -80,7 +83,7 @@ export function verifyOAuthState(token: string): SignedOAuthState | null {
   } catch {
     return null;
   }
-  if (!isSignedOAuthState(parsed)) return null;
+  if (!isSignedCustomOAuthState(parsed)) return null;
   if (Date.now() - parsed.issuedAt > MAX_AGE_MS) return null;
   return parsed;
 }

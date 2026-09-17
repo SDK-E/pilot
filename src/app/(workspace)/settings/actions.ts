@@ -7,10 +7,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { getAgent } from "@/agents/agent-repository";
-import {
-  disconnectConnectorConnection,
-  setDefaultConnectorConnection,
-} from "@/connectors/connector-connection-mutations";
+import { listSelectableModels } from "@/model-gateways/model-gateway-repository";
 import {
   addOrganizationDomain,
   verifyOrganizationDomain,
@@ -59,11 +56,7 @@ export async function updateDefaultAgentAction(formData: FormData) {
 }
 
 const modelPolicySchema = z.object({
-  primaryModelId: z
-    .string()
-    .trim()
-    .regex(/^kilo\/[a-z0-9][a-z0-9._:-]*(?:\/[a-z0-9][a-z0-9._:-]*)*$/i)
-    .max(200),
+  primaryModelId: z.string().trim().min(1).max(200),
   retryEnabled: z.boolean(),
 });
 
@@ -72,12 +65,18 @@ export async function updateModelPolicyAction(formData: FormData) {
     primaryModelId: formData.get("primaryModelId"),
     retryEnabled: formData.get("retryEnabled") === "true",
   });
-  if (!input.success) throw new Error("Enter a valid Kilo Gateway model ID.");
+  if (!input.success) throw new Error("Choose a model.");
   const { organizationId, membership } = await requireWorkspaceSession();
   if (!["owner", "admin"].includes(membership.role.slug)) {
     throw new Error(
       "Only organization owners and admins can change the model policy.",
     );
+  }
+  const availableModels = await listSelectableModels();
+  if (
+    availableModels.every((model) => model.value !== input.data.primaryModelId)
+  ) {
+    throw new Error("That model isn't available. Choose one from the list.");
   }
   await updateOrganizationModelPolicy({ organizationId, ...input.data });
   revalidatePath("/", "layout");
@@ -101,47 +100,6 @@ export async function updateOrganizationCapabilitiesAction(formData: FormData) {
   }
   await updateOrganizationCapabilities({ organizationId, ...input });
   revalidatePath("/", "layout");
-}
-
-const connectionIdSchema = z.object({ connectionId: z.uuid() });
-
-/**
- * Revokes a connector connection. A personal connection may only be
- * disconnected by its own owner; an organization connection only by an
- * admin — both checks are enforced again inside the repository.
- */
-export async function disconnectConnectorConnectionAction(formData: FormData) {
-  const input = connectionIdSchema.safeParse({
-    connectionId: formData.get("connectionId"),
-  });
-  if (!input.success) return;
-  const { organizationId, user, membership } = await requireWorkspaceSession();
-  await disconnectConnectorConnection({
-    organizationId,
-    userId: user.id,
-    connectionId: input.data.connectionId,
-    isAdmin: ADMIN_ROLES.has(membership.role.slug),
-  });
-  revalidatePath("/settings");
-}
-
-/**
- * Makes one connection the default used by connector tool calls for its
- * provider and owner scope.
- */
-export async function setDefaultConnectorConnectionAction(formData: FormData) {
-  const input = connectionIdSchema.safeParse({
-    connectionId: formData.get("connectionId"),
-  });
-  if (!input.success) return;
-  const { organizationId, user, membership } = await requireWorkspaceSession();
-  await setDefaultConnectorConnection({
-    organizationId,
-    userId: user.id,
-    connectionId: input.data.connectionId,
-    isAdmin: ADMIN_ROLES.has(membership.role.slug),
-  });
-  revalidatePath("/settings");
 }
 
 /**

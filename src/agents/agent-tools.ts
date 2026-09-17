@@ -45,49 +45,11 @@ export const TOOLS: Record<ToolId, ToolDefinition> = {
     description:
       "Run shell commands and scripts in a fresh, isolated sandbox with no access to Pilot's own systems or data, to actually execute and verify code instead of only describing it.",
   },
-  "connector-github": {
-    id: "connector-github",
-    name: "GitHub",
+  connector: {
+    id: "connector",
+    name: "Connectors",
     description:
-      "Search and read issues, pull requests, and repositories in your connected GitHub account.",
-  },
-  "connector-google-drive": {
-    id: "connector-google-drive",
-    name: "Google Drive",
-    description:
-      "Search and read files in your connected Google Drive, including exporting Google Docs as text.",
-  },
-  "connector-gmail": {
-    id: "connector-gmail",
-    name: "Gmail",
-    description: "Search and read messages in your connected Gmail account.",
-  },
-  "connector-slack": {
-    id: "connector-slack",
-    name: "Slack",
-    description:
-      "List channels and read recent messages in your connected Slack workspace.",
-  },
-  "connector-notion": {
-    id: "connector-notion",
-    name: "Notion",
-    description: "Search and read pages in your connected Notion workspace.",
-  },
-  "connector-linear": {
-    id: "connector-linear",
-    name: "Linear",
-    description: "Search issues in your connected Linear workspace.",
-  },
-  "connector-vercel": {
-    id: "connector-vercel",
-    name: "Vercel",
-    description:
-      "List deployments and check project status in your connected Vercel account.",
-  },
-  "connector-monday": {
-    id: "connector-monday",
-    name: "Monday",
-    description: "Query boards and items in your connected Monday.com account.",
+      "Call the organization's connected connectors — GitHub, Slack, and any others configured in Settings → Connectors — read actions only.",
   },
 };
 

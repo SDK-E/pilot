@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import {
   Attachment,
@@ -12,6 +12,7 @@ import {
 import {
   PromptInput,
   PromptInputActionAddAttachments,
+  PromptInputActionAddScreenshot,
   PromptInputActionMenu,
   PromptInputActionMenuContent,
   PromptInputActionMenuTrigger,
@@ -29,13 +30,19 @@ import {
   useComposerSubmitState,
 } from "@/components/conversations/composer-shared";
 import { ComposerStatus } from "@/components/conversations/composer-status";
+import { ConnectorToggleMenu } from "@/components/conversations/connector-toggle-menu";
+import { SkillPicker } from "@/components/conversations/skill-picker";
+import { useAttachmentUpload } from "@/components/conversations/use-attachment-upload";
 import {
   shouldInsertComposerNewline,
   submitOnShortcut,
 } from "@/hooks/use-message-submit-shortcut";
 
+import type { MessageSendOptions } from "@/components/conversations/conversation-types";
+import type { ComposerSkill } from "@/components/conversations/skill-picker";
+
 const ACCEPTED_FILES =
-  ".pdf,.txt,.md,.csv,.docx,.xlsx,image/jpeg,image/png,image/webp";
+  ".pdf,.txt,.md,.csv,.html,.json,.xml,.zip,.docx,.xlsx,.pptx,image/jpeg,image/png,image/webp,image/gif,image/svg+xml";
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 function AttachmentPreviews() {
@@ -60,53 +67,6 @@ function AttachmentPreviews() {
   );
 }
 
-async function toFile(part: PromptInputMessage["files"][number]) {
-  if (!part.url) throw new Error("Pilot could not read this attachment.");
-  const response = await fetch(part.url);
-  if (!response.ok) throw new Error("Pilot could not read this attachment.");
-  const blob = await response.blob();
-  return new File([blob], part.filename ?? "attachment", {
-    type: part.mediaType || blob.type || "application/octet-stream",
-  });
-}
-
-function useAttachmentUpload(conversationId: string) {
-  const [error, setError] = useState<string>();
-  const [isUploading, setIsUploading] = useState(false);
-  const uploadAll = useCallback(
-    async (parts: PromptInputMessage["files"]) => {
-      setIsUploading(true);
-      setError(undefined);
-      try {
-        for (const part of parts) {
-          const formData = new FormData();
-          formData.set("file", await toFile(part));
-          const result = await fetch(
-            `/api/conversations/${conversationId}/attachments`,
-            {
-              method: "POST",
-              body: formData,
-            },
-          );
-          if (!result.ok) throw new Error("Pilot could not attach this file.");
-        }
-        return true;
-      } catch (error_) {
-        setError(
-          error_ instanceof Error
-            ? error_.message
-            : "Pilot could not attach this file.",
-        );
-        return false;
-      } finally {
-        setIsUploading(false);
-      }
-    },
-    [conversationId],
-  );
-  return { error, setError, isUploading, uploadAll };
-}
-
 interface MessageComposerProps {
   conversationId: string;
   agentName: string;
@@ -114,17 +74,15 @@ interface MessageComposerProps {
   draft: string;
   setDraft: (value: string) => void;
   isLoading: boolean;
-  onSend: (text: string) => void;
+  onSend: (text: string, options: MessageSendOptions) => void;
   onCancel: () => void;
   onRestoreLastPrompt: () => void;
   streamError?: string;
   timeoutError?: string;
+  hasConnector: boolean;
+  skills: ComposerSkill[];
 }
 
-/**
- * The docked composer of an open conversation, with file attachments and
- * the errors of the last turn.
- */
 export function MessageComposer({
   conversationId,
   agentName,
@@ -137,17 +95,22 @@ export function MessageComposer({
   onRestoreLastPrompt,
   streamError,
   timeoutError,
+  hasConnector,
+  skills,
 }: MessageComposerProps) {
   const shortcut = useSendMessageShortcut();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const errorId = useId();
   const [validationError, setValidationError] = useState<string>();
   const upload = useAttachmentUpload(conversationId);
+  const [connectorToolIds, setConnectorToolIds] = useState<string[]>();
+  const [skillIds, setSkillIds] = useState<string[]>([]);
   const isBusy = isLoading || upload.isUploading;
   const submitState = useComposerSubmitState({
     isBusy: upload.isUploading,
     text: draft,
   });
+  const isStopControlDisabled = isLoading ? false : submitState.isDisabled;
 
   const submit = async (message: PromptInputMessage) => {
     const text = message.text.trim();
@@ -158,9 +121,13 @@ export function MessageComposer({
     }
     if (isBusy) return;
     setValidationError(undefined);
-    if (message.files.length > 0 && !(await upload.uploadAll(message.files)))
-      return;
-    onSend(text);
+    let attachmentIds: string[] | undefined;
+    if (message.files.length > 0) {
+      const uploaded = await upload.uploadAll(message.files);
+      if (!uploaded) return;
+      attachmentIds = uploaded;
+    }
+    onSend(text, { attachmentIds, connectorToolIds, skillIds });
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -185,6 +152,7 @@ export function MessageComposer({
       <PromptInput
         accept={ACCEPTED_FILES}
         className={COMPOSER_WRAPPER_CLASSNAME}
+        globalDrop
         maxFileSize={MAX_FILE_BYTES}
         multiple
         onError={(event) => {
@@ -198,7 +166,7 @@ export function MessageComposer({
             aria-describedby={validationError ? errorId : undefined}
             aria-invalid={validationError ? true : undefined}
             aria-label={`Message ${agentName}`}
-            className="min-h-20 px-3 pt-3 text-sm leading-6 sm:min-h-24"
+            className="max-h-52 min-h-11 px-3 py-2.5 text-sm leading-6"
             disabled={isBusy}
             maxLength={10_000}
             onChange={(event) => {
@@ -209,7 +177,7 @@ export function MessageComposer({
             placeholder={placeholder}
             ref={textareaRef}
             required
-            rows={2}
+            rows={1}
             value={draft}
           />
         </PromptInputBody>
@@ -222,16 +190,28 @@ export function MessageComposer({
               />
               <PromptInputActionMenuContent>
                 <PromptInputActionAddAttachments label="Add files" />
+                <PromptInputActionAddScreenshot label="Add screenshot" />
               </PromptInputActionMenuContent>
             </PromptInputActionMenu>
+            <ConnectorToggleMenu
+              disabled={isBusy}
+              hasConnector={hasConnector}
+              onChange={setConnectorToolIds}
+              selected={connectorToolIds}
+            />
+            <SkillPicker
+              disabled={isBusy}
+              onChange={setSkillIds}
+              selected={skillIds}
+              skills={skills}
+            />
             <span className="px-1 text-xs text-muted-foreground">
               {agentName}
             </span>
           </PromptInputTools>
           <PromptInputSubmit
-            // While streaming, force the button enabled so it still works as
-            // the Stop control regardless of the draft/upload state.
-            disabled={isLoading ? false : submitState.isDisabled}
+            className="transition-transform active:scale-90"
+            disabled={isStopControlDisabled}
             onStop={onCancel}
             status={isLoading ? "streaming" : "ready"}
           />

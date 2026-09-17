@@ -1,4 +1,4 @@
-import { RiFileTextLine, RiLoader4Line } from "@remixicon/react";
+import { RiFileTextLine } from "@remixicon/react";
 
 import {
   ChainOfThought,
@@ -11,6 +11,7 @@ import { buildActivitySteps } from "@/executions/activity-timeline";
 import { describeActivityStep } from "./activity-step-presentation";
 import { ActivityStepRow } from "./activity-step-row";
 import { asChainOfThoughtIcon } from "./chain-of-thought-icon";
+import { TypingDots } from "./typing-dots";
 
 import type { TimelineActivity } from "@/executions/activity-timeline";
 
@@ -52,10 +53,7 @@ export function LiveConversationActivity({
       steps.length > 0 ? `Working — step ${String(steps.length)}` : header;
     return (
       <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-        <RiLoader4Line
-          aria-hidden="true"
-          className="animate-spin text-primary"
-        />
+        <TypingDots className="text-primary" />
         {compactLabel}
       </div>
     );
@@ -65,10 +63,7 @@ export function LiveConversationActivity({
     <ChainOfThought className="mt-3 max-w-xl" defaultOpen>
       <ChainOfThoughtHeader className="text-foreground">
         <span className="flex items-center gap-2">
-          <RiLoader4Line
-            aria-hidden="true"
-            className="animate-spin text-primary"
-          />
+          <TypingDots className="text-primary" />
           {header}
         </span>
       </ChainOfThoughtHeader>

@@ -9,6 +9,23 @@ export interface PersistedMessage {
   userQuestionOptions?: { label: string; description?: string }[] | null;
   userQuestionSelectionMode?: "single_select" | "multi_select" | null;
   sources?: { title: string; domain: string; url: string; summary: string }[];
+  /*
+   * What was active on this turn — see `MessageSendOptions`.
+   */
+  skillIds?: string[];
+  connectorToolIds?: string[] | null;
+  attachments?: { id: string; filename: string }[];
+}
+
+/**
+ * The composer's per-message connector toggle, skill picker, and attached
+ * files, threaded through `send`/`editMessage` down to the stream route.
+ * Omitted `connectorToolIds` means every available connector stays on.
+ */
+export interface MessageSendOptions {
+  connectorToolIds?: string[];
+  skillIds?: string[];
+  attachmentIds?: string[];
 }
 
 export type PersistedActivity = TimelineActivity & {

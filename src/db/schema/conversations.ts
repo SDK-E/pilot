@@ -81,6 +81,11 @@ export const conversationMessages = pgTable(
     inputTokens: integer("input_tokens"),
     outputTokens: integer("output_tokens"),
     totalTokens: integer("total_tokens"),
+    // What was active on this turn (composer per-message toggle/picker),
+    // persisted so past turns can show what produced their reply and so an
+    // edit-and-resend can reconstruct the same selection.
+    skillIds: jsonb("skill_ids").$type<string[]>().notNull().default([]),
+    connectorToolIds: jsonb("connector_tool_ids").$type<string[]>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -141,6 +146,12 @@ export const conversationAttachments = pgTable(
     conversationId: uuid("conversation_id")
       .notNull()
       .references(() => conversations.id, { onDelete: "cascade" }),
+    // Which turn this attachment was added on. Nullable for rows created
+    // before this column existed, and for uploads made before the composer's
+    // first message has actually been sent — those stay conversation-scoped.
+    messageId: uuid("message_id").references(() => conversationMessages.id, {
+      onDelete: "cascade",
+    }),
     createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
     pathname: text("pathname").notNull(),
     filename: text("filename").notNull(),
@@ -152,6 +163,7 @@ export const conversationAttachments = pgTable(
   },
   (table) => [
     unique("conversation_attachments_pathname_unique").on(table.pathname),
+    index("conversation_attachments_message_index").on(table.messageId),
     index("conversation_attachments_conversation_creator_created_at_index").on(
       table.conversationId,
       table.createdByWorkosUserId,

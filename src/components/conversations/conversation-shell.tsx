@@ -2,7 +2,7 @@
 
 import { RiArrowDownSLine } from "@remixicon/react";
 import { cn } from "cn";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { AGENT_KINDS, modeHref, type AgentKindId } from "@/agents/agent-kinds";
 import { ConversationDetailsPanel } from "@/components/conversations/conversation-details-panel";
@@ -24,12 +24,14 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import { WorkspaceHeaderContent } from "@/components/workspace/workspace-header-slot";
 
 import type {
   PanelLayout,
   PersistedActivity,
   PersistedMessage,
 } from "./conversation-types";
+import type { ComposerSkill } from "@/components/conversations/skill-picker";
 import type { ConversationPlanStep } from "@/db/schema";
 
 interface ConversationShellProps {
@@ -40,7 +42,9 @@ interface ConversationShellProps {
   activities: PersistedActivity[];
   project?: { id: string; name: string; sharedMemoryEnabled: boolean };
   projects: { id: string; name: string }[];
-  attachments: { id: string; filename: string }[];
+  attachments: { id: string; filename: string; messageId: string | null }[];
+  hasConnector: boolean;
+  skills: ComposerSkill[];
   scratchpad: string;
   plan: ConversationPlanStep[];
   initialPanelLayout?: PanelLayout;
@@ -52,13 +56,16 @@ function AttachmentChips({
 }: {
   attachments: ConversationShellProps["attachments"];
 }) {
-  if (attachments.length === 0) return null;
+  const unscoped = attachments.filter(
+    (attachment) => attachment.messageId === null,
+  );
+  if (unscoped.length === 0) return null;
   return (
     <ul
       className="mx-auto mb-3 flex w-full max-w-3xl flex-wrap gap-2"
       aria-label="Attachments"
     >
-      {attachments.map((attachment) => (
+      {unscoped.map((attachment) => (
         <li key={attachment.id}>
           <Badge className="h-7 max-w-64 gap-1 pr-1 pl-2" variant="outline">
             <a
@@ -83,6 +90,8 @@ function AttachmentChips({
 interface ComposerFooterProps {
   agentName: string;
   attachments: ConversationShellProps["attachments"];
+  hasConnector: boolean;
+  skills: ComposerSkill[];
   conversationId: string;
   kind: AgentKindId;
   runtimeConfigured: boolean;
@@ -92,6 +101,8 @@ interface ComposerFooterProps {
 function ComposerFooter({
   agentName,
   attachments,
+  hasConnector,
+  skills,
   conversationId,
   kind,
   runtimeConfigured,
@@ -103,6 +114,7 @@ function ComposerFooter({
       {runtimeConfigured ? (
         <MessageComposer
           agentName={agentName}
+          hasConnector={hasConnector}
           conversationId={conversationId}
           draft={stream.draft}
           isLoading={stream.isLoading}
@@ -111,6 +123,7 @@ function ComposerFooter({
           onSend={stream.send}
           placeholder={AGENT_KINDS[kind].placeholder}
           setDraft={stream.setDraft}
+          skills={skills}
           streamError={stream.streamError}
           timeoutError={stream.timeoutError}
         />
@@ -127,12 +140,6 @@ function ComposerFooter({
   );
 }
 
-/**
- * Below the composer on desktop's side-by-side rail, this same content is a
- * collapsed-by-default drawer on mobile so it never crowds out the chat. The
- * open state is owned by the parent (rather than local) so the header's plan
- * badge can open this drawer too.
- */
 function MobileDetailsDisclosure({
   children,
   isOpen,
@@ -165,16 +172,21 @@ function MobileDetailsDisclosure({
   );
 }
 
-/**
- * An open conversation: header, transcript with the docked composer, and the
- * details rail (activity, notes) — a resizable side panel on desktop, a
- * collapsed-by-default drawer above the composer on mobile.
- */
 export function ConversationShell(props: ConversationShellProps) {
   const { kind, conversation, agent, project } = props;
+  const messagesWithAttachments = useMemo(
+    () =>
+      props.messages.map((message) => ({
+        ...message,
+        attachments: props.attachments.filter(
+          (attachment) => attachment.messageId === message.id,
+        ),
+      })),
+    [props.attachments, props.messages],
+  );
   const stream = useConversationStream({
     conversationId: conversation.id,
-    initialMessages: props.messages,
+    initialMessages: messagesWithAttachments,
     initialActivities: props.activities,
   });
   const panels = usePanelLayout(props.initialPanelLayout);
@@ -198,6 +210,7 @@ export function ConversationShell(props: ConversationShellProps) {
       activities={stream.activities}
       agentName={agent.name}
       completion={stream.completion}
+      conversationId={conversation.id}
       isDetailsPanelVisible={panels.isDesktop}
       isLoading={stream.isLoading}
       messages={stream.messages}
@@ -215,32 +228,29 @@ export function ConversationShell(props: ConversationShellProps) {
     <ComposerFooter
       agentName={agent.name}
       attachments={props.attachments}
+      hasConnector={props.hasConnector}
       conversationId={conversation.id}
       kind={kind}
       runtimeConfigured={props.runtimeConfigured}
+      skills={props.skills}
       stream={stream}
     />
   );
 
   return (
-    // Stacks the workspace shell's header with this view's own
-    // ConversationHeader rather than merging them into one row: the shell's
-    // header renders once at the layout level while ConversationHeader needs
-    // per-conversation data (agent identity, back link, actions) that only
-    // this page component has, so merging would need a header-content slot
-    // threaded across the layout/page boundary — deferred as out of scope
-    // for a consistency pass, left for a future dedicated change.
-    <main className="flex h-[calc(100svh-var(--header-height)*2)] flex-col overflow-hidden bg-background">
-      <ConversationHeader
-        agent={agent}
-        backHref={backHref}
-        conversation={conversation}
-        kind={kind}
-        onOpenPlan={openPlan}
-        plan={props.plan}
-        project={project}
-        projects={props.projects}
-      />
+    <main className="flex h-[calc(100svh-var(--header-height))] flex-col overflow-hidden bg-background">
+      <WorkspaceHeaderContent>
+        <ConversationHeader
+          agent={agent}
+          backHref={backHref}
+          conversation={conversation}
+          kind={kind}
+          onOpenPlan={openPlan}
+          plan={props.plan}
+          project={project}
+          projects={props.projects}
+        />
+      </WorkspaceHeaderContent>
 
       <section className="min-h-0 flex-1 overflow-hidden">
         {panels.isDesktop ? (
@@ -255,11 +265,6 @@ export function ConversationShell(props: ConversationShellProps) {
               defaultSize={`${String(panels.layout.conversation)}%`}
               id="conversation"
               minSize="45%"
-              // react-resizable-panels hardcodes overflow: auto on its inner
-              // wrapper div, which can't be reached via className. Left as
-              // auto, it becomes a second scroll container around the
-              // transcript's own overflow-y-auto region, showing two
-              // scrollbars for one scrollable area.
               style={{ overflow: "hidden" }}
             >
               <div className="flex h-full min-h-0 min-w-0 flex-col">

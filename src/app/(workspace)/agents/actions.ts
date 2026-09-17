@@ -43,6 +43,7 @@ const agentFormSchema = z.object({
   tone: z.string().trim().max(200).optional(),
   outputFormat: z.string().trim().max(1000).optional(),
   enabledToolIds: z.array(z.enum(TOOL_IDS)),
+  enabledSkillIds: z.array(z.uuid()),
 });
 
 /**
@@ -60,6 +61,7 @@ function agentFromForm(
     tone: optionalText(formData, "tone"),
     outputFormat: optionalText(formData, "outputFormat"),
     enabledToolIds: formData.getAll("enabledToolIds"),
+    enabledSkillIds: formData.getAll("enabledSkillIds"),
   });
   if (!parsed.success) {
     return {
@@ -188,6 +190,7 @@ export async function duplicateAgentAction(
     tone: source.tone,
     outputFormat: source.outputFormat,
     enabledToolIds: source.enabledToolIds,
+    enabledSkillIds: source.enabledSkillIds,
   });
   revalidatePath("/", "layout");
   return {

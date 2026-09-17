@@ -2,6 +2,7 @@ import { withAuth } from "@workos-inc/authkit-nextjs";
 import { redirect } from "next/navigation";
 
 import { ComposerPreferencesProvider } from "@/components/conversations/composer-preferences";
+import { WorkspaceHeaderSlotProvider } from "@/components/workspace/workspace-header-slot";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
 import { listConversations } from "@/conversations/conversation-repository";
 import { listLocalWorkspacesForUser } from "@/organizations/local-workspace";
@@ -10,6 +11,7 @@ import {
   getWorkspaceSession,
   isWorkspaceSession,
 } from "@/organizations/workspace-session";
+import { getPlatformAdminRole } from "@/platform/platform-admin-repository";
 import { getUserPreferences } from "@/users/user-preference-repository";
 
 const RECENT_CONVERSATIONS = 50;
@@ -27,6 +29,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/">) {
     workosOrganizations,
     localWorkspaces,
     recentConversations,
+    platformAdminRole,
   ] = await Promise.all([
     getUserPreferences(user.id),
     listUserOrganizations(user.id),
@@ -34,6 +37,7 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/">) {
     organizationId
       ? listConversations({ organizationId, userId: user.id })
       : Promise.resolve([]),
+    getPlatformAdminRole(user.id),
   ]);
   const organizations = [
     ...workosOrganizations,
@@ -47,23 +51,26 @@ export default async function WorkspaceLayout({ children }: LayoutProps<"/">) {
     <ComposerPreferencesProvider
       sendMessageShortcut={preferences.sendMessageShortcut}
     >
-      <WorkspaceShell
-        activeOrganizationId={organizationId}
-        organizations={organizations}
-        recentConversations={recentConversations
-          .slice(0, RECENT_CONVERSATIONS)
-          .map((conversation) => ({
-            id: conversation.id,
-            kind: conversation.kind,
-            title: conversation.title,
-            agentName: conversation.agentName,
-            preview: conversation.latestMessagePreview,
-            updatedAt: conversation.updatedAt.toISOString(),
-          }))}
-        user={{ email: user.email, name: user.firstName }}
-      >
-        {children}
-      </WorkspaceShell>
+      <WorkspaceHeaderSlotProvider>
+        <WorkspaceShell
+          activeOrganizationId={organizationId}
+          isPlatformAdmin={Boolean(platformAdminRole)}
+          organizations={organizations}
+          recentConversations={recentConversations
+            .slice(0, RECENT_CONVERSATIONS)
+            .map((conversation) => ({
+              id: conversation.id,
+              kind: conversation.kind,
+              title: conversation.title,
+              agentName: conversation.agentName,
+              preview: conversation.latestMessagePreview,
+              updatedAt: conversation.updatedAt.toISOString(),
+            }))}
+          user={{ email: user.email, name: user.firstName }}
+        >
+          {children}
+        </WorkspaceShell>
+      </WorkspaceHeaderSlotProvider>
     </ComposerPreferencesProvider>
   );
 }

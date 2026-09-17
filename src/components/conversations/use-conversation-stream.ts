@@ -7,15 +7,23 @@ import { activitiesSince, useActivityPolling } from "./use-activity-polling";
 import { useInitialMessage } from "./use-initial-message";
 import { useTranscript } from "./use-transcript";
 
-import type { PersistedActivity, PersistedMessage } from "./conversation-types";
+import type {
+  MessageSendOptions,
+  PersistedActivity,
+  PersistedMessage,
+} from "./conversation-types";
 
 export type { TransientTurn } from "./use-transcript";
 
-const RESPONSE_TIMEOUT_MS = 60_000;
+// Must stay above the server's own STREAM_TIMEOUT_MS (conversation-turn.ts,
+// 75s) — otherwise the client aborts a turn that's still legitimately
+// working (a tool call, a multi-step plan) before the server's own timeout
+// ever gets a chance to fail it gracefully and persist a partial reply.
+const RESPONSE_TIMEOUT_MS = 155_000;
 // A stop needs the server's failTurn to persist the partial reply before
 // `sync` re-fetches the transcript; long enough for that round trip, short
 // enough that the pause after clicking Stop isn't itself noticeable.
-const STOP_SYNC_DELAY_MS = 500;
+const STOP_SYNC_DELAY_MS = 5000;
 const TIMEOUT_MESSAGE =
   "The response timed out. The request may still have completed; review the message before sending it again.";
 
@@ -70,7 +78,7 @@ export function useConversationStream(input: {
   );
 
   const send = useCallback(
-    (raw: string) => {
+    (raw: string, options: MessageSendOptions = {}) => {
       const prompt = raw.trim();
       if (!prompt || isLoading) return;
       lastPrompt.current = prompt;
@@ -80,13 +88,13 @@ export function useConversationStream(input: {
       setInput("");
       setStreamError(undefined);
       setTimeoutError(undefined);
-      void complete(prompt, { body: { mode: "send" } });
+      void complete(prompt, { body: { mode: "send", ...options } });
     },
     [complete, isLoading, setCompletion, setInput],
   );
 
   const editMessage = useCallback(
-    (messageId: string, content: string) => {
+    (messageId: string, content: string, options: MessageSendOptions = {}) => {
       const prompt = content.trim();
       if (!prompt || isLoading) return;
       transcript.truncateFrom(messageId);
@@ -96,7 +104,7 @@ export function useConversationStream(input: {
       setCompletion("");
       setStreamError(undefined);
       setTimeoutError(undefined);
-      void complete(prompt, { body: { mode: "edit", messageId } });
+      void complete(prompt, { body: { mode: "edit", messageId, ...options } });
     },
     [complete, isLoading, setCompletion, transcript],
   );

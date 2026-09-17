@@ -61,17 +61,34 @@ export const runtimeRequestSchema = z.object({
   worker: z.object({
     id: z.uuid(),
     instructions: z.string().min(1).max(20_000),
+    // A Mastra model-router id: "<provider>/<model>", e.g.
+    // "kilo/kilo-auto/free", "vercel/openai/gpt-4o", or "openai/gpt-4o-mini"
+    // for a custom OpenAI-compatible gateway. Not tied to one provider —
+    // see `model-gateways/model-gateway-repository.ts` for how an
+    // organization's chosen model resolves into this plus the credential
+    // fields below.
     modelId: z
       .string()
-      .regex(/^kilo\/[a-z0-9][a-z0-9._:-]*(?:\/[a-z0-9][a-z0-9._:-]*)*$/i)
+      .regex(/^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._:/-]*$/i)
       .max(200),
+    // The gateway credential to call `modelId` with, resolved server-side
+    // from an admin-configured `model_gateways` row — never a secret this
+    // repo stores long-term. Omitted for a request pilot-ai must still
+    // resolve from its own environment (legacy/no gateway configured yet).
+    gatewayApiKey: z.string().min(1).max(2000).optional(),
+    // Only set for an "openai-compatible" gateway; kilo/vercel-ai-gateway
+    // resolve their URL from Mastra's own built-in provider registry.
+    gatewayBaseUrl: z.url().max(500).optional(),
     baseAgentId: z.enum(AGENT_KIND_IDS),
     enabledToolIds: z.array(z.string()).max(20),
   }),
   conversationId: z.uuid(),
   message: z.string().min(1).max(10_000),
   executionId: z.uuid(),
-  allowedToolIds: z.array(toolIdSchema).max(5),
+  // Mirrors worker.enabledToolIds' cap below; pilot-ai's own copy of this
+  // contract must be raised in step, since this file only mirrors it by
+  // hand (see the file-level doc comment).
+  allowedToolIds: z.array(toolIdSchema).max(20),
   project: z
     .object({
       id: z.uuid(),

@@ -27,9 +27,9 @@ const RUNTIME_ROUTE_BODIES = {
   "/api/runtime/connectors/execute": {
     organizationId: "org_forged",
     executionId: "00000000-0000-4000-8000-000000000000",
-    toolId: "connector-github",
-    action: "search-issues",
-    params: { query: "bug" },
+    toolId: "connector",
+    action: "list-connectors",
+    params: {},
   },
 } as const;
 

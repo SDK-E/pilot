@@ -1,4 +1,5 @@
 import { updateOrganizationCapabilitiesAction } from "@/app/(workspace)/settings/actions";
+import { FormSubmitToast } from "@/components/settings/form-submit-toast";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -17,10 +18,6 @@ import {
 } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
 
-/**
- * Which of the risk-gated tools (public web search, the code sandbox) the
- * organization's agents may use at all. Admins only.
- */
 export function AgentCapabilitiesSection({
   webSearchEnabled,
   codeSandboxEnabled,
@@ -74,6 +71,7 @@ export function AgentCapabilitiesSection({
           <Button type="submit" variant="outline">
             Save agent capabilities
           </Button>
+          <FormSubmitToast message="Agent capabilities saved" />
         </CardFooter>
       </form>
     </Card>

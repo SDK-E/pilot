@@ -19,12 +19,6 @@ interface ConversationHeaderProps {
   onOpenPlan: () => void;
 }
 
-/**
- * The `--header-height` bar above the transcript: back link, agent identity,
- * and conversation actions. `ConversationShell` accounts for this header's
- * own height on top of the workspace shell's header when sizing the
- * transcript (see the comment there on why these stay two separate bars).
- */
 export function ConversationHeader({
   kind,
   conversation,
@@ -36,7 +30,7 @@ export function ConversationHeader({
   onOpenPlan,
 }: ConversationHeaderProps) {
   return (
-    <header className="flex h-(--header-height) shrink-0 items-center justify-between gap-2 border-b px-4">
+    <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
       <Link
         className="inline-flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
         href={backHref}
@@ -76,6 +70,6 @@ export function ConversationHeader({
           title={conversation.title}
         />
       </div>
-    </header>
+    </div>
   );
 }

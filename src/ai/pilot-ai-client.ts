@@ -51,6 +51,12 @@ async function runtimeHeaders(request: RuntimeRequest) {
     "x-pilot-execution-id": request.executionId,
     "x-pilot-base-agent-id": request.worker.baseAgentId,
     "x-pilot-allowed-tool-ids": JSON.stringify(request.allowedToolIds),
+    ...(request.worker.gatewayApiKey && {
+      "x-pilot-model-gateway-api-key": request.worker.gatewayApiKey,
+    }),
+    ...(request.worker.gatewayBaseUrl && {
+      "x-pilot-model-gateway-base-url": request.worker.gatewayBaseUrl,
+    }),
     ...(request.project && {
       "x-pilot-project-id": request.project.id,
       "x-pilot-project-instructions": request.project.instructions ?? "",

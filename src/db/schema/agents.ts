@@ -35,6 +35,10 @@ export const workers = pgTable(
       .$type<string[]>()
       .notNull()
       .default([]),
+    enabledSkillIds: jsonb("enabled_skill_ids")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
     knowledgeSourceIds: jsonb("knowledge_source_ids")
       .$type<string[]>()
       .notNull()

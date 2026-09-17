@@ -20,6 +20,7 @@ export interface AgentConfiguration {
   tone?: string | null;
   outputFormat?: string | null;
   enabledToolIds: string[];
+  enabledSkillIds?: string[];
 }
 
 export interface OrganizationContext {
@@ -38,6 +39,7 @@ const agentColumns = {
   tone: workers.tone,
   outputFormat: workers.outputFormat,
   enabledToolIds: workers.enabledToolIds,
+  enabledSkillIds: workers.enabledSkillIds,
   archived: workers.archived,
   createdAt: workers.createdAt,
   updatedAt: workers.updatedAt,

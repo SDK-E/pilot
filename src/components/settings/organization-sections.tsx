@@ -3,10 +3,10 @@ import {
   generateDomainVerificationLinkAction,
   renameOrganizationAction,
   updateDefaultAgentAction,
-  updateModelPolicyAction,
   verifyOrganizationDomainAction,
 } from "@/app/(workspace)/settings/actions";
 import { DeleteOrganizationButton } from "@/components/settings/delete-organization-button";
+import { FormSubmitToast } from "@/components/settings/form-submit-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,14 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldTitle,
-} from "@/components/ui/field";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -33,13 +26,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 
 import type { OrganizationDomain } from "@/organizations/local-domain-verification";
 
-/**
- * Which agent is preselected when a member starts a conversation.
- */
 export function DefaultAgentSection({
   defaultAgentId,
   agents,
@@ -88,6 +77,7 @@ export function DefaultAgentSection({
             <Button type="submit" variant="outline">
               Save default agent
             </Button>
+            <FormSubmitToast message="Default agent saved" />
           </CardFooter>
         ) : null}
       </form>
@@ -95,70 +85,6 @@ export function DefaultAgentSection({
   );
 }
 
-/**
- * The organization's primary model and retry behaviour. Admins only.
- */
-export function ModelPolicySection({
-  primaryModelId,
-  retryEnabled,
-}: {
-  primaryModelId: string;
-  retryEnabled: boolean;
-}) {
-  return (
-    <Card>
-      <form action={updateModelPolicyAction}>
-        <CardHeader>
-          <CardTitle>Model policy</CardTitle>
-          <CardDescription>
-            The primary Kilo Gateway model. Pilot can retry a failed reply once
-            with the free model.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="primary-model">Primary model</FieldLabel>
-              <Input
-                className="font-mono"
-                defaultValue={primaryModelId}
-                id="primary-model"
-                name="primaryModelId"
-                required
-              />
-            </Field>
-            <Field orientation="horizontal">
-              <FieldContent>
-                <FieldTitle>Retry once with the free model</FieldTitle>
-                <FieldDescription>
-                  When the primary model fails, send the message again through
-                  kilo-auto/free before reporting an error.
-                </FieldDescription>
-              </FieldContent>
-              <Switch
-                aria-label="Retry once with the free model"
-                defaultChecked={retryEnabled}
-                name="retryEnabled"
-                value="true"
-              />
-            </Field>
-          </FieldGroup>
-        </CardContent>
-        <CardFooter className="pt-4">
-          <Button type="submit" variant="outline">
-            Save model policy
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
-  );
-}
-
-/**
- * Sends an admin to the WorkOS Admin Portal to verify the organization's
- * email domain. Once verified, teammates who sign up with a matching work
- * email are added automatically, without an invite.
- */
 export function DomainVerificationSection() {
   return (
     <Card>
@@ -180,11 +106,6 @@ export function DomainVerificationSection() {
   );
 }
 
-/**
- * Local-workspace equivalent of the WorkOS Admin Portal flow above: add a
- * company domain, prove ownership with a DNS TXT record, and teammates who
- * sign up with a matching email join this workspace automatically.
- */
 export function LocalDomainVerificationSection({
   domains,
 }: {
@@ -233,6 +154,7 @@ export function LocalDomainVerificationSection({
                       <Button size="sm" type="submit" variant="outline">
                         Verify
                       </Button>
+                      <FormSubmitToast message="Domain re-checked" />
                     </form>
                   ) : null}
                 </div>
@@ -253,16 +175,13 @@ export function LocalDomainVerificationSection({
           <Button type="submit" variant="outline">
             Add domain
           </Button>
+          <FormSubmitToast message="Domain added" />
         </form>
       </CardFooter>
     </Card>
   );
 }
 
-/**
- * Rename a local workspace. Not offered for the WorkOS-backed SDK
- * Enterprises organization — that name is managed in WorkOS.
- */
 export function WorkspaceNameSection({
   organizationName,
 }: {
@@ -293,16 +212,13 @@ export function WorkspaceNameSection({
           <Button type="submit" variant="outline">
             Save name
           </Button>
+          <FormSubmitToast message="Workspace name saved" />
         </CardFooter>
       </form>
     </Card>
   );
 }
 
-/**
- * Permanently delete a local workspace. Owner only, since it destroys every
- * member's data, not just the requester's own.
- */
 export function DeleteWorkspaceSection({
   organizationId,
   organizationName,

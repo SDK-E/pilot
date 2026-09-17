@@ -45,10 +45,12 @@ export function createSkillActivity(input: { skillId: string }) {
   if (!isSafeSkillId(input.skillId)) {
     throw new Error("Invalid runtime skill identifier.");
   }
-  const name = input.skillId
-    .split("/")
-    .at(-1)
-    ?.replaceAll(/[._-]+/g, " ")
+  const lastSegment = input.skillId.split("/").at(-1) ?? "";
+  // A marketplace id often ends in a version, e.g. "web-search-instant-1.1.0";
+  // strip it before formatting or "1.1.0" reads as three separate words.
+  const withoutVersion = lastSegment.replace(/[._-]v?\d+(?:\.\d+)*$/i, "");
+  const name = (withoutVersion || lastSegment)
+    .replaceAll(/[._-]+/g, " ")
     .replaceAll(/\b\w/g, (letter) => letter.toUpperCase())
     .slice(0, 80);
   return {

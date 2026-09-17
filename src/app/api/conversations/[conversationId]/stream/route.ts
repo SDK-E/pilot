@@ -40,13 +40,28 @@ function error(message: string, status: number): Response {
 }
 
 const promptField = z.string().trim().min(1).max(10_000);
+// The composer's per-message connector toggle and skill picker. Omitted
+// connectorToolIds means every available connector stays on; see
+// `MessageToolOverrides` in tool-authorization.ts.
+const connectorToolIdsField = z.array(z.string()).max(20).optional();
+const skillIdsField = z.array(z.uuid()).max(10).optional();
+const attachmentIdsField = z.array(z.uuid()).max(20).optional();
 
 const inputSchema = z.discriminatedUnion("mode", [
-  z.object({ mode: z.literal("send"), prompt: promptField }),
+  z.object({
+    mode: z.literal("send"),
+    prompt: promptField,
+    connectorToolIds: connectorToolIdsField,
+    skillIds: skillIdsField,
+    attachmentIds: attachmentIdsField,
+  }),
   z.object({
     mode: z.literal("edit"),
     messageId: z.uuid(),
     prompt: promptField,
+    connectorToolIds: connectorToolIdsField,
+    skillIds: skillIdsField,
+    attachmentIds: attachmentIdsField,
   }),
   z.object({ mode: z.literal("regenerate"), messageId: z.uuid() }),
   z.object({ mode: z.literal("continue"), messageId: z.uuid() }),
@@ -71,16 +86,23 @@ function isResponse(value: unknown): value is Response {
  * Rewrites a sent user message: forgets it and everything after it, then
  * resends the edited text as a normal new turn.
  */
+interface EditRequest {
+  messageId: string;
+  prompt: string;
+  connectorToolIds?: readonly string[];
+  skillIds?: readonly string[];
+  attachmentIds?: readonly string[];
+}
+
 async function startEdit(
   turn: Turn,
-  messageId: string,
-  prompt: string,
+  edit: EditRequest,
   clientSignal: AbortSignal,
 ): Promise<Response | ReadableStream<Uint8Array>> {
   const target = await getConversationMessage(
     turn,
     turn.conversationId,
-    messageId,
+    edit.messageId,
   );
   if (target?.role !== "user")
     return error("This message can't be edited.", 400);
@@ -93,8 +115,18 @@ async function startEdit(
     { ...turn, agentId: turn.agent.id },
     turn.conversationId,
     target.createdAt,
+    edit.attachmentIds ?? [],
   );
-  return streamMessage({ ...turn, message: prompt }, clientSignal);
+  return streamMessage(
+    {
+      ...turn,
+      message: edit.prompt,
+      requestedConnectorToolIds: edit.connectorToolIds,
+      activeSkillIds: edit.skillIds,
+      attachmentIds: edit.attachmentIds,
+    },
+    clientSignal,
+  );
 }
 
 /**
@@ -186,9 +218,28 @@ function runTurn(
   clientSignal: AbortSignal,
 ): Promise<Response | ReadableStream<Uint8Array>> {
   if (input.mode === "send")
-    return streamMessage({ ...turn, message: input.prompt }, clientSignal);
+    return streamMessage(
+      {
+        ...turn,
+        message: input.prompt,
+        requestedConnectorToolIds: input.connectorToolIds,
+        activeSkillIds: input.skillIds,
+        attachmentIds: input.attachmentIds,
+      },
+      clientSignal,
+    );
   if (input.mode === "edit")
-    return startEdit(turn, input.messageId, input.prompt, clientSignal);
+    return startEdit(
+      turn,
+      {
+        messageId: input.messageId,
+        prompt: input.prompt,
+        connectorToolIds: input.connectorToolIds,
+        skillIds: input.skillIds,
+        attachmentIds: input.attachmentIds,
+      },
+      clientSignal,
+    );
   if (input.mode === "regenerate")
     return startRegenerate(turn, input.messageId, clientSignal);
   return startContinue(turn, input.messageId, clientSignal);

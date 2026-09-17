@@ -1,6 +1,14 @@
 import {
   RiErrorWarningLine,
+  RiFileSearchLine,
   RiFileTextLine,
+  RiGithubFill,
+  RiGlobalLine,
+  RiListCheck3,
+  RiQuestionLine,
+  RiSearchLine,
+  RiStickyNoteLine,
+  RiTerminalBoxLine,
   type RemixiconComponentType,
 } from "@remixicon/react";
 
@@ -16,6 +24,10 @@ interface ToolLabels {
   runningMany?: (count: number) => string;
   doneMany?: (count: number) => string;
   failedMany?: (count: number) => string;
+  // Lets a step be told apart from the rest of the trace at a glance, the
+  // way Claude Code's tool calls each carry their own glyph — reserved for
+  // named tools, not stamped on every line as pure decoration.
+  icon?: RemixiconComponentType;
 }
 
 // One line of present/past-tense copy per tool, so a call reads as
@@ -26,41 +38,49 @@ const TOOL_LABELS: Record<string, ToolLabels> = {
     running: "Searching the web",
     done: "Searched the web",
     failed: "Web search failed",
+    icon: RiSearchLine,
   },
   langsearch: {
     running: "Searching the web",
     done: "Searched the web",
     failed: "Web search failed",
+    icon: RiSearchLine,
   },
   browser: {
     running: "Using the browser",
     done: "Used the browser",
     failed: "Browser use failed",
+    icon: RiGlobalLine,
   },
   "file-analysis": {
     running: "Analyzing a file",
     done: "Analyzed a file",
     failed: "File analysis failed",
+    icon: RiFileSearchLine,
   },
   github: {
     running: "Using GitHub",
     done: "Used GitHub",
     failed: "GitHub request failed",
+    icon: RiGithubFill,
   },
   scratchpad: {
     running: "Updating the scratchpad",
     done: "Updated the scratchpad",
     failed: "Scratchpad update failed",
+    icon: RiStickyNoteLine,
   },
   "ask-user": {
     running: "Waiting for your input",
     done: "Got your input",
     failed: "Didn't get an answer",
+    icon: RiQuestionLine,
   },
   plan: {
     running: "Updating the plan",
     done: "Updated the plan",
     failed: "Plan update failed",
+    icon: RiListCheck3,
   },
   "code-sandbox": {
     running: "Running a command",
@@ -69,6 +89,7 @@ const TOOL_LABELS: Record<string, ToolLabels> = {
     runningMany: (count) => `Running ${String(count)} commands`,
     doneMany: (count) => `Ran ${String(count)} commands`,
     failedMany: (count) => `Failed to run ${String(count)} commands`,
+    icon: RiTerminalBoxLine,
   },
 };
 
@@ -80,10 +101,8 @@ const FALLBACK_TOOL_LABELS: ToolLabels = {
 
 export interface ActivityStepPresentation {
   label: string;
-  // Undefined keeps the step on ChainOfThoughtStep's plain default dot: most
-  // steps read fine as text alone, so an icon is reserved for the two cases
-  // that genuinely change how a line should be read (a failure, or a named
-  // skill), not stamped on every line as decoration.
+  // Undefined keeps the step on ChainOfThoughtStep's plain default dot —
+  // only tools with a mapped icon (or a failure/skill step) get one.
   icon?: RemixiconComponentType;
   isFailed: boolean;
 }
@@ -121,7 +140,7 @@ export function describeActivityStep(
       : labelByStatus[step.status];
   return {
     label,
-    icon: isFailed ? RiErrorWarningLine : undefined,
+    icon: isFailed ? RiErrorWarningLine : tool.icon,
     isFailed,
   };
 }

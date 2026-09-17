@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence } from "motion/react";
 import { useCallback, useState } from "react";
 
 import {
@@ -12,15 +13,18 @@ import {
   MessageContent,
   MessageResponse,
 } from "@/components/ai-elements/message";
-import {
-  AssistantMessage,
-  TransientTurnReply,
-} from "@/components/conversations/assistant-message";
+import { TransientTurnReply } from "@/components/conversations/assistant-message";
 import { LiveConversationActivity } from "@/components/conversations/live-conversation-activity";
+import { MessageAppear } from "@/components/conversations/message-appear";
 import {
   MESSAGE_RESPONSE_COMPONENTS,
   MESSAGE_RESPONSE_CONTROLS,
 } from "@/components/conversations/message-response-controls";
+import {
+  groupMessagesForDisplay,
+  renderGroup,
+} from "@/components/conversations/message-turn-groups";
+import { StreamingCursor } from "@/components/conversations/streaming-cursor";
 import { UserMessage } from "@/components/conversations/user-message";
 import {
   Empty,
@@ -29,7 +33,11 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty";
 
-import type { PersistedActivity, PersistedMessage } from "./conversation-types";
+import type {
+  MessageSendOptions,
+  PersistedActivity,
+  PersistedMessage,
+} from "./conversation-types";
 import type { TransientTurn } from "./use-conversation-stream";
 
 const COPIED_RESET_MS = 2000;
@@ -48,54 +56,6 @@ function useCopyMessage() {
     }
   }, []);
   return { copiedId, copy };
-}
-
-interface RenderMessageOptions {
-  activities: PersistedActivity[];
-  copiedId?: string;
-  copy: (id: string, content: string) => void;
-  isLoading: boolean;
-  lastMessageId?: string;
-  pendingPrompt?: string;
-  onAnswer: (text: string) => void;
-  onEditMessage: (messageId: string, content: string) => void;
-  onRegenerate: (messageId: string) => void;
-  onContinue: (messageId: string) => void;
-}
-
-function renderMessage(
-  message: PersistedMessage,
-  options: RenderMessageOptions,
-) {
-  if (message.role === "user") {
-    return (
-      <UserMessage
-        content={message.content}
-        id={message.id}
-        isLoading={options.isLoading}
-        key={message.id}
-        onEdit={options.onEditMessage}
-      />
-    );
-  }
-  const isLast = message.id === options.lastMessageId && !options.pendingPrompt;
-  return (
-    <AssistantMessage
-      activities={options.activities.filter(
-        (activity) => activity.conversationMessageId === message.id,
-      )}
-      canContinue={isLast && Boolean(message.isPartial)}
-      canRegenerate={isLast && !message.isPartial}
-      copiedId={options.copiedId}
-      isLoading={options.isLoading}
-      key={message.id}
-      message={message}
-      onAnswer={options.onAnswer}
-      onContinue={options.onContinue}
-      onCopy={options.copy}
-      onRegenerate={options.onRegenerate}
-    />
-  );
 }
 
 function isTranscriptEmpty(input: {
@@ -123,12 +83,15 @@ function StreamingReply({
     <Message from="assistant">
       <MessageContent>
         {completion ? (
-          <MessageResponse
-            components={MESSAGE_RESPONSE_COMPONENTS}
-            controls={MESSAGE_RESPONSE_CONTROLS}
-          >
-            {completion}
-          </MessageResponse>
+          <span className="inline">
+            <MessageResponse
+              components={MESSAGE_RESPONSE_COMPONENTS}
+              controls={MESSAGE_RESPONSE_CONTROLS}
+            >
+              {completion}
+            </MessageResponse>
+            {isLoading ? <StreamingCursor /> : null}
+          </span>
         ) : null}
         {isLoading ? (
           <LiveConversationActivity
@@ -143,6 +106,7 @@ function StreamingReply({
 
 interface MessageListProps {
   agentName: string;
+  conversationId: string;
   messages: PersistedMessage[];
   activities: PersistedActivity[];
   transientTurns: TransientTurn[];
@@ -152,7 +116,11 @@ interface MessageListProps {
   isDetailsPanelVisible: boolean;
   streamActivities: PersistedActivity[];
   onAnswer: (text: string) => void;
-  onEditMessage: (messageId: string, content: string) => void;
+  onEditMessage: (
+    messageId: string,
+    content: string,
+    options: MessageSendOptions,
+  ) => void;
   onRegenerate: (messageId: string) => void;
   onContinue: (messageId: string) => void;
 }
@@ -165,6 +133,7 @@ interface MessageListProps {
  */
 export function MessageList({
   agentName,
+  conversationId,
   messages,
   activities,
   transientTurns,
@@ -200,35 +169,46 @@ export function MessageList({
             </EmptyHeader>
           </Empty>
         ) : null}
-        {messages.map((message) =>
-          renderMessage(message, {
-            activities,
-            copiedId,
-            copy: (id, content) => void copy(id, content),
-            isLoading,
-            lastMessageId,
-            onAnswer,
-            onContinue,
-            onEditMessage,
-            onRegenerate,
-            pendingPrompt,
-          }),
-        )}
-        {transientTurns.map((turn) => (
-          <div key={turn.id}>
-            <UserMessage content={turn.prompt} />
-            <TransientTurnReply turn={turn} />
-          </div>
-        ))}
-        {pendingPrompt ? <UserMessage content={pendingPrompt} /> : null}
-        {isLoading || pendingPrompt ? (
-          <StreamingReply
-            completion={completion}
-            isDetailsPanelVisible={isDetailsPanelVisible}
-            isLoading={isLoading}
-            streamActivities={streamActivities}
-          />
-        ) : null}
+        <AnimatePresence initial={false}>
+          {groupMessagesForDisplay(messages).map((group) =>
+            renderGroup(group, {
+              activities,
+              conversationId,
+              copiedId,
+              copy: (id, content) => void copy(id, content),
+              isLoading,
+              lastMessageId,
+              onAnswer,
+              onContinue,
+              onEditMessage,
+              onRegenerate,
+              pendingPrompt,
+            }),
+          )}
+          {transientTurns.map((turn) => (
+            <MessageAppear key={turn.id}>
+              <div className="flex flex-col gap-8">
+                <UserMessage content={turn.prompt} />
+                <TransientTurnReply turn={turn} />
+              </div>
+            </MessageAppear>
+          ))}
+          {pendingPrompt ? (
+            <MessageAppear key="pending-prompt">
+              <UserMessage content={pendingPrompt} />
+            </MessageAppear>
+          ) : null}
+          {isLoading || pendingPrompt ? (
+            <MessageAppear key="streaming-reply">
+              <StreamingReply
+                completion={completion}
+                isDetailsPanelVisible={isDetailsPanelVisible}
+                isLoading={isLoading}
+                streamActivities={streamActivities}
+              />
+            </MessageAppear>
+          ) : null}
+        </AnimatePresence>
       </ConversationContent>
       <ConversationScrollButton />
     </Conversation>

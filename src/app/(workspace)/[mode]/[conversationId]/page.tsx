@@ -4,6 +4,7 @@ import { z } from "zod";
 import { isAgentKindId, modeHref } from "@/agents/agent-kinds";
 import { getAgent } from "@/agents/agent-repository";
 import { ConversationShell } from "@/components/conversations/conversation-shell";
+import { hasActiveCustomConnector } from "@/connectors/connector-definition-repository";
 import { listConversationAttachments } from "@/conversations/attachment-repository";
 import {
   getConversation,
@@ -12,12 +13,16 @@ import {
 import { listMessageSources } from "@/conversations/message-sources";
 import { getConversationPlan } from "@/conversations/plan-repository";
 import { getConversationScratchpad } from "@/conversations/scratchpad-repository";
+import { isConnectorAvailable } from "@/conversations/tool-authorization";
 import { listConversationActivity } from "@/executions/execution-repository";
+import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
 import { requireWorkspaceSession } from "@/organizations/workspace-session";
 import {
   getProjectMemoryContextForConversation,
   listProjects,
 } from "@/projects/project-repository";
+import { grantedSkillIds } from "@/skills/agent-skill-grants";
+import { listSkills } from "@/skills/skill-repository";
 import { getUserPreferences } from "@/users/user-preference-repository";
 
 import type { Metadata } from "next";
@@ -58,6 +63,9 @@ export default async function ConversationPage({
     scratchpad,
     plan,
     preferences,
+    organizationPreferences,
+    organizationSkills,
+    customConnectorActive,
   ] = await Promise.all([
     listConversationMessages(owner, conversationId),
     listMessageSources(scope),
@@ -68,8 +76,19 @@ export default async function ConversationPage({
     getConversationScratchpad(scope),
     getConversationPlan(scope),
     getUserPreferences(user.id),
+    getOrganizationPreferences(organizationId),
+    listSkills(organizationId),
+    hasActiveCustomConnector(organizationId),
   ]);
   if (!messages) notFound();
+
+  const hasConnector = isConnectorAvailable(agent, {
+    ...organizationPreferences,
+    hasActiveCustomConnector: customConnectorActive,
+  });
+  const skills = organizationSkills.filter((skill) =>
+    grantedSkillIds(agent, organizationSkills).includes(skill.id),
+  );
 
   return (
     <ConversationShell
@@ -87,8 +106,10 @@ export default async function ConversationPage({
       project={project}
       projects={projects}
       attachments={attachments}
+      hasConnector={hasConnector}
       scratchpad={scratchpad}
       plan={plan}
+      skills={skills.map((skill) => ({ id: skill.id, name: skill.name }))}
       initialPanelLayout={preferences.conversationPanelLayout ?? undefined}
       runtimeConfigured={Boolean(process.env.PILOT_AI_RUNTIME_URL?.trim())}
     />

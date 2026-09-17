@@ -6,4 +6,6 @@ export * from "./agents";
 export * from "./conversations";
 export * from "./projects";
 export * from "./executions";
-export * from "./connectors";
+export * from "./connector-definitions";
+export * from "./platform";
+export * from "./skills";

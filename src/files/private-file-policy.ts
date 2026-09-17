@@ -5,11 +5,18 @@ const acceptedPrivateFileTypes = new Set([
   "text/plain",
   "text/markdown",
   "text/csv",
+  "text/html",
+  "application/json",
+  "application/xml",
+  "application/zip",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   "image/jpeg",
   "image/png",
   "image/webp",
+  "image/gif",
+  "image/svg+xml",
 ]);
 
 export function isAcceptedPrivateFile(file: File) {

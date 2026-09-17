@@ -8,8 +8,8 @@ import {
   type RuntimeEvent,
   type RuntimeRequest,
 } from "@/ai/pilot-ai-client";
-import { getAvailableConnectorProviders } from "@/connectors/connector-repository";
-import { buildAttachmentContext } from "@/conversations/attachment-context";
+import { hasActiveCustomConnector } from "@/connectors/connector-definition-repository";
+import { attachConversationAttachmentsToMessage } from "@/conversations/attachment-repository";
 import { appendConversationMessageContent } from "@/conversations/conversation-message-repository";
 import { createConversationMessage } from "@/conversations/conversation-repository";
 import {
@@ -20,10 +20,7 @@ import {
   sanitizeWebResponse,
   saveMessageSources,
 } from "@/conversations/message-sources";
-import {
-  allowedToolIds,
-  type OrganizationCapabilities,
-} from "@/conversations/tool-authorization";
+import { buildRuntimeRequest } from "@/conversations/runtime-request";
 import {
   owner,
   storedCount,
@@ -34,15 +31,15 @@ import {
   startExecution,
 } from "@/executions/execution-repository";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
-import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
+
+import type { OrganizationCapabilities } from "@/conversations/tool-authorization";
 
 export type { TurnInput } from "@/conversations/turn-shared";
 
-const MAX_INSTRUCTIONS_LENGTH = 20_000;
 // pilot-ai's own `maxDuration` for /v1/chat/completions is 90s (pilot-ai/vercel.json).
 // Stay clearly under that so Pilot never races pilot-ai's hard cutoff and tears
 // down a response pilot-ai would otherwise have delivered in time.
-const STREAM_TIMEOUT_MS = 75_000;
+const STREAM_TIMEOUT_MS = 150_000;
 const FALLBACK_MODEL_ID = "kilo/kilo-auto/free";
 
 /**
@@ -69,6 +66,10 @@ async function beginTurn(input: TurnInput, reuseUserMessageId?: string) {
         conversationId: input.conversationId,
         role: "user",
         content: input.message,
+        skillIds: input.activeSkillIds ? [...input.activeSkillIds] : undefined,
+        connectorToolIds: input.requestedConnectorToolIds
+          ? [...input.requestedConnectorToolIds]
+          : undefined,
       });
   if (!userMessage) {
     // The execution already reserved this conversation; leaving it "running"
@@ -81,47 +82,16 @@ async function beginTurn(input: TurnInput, reuseUserMessageId?: string) {
     });
     throw new Error("This conversation is unavailable.");
   }
+  if (!reuseUserMessageId && input.attachmentIds?.length) {
+    await attachConversationAttachmentsToMessage({
+      organizationId: input.organizationId,
+      userId: input.userId,
+      conversationId: input.conversationId,
+      messageId: userMessage.id,
+      attachmentIds: input.attachmentIds,
+    });
+  }
   return { userMessage, execution, startedAt: performance.now() };
-}
-
-async function runtimeRequest(
-  input: TurnInput,
-  executionId: string,
-  modelId: string,
-  capabilities: OrganizationCapabilities,
-): Promise<RuntimeRequest> {
-  const scope = {
-    organizationId: input.organizationId,
-    conversationId: input.conversationId,
-    userId: input.userId,
-  };
-  const [attachmentContext, project] = await Promise.all([
-    buildAttachmentContext({
-      ...scope,
-      maximumCharacters:
-        MAX_INSTRUCTIONS_LENGTH - input.agent.instructions.length - 2,
-    }),
-    getProjectMemoryContextForConversation(scope),
-  ]);
-  return {
-    organizationId: input.organizationId,
-    worker: {
-      ...input.agent,
-      modelId,
-      instructions: attachmentContext
-        ? `${input.agent.instructions}\n\n${attachmentContext}`
-        : input.agent.instructions,
-    },
-    conversationId: input.conversationId,
-    message: input.message,
-    executionId,
-    allowedToolIds: allowedToolIds(input.agent, capabilities),
-    project: project && {
-      id: project.id,
-      instructions: project.instructions ?? undefined,
-      sharedMemoryEnabled: project.sharedMemoryEnabled,
-    },
-  };
 }
 
 export type Turn = Awaited<ReturnType<typeof beginTurn>>;
@@ -130,6 +100,7 @@ async function persistQuestion(
   input: TurnInput,
   turn: Turn,
   event: Extract<RuntimeEvent, { type: "user_input_required" }>,
+  modelId: string,
 ) {
   const message = await createConversationMessage(owner(input), {
     conversationId: input.conversationId,
@@ -137,7 +108,7 @@ async function persistQuestion(
     content: event.question,
     userQuestionOptions: event.options,
     userQuestionSelectionMode: event.selectionMode,
-    modelId: input.agent.modelId,
+    modelId,
     runtimeRunId: event.runId,
     latencyMs: storedCount(Math.round(performance.now() - turn.startedAt)),
   });
@@ -238,23 +209,20 @@ async function runStreamingTurn(
   signal: AbortSignal,
   write: (text: string) => void,
 ) {
-  const [policy, availableConnectorProviders] = await Promise.all([
+  const [policy, customConnectorActive] = await Promise.all([
     getOrganizationPreferences(input.organizationId),
-    getAvailableConnectorProviders({
-      organizationId: input.organizationId,
-      userId: input.userId,
-    }),
+    hasActiveCustomConnector(input.organizationId),
   ]);
   const capabilities: OrganizationCapabilities = {
     ...policy,
-    availableConnectorProviders,
+    hasActiveCustomConnector: customConnectorActive,
   };
   const models = policy.retryEnabled
     ? [policy.primaryModelId, FALLBACK_MODEL_ID]
     : [policy.primaryModelId];
 
   for (const [attempt, modelId] of models.entries()) {
-    const request = await runtimeRequest(
+    const request = await buildRuntimeRequest(
       input,
       turn.execution.id,
       modelId,
@@ -272,7 +240,7 @@ async function runStreamingTurn(
       if (canStreamLive) write(text);
     });
     if (result.event.type === "user_input_required") {
-      await persistQuestion(input, turn, result.event);
+      await persistQuestion(input, turn, result.event, request.worker.modelId);
       return;
     }
     try {
@@ -331,7 +299,11 @@ export async function streamMessage(
         stream.error(
           cause instanceof PilotAiRuntimeError
             ? cause
-            : new Error("Pilot could not complete this message."),
+            : // The client only ever sees this generic message; keep the
+              // real cause on the error so Next's own server-side logging
+              // (which prints the `.cause` chain) still shows what actually
+              // failed instead of the failure being undebuggable.
+              new Error("Pilot could not complete this message.", { cause }),
         );
       } finally {
         clearTimeout(timeout);

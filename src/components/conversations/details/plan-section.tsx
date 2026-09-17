@@ -33,41 +33,37 @@ const STEP_LABEL: Record<ConversationPlanStep["status"], string> = {
 /**
  * The agent's live, visible step-by-step plan for this conversation.
  */
+/**
+ * Renders nothing until the agent has an actual plan — an empty section
+ * that just restates its own purpose adds noise without adding information,
+ * so this (like ActivitySection and NotesSection) stays absent rather than
+ * showing a permanent explainer.
+ */
 export function PlanSection({ steps }: { steps: ConversationPlanStep[] }) {
+  if (steps.length === 0) return null;
   return (
     <section className="space-y-2">
-      <div>
-        <h2 className="text-xs font-medium">Plan</h2>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          The agent&apos;s step-by-step progress on this conversation.
-        </p>
-      </div>
-      {steps.length > 0 ? (
-        <ol className="space-y-1.5">
-          {steps.map((step) => (
-            <li
-              className="flex items-start gap-2 text-xs"
-              key={step.id}
-              title={STEP_LABEL[step.status]}
+      <h2 className="text-xs font-medium">Plan</h2>
+      <ol className="space-y-1.5">
+        {steps.map((step) => (
+          <li
+            className="flex items-start gap-2 text-xs"
+            key={step.id}
+            title={STEP_LABEL[step.status]}
+          >
+            <span className="mt-0.5 shrink-0">{STEP_ICON[step.status]}</span>
+            <span
+              className={
+                step.status === "done"
+                  ? "text-muted-foreground line-through"
+                  : undefined
+              }
             >
-              <span className="mt-0.5 shrink-0">{STEP_ICON[step.status]}</span>
-              <span
-                className={
-                  step.status === "done"
-                    ? "text-muted-foreground line-through"
-                    : undefined
-                }
-              >
-                {step.text}
-              </span>
-            </li>
-          ))}
-        </ol>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          A plan appears here once the agent breaks the work into steps.
-        </p>
-      )}
+              {step.text}
+            </span>
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }

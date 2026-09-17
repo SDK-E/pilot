@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { listConversationAttachments } from "@/conversations/attachment-repository";
 import { listConversationMessages } from "@/conversations/conversation-repository";
 import { listMessageSources } from "@/conversations/message-sources";
 import { errorResponse } from "@/lib/http";
@@ -33,15 +34,21 @@ export async function GET(_request: Request, { params }: RouteContext) {
   }
   const messages = await listConversationMessages(owner, conversationId.data);
   if (!messages) return errorResponse("Conversation not found.", 404);
-  const sources = await listMessageSources({
-    ...owner,
-    conversationId: conversationId.data,
-  });
+  const [sources, attachments] = await Promise.all([
+    listMessageSources({ ...owner, conversationId: conversationId.data }),
+    listConversationAttachments({
+      ...owner,
+      conversationId: conversationId.data,
+    }),
+  ]);
   return Response.json(
     {
       messages: messages.map((message) => ({
         ...message,
         sources: sources.filter((source) => source.messageId === message.id),
+        attachments: attachments.filter(
+          (attachment) => attachment.messageId === message.id,
+        ),
       })),
     },
     { headers: { "cache-control": "no-store" } },

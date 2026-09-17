@@ -12,8 +12,7 @@ const agent: AgentToolConfiguration = {
     "scratchpad",
     "ask-user",
     "code-sandbox",
-    "connector-github",
-    "connector-gmail",
+    "connector",
   ],
 };
 
@@ -22,7 +21,7 @@ test("web-search and code-sandbox are gated by the org capability flags", () => 
     allowedToolIds(agent, {
       webSearchEnabled: false,
       codeSandboxEnabled: false,
-      availableConnectorProviders: new Set(),
+      hasActiveCustomConnector: false,
     }),
     ["scratchpad", "ask-user"],
   );
@@ -30,52 +29,26 @@ test("web-search and code-sandbox are gated by the org capability flags", () => 
     allowedToolIds(agent, {
       webSearchEnabled: true,
       codeSandboxEnabled: true,
-      availableConnectorProviders: new Set(),
+      hasActiveCustomConnector: false,
     }),
     ["web-search", "scratchpad", "ask-user", "code-sandbox"],
   );
 });
 
-test("a connector tool is granted only when its provider has an available connection", () => {
+test("the connector tool is granted only when the org has an active connection", () => {
   const withoutConnections = allowedToolIds(agent, {
     webSearchEnabled: false,
     codeSandboxEnabled: false,
-    availableConnectorProviders: new Set(),
+    hasActiveCustomConnector: false,
   });
-  assert.ok(!withoutConnections.includes("connector-github"));
-  assert.ok(!withoutConnections.includes("connector-gmail"));
+  assert.ok(!withoutConnections.includes("connector"));
 
-  const withGithubOnly = allowedToolIds(agent, {
+  const withConnection = allowedToolIds(agent, {
     webSearchEnabled: false,
     codeSandboxEnabled: false,
-    availableConnectorProviders: new Set(["github"]),
+    hasActiveCustomConnector: true,
   });
-  assert.ok(withGithubOnly.includes("connector-github"));
-  assert.ok(!withGithubOnly.includes("connector-gmail"));
-
-  const withBoth = allowedToolIds(agent, {
-    webSearchEnabled: false,
-    codeSandboxEnabled: false,
-    availableConnectorProviders: new Set(["github", "google"]),
-  });
-  assert.ok(withBoth.includes("connector-github"));
-  assert.ok(withBoth.includes("connector-gmail"));
-});
-
-test("gmail and google-drive both key off the shared google provider connection", () => {
-  const agentWithBothGoogleTools: AgentToolConfiguration = {
-    baseAgentId: "work",
-    enabledToolIds: ["connector-gmail", "connector-google-drive"],
-  };
-  const granted = allowedToolIds(agentWithBothGoogleTools, {
-    webSearchEnabled: false,
-    codeSandboxEnabled: false,
-    availableConnectorProviders: new Set(["google"]),
-  });
-  assert.deepEqual(
-    new Set(granted),
-    new Set(["connector-gmail", "connector-google-drive"]),
-  );
+  assert.ok(withConnection.includes("connector"));
 });
 
 test("plan is never gated by an org capability or connector availability", () => {
@@ -87,8 +60,72 @@ test("plan is never gated by an org capability or connector availability", () =>
     allowedToolIds(agentWithPlan, {
       webSearchEnabled: false,
       codeSandboxEnabled: false,
-      availableConnectorProviders: new Set(),
+      hasActiveCustomConnector: false,
     }),
     ["plan"],
   );
+});
+
+test("omitting requestedConnectorToolIds keeps the connector on when connected", () => {
+  const granted = allowedToolIds(agent, {
+    webSearchEnabled: false,
+    codeSandboxEnabled: false,
+    hasActiveCustomConnector: true,
+  });
+  assert.ok(granted.includes("connector"));
+});
+
+test("an explicit empty requestedConnectorToolIds turns the connector off for this message", () => {
+  const turnedOff = allowedToolIds(
+    agent,
+    {
+      webSearchEnabled: false,
+      codeSandboxEnabled: false,
+      hasActiveCustomConnector: true,
+    },
+    { requestedConnectorToolIds: [] },
+  );
+  assert.ok(!turnedOff.includes("connector"));
+
+  // Requesting the connector when the org has no connection still excludes
+  // it — the message-level toggle can only narrow an already-legitimate grant.
+  const cannotWiden = allowedToolIds(
+    agent,
+    {
+      webSearchEnabled: false,
+      codeSandboxEnabled: false,
+      hasActiveCustomConnector: false,
+    },
+    { requestedConnectorToolIds: ["connector"] },
+  );
+  assert.ok(!cannotWiden.includes("connector"));
+});
+
+test("activeSkillToolIds are unioned in before the usual filters run", () => {
+  const agentWithNoTools: AgentToolConfiguration = {
+    baseAgentId: "chat",
+    enabledToolIds: [],
+  };
+  const withSkillTool = allowedToolIds(
+    agentWithNoTools,
+    {
+      webSearchEnabled: false,
+      codeSandboxEnabled: false,
+      hasActiveCustomConnector: true,
+    },
+    { activeSkillToolIds: ["connector"] },
+  );
+  assert.deepEqual(withSkillTool, ["connector"]);
+
+  // A skill can't bypass an org capability or an unconnected connector.
+  const skillCannotBypassCapability = allowedToolIds(
+    agentWithNoTools,
+    {
+      webSearchEnabled: false,
+      codeSandboxEnabled: false,
+      hasActiveCustomConnector: false,
+    },
+    { activeSkillToolIds: ["web-search", "connector"] },
+  );
+  assert.deepEqual(skillCannotBypassCapability, []);
 });

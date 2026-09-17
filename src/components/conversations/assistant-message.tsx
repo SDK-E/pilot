@@ -55,6 +55,7 @@ function CopyMessageAction({
   return (
     <MessageAction
       aria-pressed={isCopied}
+      className="transition-transform active:scale-90"
       label={label}
       onClick={onClick}
       tooltip={isCopied ? "Copied" : "Copy"}
@@ -125,6 +126,7 @@ export function AssistantMessage({
         />
         {canContinue ? (
           <MessageAction
+            className="transition-transform active:scale-90"
             disabled={isLoading}
             label="Continue response"
             onClick={() => {
@@ -137,6 +139,7 @@ export function AssistantMessage({
         ) : null}
         {canRegenerate ? (
           <MessageAction
+            className="transition-transform active:scale-90"
             disabled={isLoading}
             label="Regenerate response"
             onClick={() => {

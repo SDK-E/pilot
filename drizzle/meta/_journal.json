@@ -281,6 +281,41 @@
       "when": 1789489358178,
       "tag": "0039_simple_redwing",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1789589997802,
+      "tag": "0040_mighty_madrox",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1789605588897,
+      "tag": "0041_huge_doomsday",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1789607245482,
+      "tag": "0042_nostalgic_apocalypse",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1789662303020,
+      "tag": "0043_clumsy_natasha_romanoff",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1789663690088,
+      "tag": "0044_powerful_stryfe",
+      "breakpoints": true
     }
   ]
 }

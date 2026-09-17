@@ -1,0 +1,38 @@
+CREATE TABLE "connector_definitions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"organization_id" text NOT NULL,
+	"slug" text NOT NULL,
+	"display_name" text NOT NULL,
+	"icon" text,
+	"description" text DEFAULT '' NOT NULL,
+	"authorize_url" text NOT NULL,
+	"token_url" text NOT NULL,
+	"scopes" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"scope_delimiter" text DEFAULT ' ' NOT NULL,
+	"client_id" text NOT NULL,
+	"encrypted_client_secret" text NOT NULL,
+	"client_secret_iv" text NOT NULL,
+	"client_secret_auth_tag" text NOT NULL,
+	"account_identifier_url" text,
+	"account_identifier_field" text,
+	"actions" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"definition_status" text DEFAULT 'active' NOT NULL,
+	"account_identifier" text,
+	"encrypted_access_token" text,
+	"access_token_iv" text,
+	"access_token_auth_tag" text,
+	"encrypted_refresh_token" text,
+	"refresh_token_iv" text,
+	"refresh_token_auth_tag" text,
+	"token_expires_at" timestamp with time zone,
+	"granted_scopes" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"connection_status" text DEFAULT 'not_connected' NOT NULL,
+	"last_error_message" text,
+	"last_used_at" timestamp with time zone,
+	"created_by_workos_user_id" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "connector_definitions" ADD CONSTRAINT "connector_definitions_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "connector_definitions_org_slug_unique" ON "connector_definitions" USING btree ("organization_id","slug");

@@ -37,19 +37,11 @@ interface AgentOption {
   name: string;
 }
 
-/**
- * The organization's default agent when it belongs to this mode, otherwise
- * the first agent listed.
- */
 function initialAgentId(agents: AgentOption[], defaultAgentId: string | null) {
   const preferred = agents.find((agent) => agent.id === defaultAgentId);
   return (preferred ?? agents[0])?.id;
 }
 
-/**
- * Starts the conversation for the first message and navigates to it. The
- * form stays disabled after success because the page is about to change.
- */
 function useStartConversation({
   kind,
   agentId,
@@ -91,10 +83,6 @@ function useStartConversation({
   };
 }
 
-/**
- * Only worth choosing between when there's more than one agent to pick;
- * a single agent shows as a plain label, and zero agents show nothing.
- */
 function AgentPicker({
   agents,
   agentId,
@@ -165,10 +153,6 @@ function SuggestionChips({
   );
 }
 
-/**
- * The start screen composer. Creates the conversation, then opens it with
- * the first message queued so the conversation page streams it.
- */
 export function NewConversationForm({
   kind,
   agents,
@@ -210,7 +194,7 @@ export function NewConversationForm({
             aria-describedby={error ? errorId : undefined}
             aria-invalid={error ? true : undefined}
             aria-label={`Message ${agentName}`}
-            className="min-h-32 px-3 pt-3 text-sm leading-6"
+            className="max-h-52 min-h-11 px-3 py-2.5 text-sm leading-6"
             disabled={isStarting}
             id={textareaId}
             ref={textareaRef}
@@ -222,11 +206,11 @@ export function NewConversationForm({
             onKeyDown={(event) => submitOnShortcut(event, sendMessageShortcut)}
             placeholder={placeholder}
             required
-            rows={3}
+            rows={1}
             value={input}
           />
         </PromptInputBody>
-        <PromptInputFooter className="px-2 pb-1">
+        <PromptInputFooter className="px-1 pb-1">
           <PromptInputTools>
             <AgentPicker
               agentId={agentId}

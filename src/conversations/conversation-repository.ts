@@ -139,6 +139,11 @@ export interface NewConversationMessage {
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
+  /*
+   * What was active on this turn (composer per-message toggle/picker).
+   */
+  skillIds?: string[];
+  connectorToolIds?: string[] | null;
 }
 
 export async function createConversationMessage(
@@ -156,6 +161,8 @@ export async function createConversationMessage(
       role: conversationMessages.role,
       content: conversationMessages.content,
       isError: conversationMessages.isError,
+      skillIds: conversationMessages.skillIds,
+      connectorToolIds: conversationMessages.connectorToolIds,
       createdAt: conversationMessages.createdAt,
     });
   await db
@@ -181,6 +188,8 @@ export async function listConversationMessages(
       isPartial: conversationMessages.isPartial,
       userQuestionOptions: conversationMessages.userQuestionOptions,
       userQuestionSelectionMode: conversationMessages.userQuestionSelectionMode,
+      skillIds: conversationMessages.skillIds,
+      connectorToolIds: conversationMessages.connectorToolIds,
       createdAt: conversationMessages.createdAt,
     })
     .from(conversationMessages)

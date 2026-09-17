@@ -4,12 +4,13 @@ import { redirect } from "next/navigation";
 import { listAgents } from "@/agents/agent-repository";
 import { AgentCapabilitiesSection } from "@/components/settings/agent-capabilities-section";
 import { ConnectorsSection } from "@/components/settings/connectors-section";
+import { FormSubmitToast } from "@/components/settings/form-submit-toast";
+import { ModelPolicySection } from "@/components/settings/model-policy-section";
 import {
   DefaultAgentSection,
   DeleteWorkspaceSection,
   DomainVerificationSection,
   LocalDomainVerificationSection,
-  ModelPolicySection,
   WorkspaceNameSection,
 } from "@/components/settings/organization-sections";
 import { SettingsNav } from "@/components/settings/settings-nav";
@@ -32,7 +33,8 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/workspace/page-header";
-import { listConnectorConnectionsForSettings } from "@/connectors/connector-repository";
+import { listConnectorDefinitionsForSettings } from "@/connectors/connector-definition-repository";
+import { listSelectableModels } from "@/model-gateways/model-gateway-repository";
 import { listOrganizationDomains } from "@/organizations/local-domain-verification";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
 import {
@@ -67,10 +69,12 @@ function buildAgentsAndCapabilitiesSection({
   agents,
   organization,
   isAdmin,
+  availableModels,
 }: {
   agents: { id: string; name: string }[];
   organization: Awaited<ReturnType<typeof getOrganizationPreferences>>;
   isAdmin: boolean;
+  availableModels: Awaited<ReturnType<typeof listSelectableModels>>;
 }) {
   return (
     <>
@@ -81,6 +85,7 @@ function buildAgentsAndCapabilitiesSection({
       {isAdmin ? (
         <>
           <ModelPolicySection
+            availableModels={availableModels}
             primaryModelId={organization.primaryModelId}
             retryEnabled={organization.retryEnabled}
           />
@@ -135,12 +140,6 @@ function buildDangerZoneSection({
   );
 }
 
-/**
- * The organization-level settings, grouped so the page can lay them out as
- * separate, independently-navigable sections instead of one flat stack.
- * `null` for a group means this member sees nothing in it (the section and
- * its nav entry are both skipped).
- */
 async function loadOrganizationSettingsGroups(): Promise<{
   agentsAndCapabilities: React.ReactNode;
   connectors: React.ReactNode;
@@ -149,33 +148,27 @@ async function loadOrganizationSettingsGroups(): Promise<{
 } | null> {
   const session = await getWorkspaceSession();
   if (!isWorkspaceSession(session)) return null;
-  const [organization, agents, domains, connectors] = await Promise.all([
-    getOrganizationPreferences(session.organizationId),
-    listAgents(session.organizationId),
-    session.kind === "local"
-      ? listOrganizationDomains(session.organizationId)
-      : Promise.resolve([]),
-    listConnectorConnectionsForSettings({
-      organizationId: session.organizationId,
-      userId: session.user.id,
-    }),
-  ]);
+  const [organization, agents, domains, connectors, availableModels] =
+    await Promise.all([
+      getOrganizationPreferences(session.organizationId),
+      listAgents(session.organizationId),
+      session.kind === "local"
+        ? listOrganizationDomains(session.organizationId)
+        : Promise.resolve([]),
+      listConnectorDefinitionsForSettings(session.organizationId),
+      listSelectableModels(),
+    ]);
   const isAdmin = ADMIN_ROLES.has(session.membership.role.slug);
   const isOwner = session.membership.role.slug === "owner";
 
   return {
     agentsAndCapabilities: buildAgentsAndCapabilitiesSection({
       agents,
+      availableModels,
       isAdmin,
       organization,
     }),
-    connectors: (
-      <ConnectorsSection
-        isAdmin={isAdmin}
-        organization={connectors.organization}
-        personal={connectors.personal}
-      />
-    ),
+    connectors: isAdmin ? <ConnectorsSection definitions={connectors} /> : null,
     organization: buildOrganizationSection({ domains, isAdmin, session }),
     dangerZone: buildDangerZoneSection({ isOwner, session }),
   };
@@ -215,6 +208,7 @@ function ComposerSection({
         </CardContent>
         <CardFooter className="pt-4">
           <Button type="submit">Save composer preference</Button>
+          <FormSubmitToast message="Composer preference saved" />
         </CardFooter>
       </form>
     </Card>
@@ -246,7 +240,7 @@ export default async function SettingsPage() {
           content: organizationGroups.agentsAndCapabilities,
         }
       : null,
-    organizationGroups
+    organizationGroups?.connectors
       ? {
           id: "connectors",
           label: "Connectors",
@@ -291,9 +285,7 @@ export default async function SettingsPage() {
                   {section.label}
                 </h2>
               </>
-            ) : (
-              <h2 className="text-sm font-medium">{section.label}</h2>
-            )}
+            ) : null}
             {section.content}
           </section>
         ))}
