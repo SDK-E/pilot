@@ -61,3 +61,48 @@ export const modelGateways = pgTable(
     index("model_gateways_enabled_index").on(table.enabled),
   ],
 );
+
+/**
+ * A built-in connector's shared OAuth app credentials (one GitHub app,
+ * one Slack app, etc., used by every organization that seeds it),
+ * platform admin-managed from Settings so adding or rotating one needs no
+ * deploy. Keyed by the same `slug` as `CONNECTOR_SEEDS`
+ * (src/connectors/connector-seed-definitions.ts).
+ */
+export const connectorProviderCredentials = pgTable(
+  "connector_provider_credentials",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    slug: text("slug").notNull(),
+    clientId: text("client_id").notNull(),
+    clientSecretCiphertext: text("client_secret_ciphertext").notNull(),
+    clientSecretIv: text("client_secret_iv").notNull(),
+    clientSecretAuthTag: text("client_secret_auth_tag").notNull(),
+    updatedByWorkosUserId: text("updated_by_workos_user_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    unique("connector_provider_credentials_slug_unique").on(table.slug),
+  ],
+);
+
+/**
+ * Single-value platform secrets that aren't tied to a connector provider or
+ * model gateway — e.g. the GitHub Marketplace webhook secret. One row per
+ * `key`, admin-managed from Settings.
+ */
+export const platformSecrets = pgTable("platform_secrets", {
+  key: text("key").primaryKey(),
+  valueCiphertext: text("value_ciphertext").notNull(),
+  valueIv: text("value_iv").notNull(),
+  valueAuthTag: text("value_auth_tag").notNull(),
+  updatedByWorkosUserId: text("updated_by_workos_user_id").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});

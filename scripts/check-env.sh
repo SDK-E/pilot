@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Reports which env vars pilot needs are missing, so a gap shows up here
-# instead of as a runtime crash. `development` reads .env.local (what your
-# local server actually sees); `preview`/`production` query Vercel directly
-# (what that deployment actually has), since .env.local may be stale.
+# Reports which env vars pilot needs are missing, surfacing the gap here
+# before it becomes a runtime crash. `development` reads .env.local (what
+# your local server actually sees); `preview`/`production` query Vercel
+# directly (what that deployment actually has), since .env.local may be
+# stale.
 
 ENVIRONMENT="${1:-development}"
 
@@ -27,21 +28,6 @@ REQUIRED_PLATFORM=(
 REQUIRED_CONNECTORS=(
   CONNECTOR_TOKEN_ENCRYPTION_KEY
   CONNECTOR_STATE_SIGNING_SECRET
-  CONNECTOR_GITHUB_CLIENT_ID
-  CONNECTOR_GITHUB_CLIENT_SECRET
-  CONNECTOR_GOOGLE_CLIENT_ID
-  CONNECTOR_GOOGLE_CLIENT_SECRET
-  CONNECTOR_SLACK_CLIENT_ID
-  CONNECTOR_SLACK_CLIENT_SECRET
-  CONNECTOR_NOTION_CLIENT_ID
-  CONNECTOR_NOTION_CLIENT_SECRET
-  CONNECTOR_LINEAR_CLIENT_ID
-  CONNECTOR_LINEAR_CLIENT_SECRET
-  CONNECTOR_VERCEL_CLIENT_ID
-  CONNECTOR_VERCEL_CLIENT_SECRET
-  CONNECTOR_MONDAY_CLIENT_ID
-  CONNECTOR_MONDAY_CLIENT_SECRET
-  GITHUB_MARKETPLACE_WEBHOOK_SECRET
 )
 OPTIONAL=(
   NEXT_PUBLIC_SITE_URL
@@ -90,7 +76,7 @@ check_group() {
 check_group "Core (auth, database) — every request needs these" "${REQUIRED_CORE[@]}"
 check_group "Chat/Work/Code runtime (pilot-ai M2M call)" "${REQUIRED_RUNTIME[@]}"
 check_group "Platform admin (model gateways)" "${REQUIRED_PLATFORM[@]}"
-check_group "Connectors" "${REQUIRED_CONNECTORS[@]}"
+check_group "Connectors (per-provider OAuth credentials: Settings → Admin → Connector providers)" "${REQUIRED_CONNECTORS[@]}"
 
 echo "-- Optional / platform-managed --"
 for name in "${OPTIONAL[@]}"; do

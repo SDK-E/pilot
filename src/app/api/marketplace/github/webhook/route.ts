@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 import { isValidMarketplaceWebhookSignature } from "@/connectors/github-marketplace-webhook";
+import {
+  getPlatformSecret,
+  GITHUB_MARKETPLACE_WEBHOOK_SECRET_KEY,
+} from "@/platform/platform-secret-repository";
 
 export const runtime = "nodejs";
 
@@ -37,10 +41,13 @@ const marketplacePurchaseEventSchema = z.object({
  */
 export async function POST(request: Request) {
   const rawBody = await request.text();
+  const secret = await getPlatformSecret(GITHUB_MARKETPLACE_WEBHOOK_SECRET_KEY);
   if (
+    !secret ||
     !isValidMarketplaceWebhookSignature(
       rawBody,
       request.headers.get(SIGNATURE_HEADER),
+      secret,
     )
   ) {
     return Response.json({ error: "Invalid signature." }, { status: 401 });

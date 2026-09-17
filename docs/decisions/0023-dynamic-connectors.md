@@ -72,11 +72,11 @@ nextCursorPath?, idField?, titleField?, urlField? }` — a declarative REST
   live traffic — the same caveat ADR-0021's adapters carried). An admin
   triggers `seedDefaultConnectorsAction` from Settings (never an automatic
   side effect of loading the page — mutations only happen from an explicit
-  action); it inserts one `connector_definitions` row per seed whose
-  `CONNECTOR_<PROVIDER>_CLIENT_ID`/`_CLIENT_SECRET` env vars are set, and is
-  a no-op if the org already has any connector. Once seeded, each row is
-  ordinary admin-editable/removable state — nothing about it is special
-  after that point.
+  action); it inserts one `connector_definitions` row per seed a platform
+  admin has configured credentials for (`connector_provider_credentials`,
+  see ADR-0024), and is a no-op if the org already has any connector. Once
+  seeded, each row is ordinary admin-editable/removable state — nothing
+  about it is special after that point.
 - **Tool contract**: `pilot-ai`'s `ALLOWED_TOOL_IDS` has one connector
   entry, `"connector"`, with two actions: `list-connectors` (discovery —
   slug, display name, icon, description, and action ids/descriptions for

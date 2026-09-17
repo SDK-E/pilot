@@ -11,13 +11,15 @@ export const metadata: Metadata = {
 
 const NAV_ITEMS = [
   { href: "/admin/model-gateways", label: "Model gateways" },
+  { href: "/admin/connector-providers", label: "Connector providers" },
   { href: "/admin/admins", label: "Admins" },
 ] as const;
 
 /**
  * The platform admin panel: settings that apply across every organization
- * (model gateways and who else can administer Pilot), gated on
- * `platform_admins` rather than any organization's own membership role.
+ * (model gateways, connector provider credentials, and who else can
+ * administer Pilot), gated on `platform_admins` rather than any
+ * organization's own membership role.
  */
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const session = await requirePlatformAdmin();

@@ -1,16 +1,16 @@
 /**
  * The connectors Pilot ships out of the box — GitHub, Slack, Notion,
- * Linear, and Vercel — expressed as plain data for the generic connector
- * engine (`base-connector.ts` / `base-connector-adapter.ts`) instead of as
- * hand-written TypeScript providers. Seeding these into `connector_definitions`
- * (see `seedDefaultConnectorDefinitions`) is what makes them admin-editable
+ * Linear, Vercel, and Monday.com — expressed as plain data for the
+ * generic connector engine (`base-connector.ts` / `base-connector-adapter.ts`).
+ * Seeding these into `connector_definitions` (see
+ * `seedDefaultConnectorDefinitions`) is what makes them admin-editable
  * and removable exactly like a connector an admin adds from scratch — see
  * docs/decisions/0023-dynamic-connectors.md.
  *
- * Client id/secret come from the same env vars the old built-in providers
- * used, so an org that already had `CONNECTOR_GITHUB_CLIENT_ID` etc. set
- * keeps working with zero reconfiguration; an admin can edit or delete any
- * seeded connector afterward like any other.
+ * Client id/secret are platform admin-managed (Settings → Admin →
+ * Connector providers, backed by `connector_provider_credentials`, keyed
+ * by `slug` here) — an admin can edit or delete any seeded connector
+ * afterward like any other.
  */
 import type { ConnectorDefinitionAction } from "@/db/schema/connector-definitions";
 
@@ -23,8 +23,6 @@ export interface ConnectorSeed {
   tokenUrl: string;
   scopes: string[];
   scopeDelimiter: string;
-  clientIdEnvVar: string;
-  clientSecretEnvVar: string;
   accountIdentifierUrl: string | null;
   accountIdentifierField: string | null;
   actions: ConnectorDefinitionAction[];
@@ -40,8 +38,6 @@ export const CONNECTOR_SEEDS: ConnectorSeed[] = [
     tokenUrl: "https://github.com/login/oauth/access_token",
     scopes: ["repo"],
     scopeDelimiter: " ",
-    clientIdEnvVar: "CONNECTOR_GITHUB_CLIENT_ID",
-    clientSecretEnvVar: "CONNECTOR_GITHUB_CLIENT_SECRET",
     accountIdentifierUrl: "https://api.github.com/user",
     accountIdentifierField: "login",
     actions: [
@@ -68,8 +64,6 @@ export const CONNECTOR_SEEDS: ConnectorSeed[] = [
     tokenUrl: "https://slack.com/api/oauth.v2.access",
     scopes: ["channels:read", "channels:history"],
     scopeDelimiter: ",",
-    clientIdEnvVar: "CONNECTOR_SLACK_CLIENT_ID",
-    clientSecretEnvVar: "CONNECTOR_SLACK_CLIENT_SECRET",
     accountIdentifierUrl: "https://slack.com/api/team.info",
     accountIdentifierField: "team.name",
     actions: [
@@ -95,8 +89,6 @@ export const CONNECTOR_SEEDS: ConnectorSeed[] = [
     tokenUrl: "https://api.notion.com/v1/oauth/token",
     scopes: [],
     scopeDelimiter: " ",
-    clientIdEnvVar: "CONNECTOR_NOTION_CLIENT_ID",
-    clientSecretEnvVar: "CONNECTOR_NOTION_CLIENT_SECRET",
     accountIdentifierUrl: null,
     accountIdentifierField: null,
     actions: [
@@ -122,8 +114,6 @@ export const CONNECTOR_SEEDS: ConnectorSeed[] = [
     tokenUrl: "https://api.linear.app/oauth/token",
     scopes: ["read"],
     scopeDelimiter: ",",
-    clientIdEnvVar: "CONNECTOR_LINEAR_CLIENT_ID",
-    clientSecretEnvVar: "CONNECTOR_LINEAR_CLIENT_SECRET",
     accountIdentifierUrl: null,
     accountIdentifierField: null,
     actions: [
@@ -149,8 +139,6 @@ export const CONNECTOR_SEEDS: ConnectorSeed[] = [
     tokenUrl: "https://api.vercel.com/v2/oauth/access_token",
     scopes: [],
     scopeDelimiter: " ",
-    clientIdEnvVar: "CONNECTOR_VERCEL_CLIENT_ID",
-    clientSecretEnvVar: "CONNECTOR_VERCEL_CLIENT_SECRET",
     accountIdentifierUrl: "https://api.vercel.com/v2/user",
     accountIdentifierField: "user.username",
     actions: [
@@ -175,8 +163,6 @@ export const CONNECTOR_SEEDS: ConnectorSeed[] = [
     tokenUrl: "https://auth.monday.com/oauth2/token",
     scopes: ["boards:read"],
     scopeDelimiter: " ",
-    clientIdEnvVar: "CONNECTOR_MONDAY_CLIENT_ID",
-    clientSecretEnvVar: "CONNECTOR_MONDAY_CLIENT_SECRET",
     accountIdentifierUrl: null,
     accountIdentifierField: null,
     actions: [
