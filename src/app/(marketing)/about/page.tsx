@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Pilot is built by SDK Enterprises: one AI workspace for chat, task work, and code, instead of three separate tools.",
+    "Pilot is built by SDK Enterprises: AI your team can hand real work to, with read-only tools, sandboxed execution, and data scoped to you.",
   alternates: { canonical: `${SITE_URL}/about` },
 };
 
@@ -19,10 +19,11 @@ export default function AboutPage() {
       </h1>
       <div className="mt-6 space-y-5 text-sm leading-relaxed text-muted-foreground sm:text-base">
         <p>
-          Pilot is built by SDK Enterprises. We started it because the usual
-          setup — a chat assistant here, a task tool there, a separate coding
-          assistant somewhere else — loses context every time you switch between
-          them. Pilot keeps Chat, Work, and Code in one workspace instead.
+          Pilot is built by SDK Enterprises. Most AI tools assume one person is
+          using them — hand the same login to a team and there&apos;s no
+          boundary between what one person asked and what everyone else can see.
+          Pilot keeps Chat, Work, and Code in one place, with that boundary
+          built in from the start.
         </p>
         <p>
           Every conversation, project, and file in Pilot is private to the

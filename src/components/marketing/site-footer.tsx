@@ -13,8 +13,7 @@ export function SiteFooter() {
           <div className="space-y-2">
             <PilotWordmark className="text-base" />
             <p className="max-w-xs text-xs text-muted-foreground">
-              One workspace for chat, task work, and code — built by SDK
-              Enterprises.
+              Ask fast, ship faster — built by SDK Enterprises.
             </p>
           </div>
           {Object.entries(MARKETING_FOOTER_LINKS).map(([group, links]) => (

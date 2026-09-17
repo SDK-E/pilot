@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Pilot — one AI workspace for chat, work, and code";
+export const alt = "Pilot — ask fast, ship faster";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -38,7 +38,7 @@ export default function Image() {
           color: "#a1a1aa",
         }}
       >
-        Chat, work, and code — one AI workspace.
+        Ask fast. Ship faster.
       </div>
     </div>,
     { ...size },

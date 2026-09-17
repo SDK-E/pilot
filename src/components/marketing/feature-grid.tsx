@@ -17,17 +17,17 @@ const FEATURES = [
   {
     icon: RiChat3Line,
     title: "Chat",
-    body: "Ask a question, get a clear answer. Pilot pushes back with a follow-up question when it would change the result, instead of guessing.",
+    body: 'Ask a real question — "what changed in our refund policy last quarter?" — and get a straight answer, or a sharper question back when guessing would cost you.',
   },
   {
     icon: RiListCheck3,
     title: "Work",
-    body: "Describe a task once. Pilot turns it into a visible step-by-step plan and works through it, so you can see exactly what it's doing and why.",
+    body: "Hand off a task like onboarding a new client, and watch the plan appear before a single step runs. You approve the plan, not just the outcome.",
   },
   {
     icon: RiCodeSSlashLine,
     title: "Code",
-    body: "Point Pilot at a change. It reads the code first, proposes a small reviewable diff, and never claims to have run something it didn't run.",
+    body: "Point it at a flaky test or a gnarly bug. It reads the code, opens a small diff, and never tells you something ran when it didn't.",
   },
 ] as const;
 

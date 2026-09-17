@@ -85,18 +85,66 @@ export const BLOG_POSTS: readonly (ContentPage & { publishedLabel: string })[] =
       title: "Pilot is in early access",
       publishedLabel: "Early access",
       summary:
-        "Why we built Chat, Work, and Code as one workspace, and what early access means for pricing.",
+        "What Chat, Work, and Code each do, and what early access means for pricing.",
       sections: [
         {
-          heading: "One workspace, three modes",
+          heading: "Three modes, one agent model",
           paragraphs: [
-            "Most teams end up switching between a chat assistant, a task runner, and a coding tool. Pilot puts all three in one place — Chat, Work, and Code — as modes of the same agent, so context and conversation history don't get scattered across separate apps.",
+            "Chat, Work, and Code are modes of the same underlying agent, differing in instructions and which tools they're allowed to use — not three separate products. Chat answers questions, Work plans and runs multi-step tasks, and Code reads, explains, and proposes changes as reviewable diffs.",
           ],
         },
         {
           heading: "Pricing during early access",
           paragraphs: [
             "Pilot's plans are Free (Chat), 5€/month (adds Work), and 20€/month (Chat, Work, and Code). Billing isn't live yet, so every plan is free to use right now — you can see what each tier will include on the Pricing page, and we'll tell you before any charge ever applies.",
+          ],
+        },
+      ],
+    },
+    {
+      slug: "how-pilot-plans-before-it-acts",
+      title: "How Pilot plans before it acts",
+      publishedLabel: "Product",
+      summary:
+        "In Work and Code mode, Pilot lays out its steps before running any of them — and every tool call is logged with what actually happened.",
+      sections: [
+        {
+          heading: "A visible plan, not a black box",
+          paragraphs: [
+            "For anything beyond a one-shot question, Pilot's plan tool keeps a step-by-step task list that updates as it works. You see the plan before a single step runs, not just a finished answer at the end.",
+          ],
+        },
+        {
+          heading: "Every tool call is logged, not summarized",
+          paragraphs: [
+            "When Pilot uses a tool — a web search, a connected app, a code sandbox run — the activity record holds what it actually did: the real command, output, and result, bounded and server-formatted. Pilot never reports a result for a call it didn't make.",
+          ],
+        },
+        {
+          heading: "Code changes come back as diffs",
+          paragraphs: [
+            "Code mode runs in a fresh, isolated sandbox with no access to Pilot's own systems, secrets, or data, and the result is a small, reviewable diff — something you check, not something you're asked to trust.",
+          ],
+        },
+      ],
+    },
+    {
+      slug: "bring-your-own-model",
+      title: "Bring your own model to Pilot",
+      publishedLabel: "Product",
+      summary:
+        "Pilot isn't tied to one model provider. A platform admin can point it at Kilo, Vercel AI Gateway, or any OpenAI-compatible endpoint.",
+      sections: [
+        {
+          heading: "Model choice is an admin setting, not a hardcoded default",
+          paragraphs: [
+            "From the admin panel, a platform admin can add any OpenAI-compatible model gateway — Kilo, Vercel AI Gateway, or a custom endpoint — with its own API key and an allow-list of models. Organizations then choose from whatever the admin has made available.",
+          ],
+        },
+        {
+          heading: "Why this matters",
+          paragraphs: [
+            "Pricing, latency, and model quality all shift over time. Pointing Pilot at a different gateway is a settings change, not a redeploy — and nothing about a gateway's identity is hardcoded into the product.",
           ],
         },
       ],

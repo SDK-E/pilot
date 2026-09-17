@@ -23,7 +23,7 @@ export default async function PricingPage() {
     <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
       <div className="max-w-2xl">
         <h1 className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
-          Simple, usage-based pricing
+          Simple, flat pricing
         </h1>
         <p className="mt-3 text-sm text-muted-foreground sm:text-base">
           Start with Chat for free. Add Work or the full Chat, Work, and Code
