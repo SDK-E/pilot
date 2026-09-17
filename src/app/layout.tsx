@@ -3,6 +3,7 @@ import { cn } from "cn";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SITE_URL } from "@/marketing/site-config";
 
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           <AuthKitProvider>
             <TooltipProvider>{children}</TooltipProvider>
+            <Toaster />
           </AuthKitProvider>
         </ThemeProvider>
       </body>
