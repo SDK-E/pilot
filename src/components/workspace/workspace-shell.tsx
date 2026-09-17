@@ -9,6 +9,7 @@ import {
 } from "@remixicon/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
 import { AGENT_KIND_IDS, AGENT_KINDS, modeHref } from "@/agents/agent-kinds";
 import { PilotWordmark } from "@/components/brand/pilot-wordmark";
@@ -28,6 +29,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { AccountMenu } from "@/components/workspace/account-menu";
 import { ConversationSearch } from "@/components/workspace/conversation-search";
@@ -142,6 +144,28 @@ function RecentList({
   );
 }
 
+/**
+ * Closes the mobile sidebar Sheet on navigation. Without this, tapping a
+ * nav link inside it leaves the Sheet's `openMobile` state stuck true while
+ * the route changes underneath it — Radix's own close (which restores the
+ * body pointer-events lock it takes while the Sheet is open) never gets to
+ * run, and every tap on the destination page is silently swallowed.
+ */
+function CloseMobileSidebarOnNavigate() {
+  const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  useEffect(() => {
+    if (isMobile) setOpenMobile(false);
+    // Deliberately keyed on pathname alone: including isMobile/setOpenMobile
+    // would also re-run this on every mobile/desktop breakpoint crossing,
+    // not just on navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  return null;
+}
+
 export function WorkspaceShell({
   activeOrganizationId,
   children,
@@ -156,6 +180,7 @@ export function WorkspaceShell({
 
   return (
     <SidebarProvider>
+      <CloseMobileSidebarOnNavigate />
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <SidebarMenu>

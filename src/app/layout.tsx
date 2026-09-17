@@ -2,6 +2,7 @@ import { AuthKitProvider } from "@workos-inc/authkit-nextjs/components";
 import { cn } from "cn";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 
+import { PointerEventsGuard } from "@/components/layout/pointer-events-guard";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <AuthKitProvider>
             <TooltipProvider>{children}</TooltipProvider>
             <Toaster />
+            <PointerEventsGuard />
           </AuthKitProvider>
         </ThemeProvider>
       </body>
