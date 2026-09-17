@@ -22,12 +22,15 @@ CREATE TABLE IF NOT EXISTS action_proposals (
   UNIQUE (proposal_id),
   UNIQUE (proposal_hash)
 );
+--> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS action_proposals_organization_status_index
   ON action_proposals (organization_id, status, created_at);
+--> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS action_proposals_target_index
   ON action_proposals (organization_id, target_ref);
+--> statement-breakpoint
 
 CREATE TABLE IF NOT EXISTS effect_intents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -45,12 +48,15 @@ CREATE TABLE IF NOT EXISTS effect_intents (
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   UNIQUE (effect_key)
 );
+--> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS effect_intents_organization_proposal_index
   ON effect_intents (organization_id, proposal_id);
+--> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS effect_intents_status_index
   ON effect_intents (status);
+--> statement-breakpoint
 
 -- trigger for updated_at
 CREATE OR REPLACE FUNCTION update_action_proposals_updated_at()
@@ -60,10 +66,12 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+--> statement-breakpoint
 
 CREATE OR REPLACE TRIGGER action_proposals_updated_at
   BEFORE UPDATE ON action_proposals
   FOR EACH ROW EXECUTE FUNCTION update_action_proposals_updated_at();
+--> statement-breakpoint
 
 CREATE OR REPLACE FUNCTION update_effect_intents_updated_at()
 RETURNS TRIGGER AS $$
@@ -72,6 +80,7 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+--> statement-breakpoint
 
 CREATE OR REPLACE TRIGGER effect_intents_updated_at
   BEFORE UPDATE ON effect_intents

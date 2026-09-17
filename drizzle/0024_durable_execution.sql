@@ -5,15 +5,19 @@
 
 ALTER TABLE executions
   ADD COLUMN IF NOT EXISTS request_id UUID;
+--> statement-breakpoint
 
 ALTER TABLE executions
   ADD COLUMN IF NOT EXISTS budget_id UUID;
+--> statement-breakpoint
 
 ALTER TABLE executions
   ADD COLUMN IF NOT EXISTS parent_execution_id UUID;
+--> statement-breakpoint
 
 ALTER TABLE executions
   ALTER COLUMN status TYPE TEXT;
+--> statement-breakpoint
 
 CREATE TABLE IF NOT EXISTS execution_attempts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -26,6 +30,7 @@ CREATE TABLE IF NOT EXISTS execution_attempts (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   UNIQUE (execution_id, attempt_number)
 );
+--> statement-breakpoint
 
 CREATE TABLE IF NOT EXISTS budget_reservations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -45,9 +50,11 @@ CREATE TABLE IF NOT EXISTS budget_reservations (
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+--> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS budget_reservations_execution_id_idx
   ON budget_reservations (execution_id);
+--> statement-breakpoint
 
 CREATE TABLE IF NOT EXISTS outbox_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -60,9 +67,11 @@ CREATE TABLE IF NOT EXISTS outbox_events (
   last_dispatched_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
+--> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS outbox_events_status_idx
   ON outbox_events (status);
+--> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS outbox_events_execution_id_idx
   ON outbox_events (execution_id);

@@ -15,15 +15,20 @@ CREATE TABLE IF NOT EXISTS lifecycle_operations (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
+--> statement-breakpoint
 
 ALTER TABLE workers
   ADD COLUMN IF NOT EXISTS archived BOOLEAN NOT NULL DEFAULT false;
+--> statement-breakpoint
 
 ALTER TABLE conversations
   ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';
+--> statement-breakpoint
 
 ALTER TABLE projects
   ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active';
+--> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS idx_lifecycle_org_status ON lifecycle_operations(organization_id, status);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_lifecycle_resource ON lifecycle_operations(resource_type, resource_id);

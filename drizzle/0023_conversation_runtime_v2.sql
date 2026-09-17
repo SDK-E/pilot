@@ -5,12 +5,15 @@
 
 ALTER TABLE conversation_messages
   ADD COLUMN IF NOT EXISTS request_id UUID;
+--> statement-breakpoint
 
 ALTER TABLE conversation_messages
   ADD COLUMN IF NOT EXISTS parts JSONB;
+--> statement-breakpoint
 
 ALTER TABLE conversation_messages
   ADD COLUMN IF NOT EXISTS schema_version INTEGER DEFAULT 1;
+--> statement-breakpoint
 
 ALTER TABLE conversation_messages
   ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'complete';

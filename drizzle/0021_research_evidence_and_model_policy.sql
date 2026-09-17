@@ -1,5 +1,7 @@
 ALTER TABLE "organization_preferences" ADD COLUMN "primary_model_id" text DEFAULT 'kilo/kilo-auto/free' NOT NULL;
+--> statement-breakpoint
 ALTER TABLE "organization_preferences" ADD COLUMN "retry_enabled" boolean DEFAULT true NOT NULL;
+--> statement-breakpoint
 CREATE TABLE "conversation_sources" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "organization_id" text NOT NULL REFERENCES "organizations"("id") ON DELETE cascade,
@@ -12,5 +14,7 @@ CREATE TABLE "conversation_sources" (
   "summary" text DEFAULT '' NOT NULL,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
+--> statement-breakpoint
 CREATE INDEX "conversation_sources_message_index" ON "conversation_sources" ("message_id");
+--> statement-breakpoint
 CREATE INDEX "conversation_sources_conversation_creator_index" ON "conversation_sources" ("conversation_id", "created_by_workos_user_id");

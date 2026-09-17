@@ -6,8 +6,10 @@
 UPDATE workers
 SET base_agent_id = 'chat'
 WHERE base_agent_id IN ('conversational', 'research');
+--> statement-breakpoint
 
 ALTER TABLE workers ALTER COLUMN base_agent_id SET DEFAULT 'chat';
+--> statement-breakpoint
 
 UPDATE workers
 SET approval_rules = (

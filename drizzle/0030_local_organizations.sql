@@ -4,6 +4,7 @@
 
 ALTER TABLE organizations
   ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'workos';
+--> statement-breakpoint
 
 CREATE TABLE IF NOT EXISTS organization_domains (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
