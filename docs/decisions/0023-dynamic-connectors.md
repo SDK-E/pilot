@@ -73,7 +73,7 @@ nextCursorPath?, idField?, titleField?, urlField? }` — a declarative REST
   triggers `seedDefaultConnectorsAction` from Settings (never an automatic
   side effect of loading the page — mutations only happen from an explicit
   action); it inserts one `connector_definitions` row per seed a platform
-  admin has configured credentials for (`connector_provider_credentials`,
+  admin has configured credentials for (`connector_providers`,
   see ADR-0024), and is a no-op if the org already has any connector. Once
   seeded, each row is ordinary admin-editable/removable state — nothing
   about it is special after that point.

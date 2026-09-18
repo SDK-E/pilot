@@ -26,7 +26,10 @@ import {
   LOCAL_ORGANIZATION_COOKIE,
   requireWorkspaceSession,
 } from "@/organizations/workspace-session";
-import { updateUserPreferences } from "@/users/user-preference-repository";
+import {
+  updateUserPreferences,
+  updateWorkInstructions,
+} from "@/users/user-preference-repository";
 
 const ADMIN_ROLES = new Set(["owner", "admin"]);
 
@@ -37,6 +40,19 @@ export async function updateMessageShortcutAction(formData: FormData) {
   if (!input.success) return;
   const { user } = await withAuth({ ensureSignedIn: true });
   await updateUserPreferences({ workosUserId: user.id, ...input.data });
+  revalidatePath("/", "layout");
+}
+
+export async function updateWorkInstructionsAction(formData: FormData) {
+  const input = z
+    .object({ workInstructions: z.string().trim().max(4000) })
+    .safeParse({ workInstructions: formData.get("workInstructions") });
+  if (!input.success) return;
+  const { user } = await withAuth({ ensureSignedIn: true });
+  await updateWorkInstructions({
+    workosUserId: user.id,
+    workInstructions: input.data.workInstructions || null,
+  });
   revalidatePath("/", "layout");
 }
 

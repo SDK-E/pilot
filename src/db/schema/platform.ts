@@ -15,6 +15,8 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+import type { ConnectorDefinitionAction } from "./connector-definitions";
+
 export const platformAdmins = pgTable(
   "platform_admins",
   {
@@ -63,21 +65,40 @@ export const modelGateways = pgTable(
 );
 
 /**
- * A built-in connector's shared OAuth app credentials (one GitHub app,
- * one Slack app, etc., used by every organization that seeds it),
- * platform admin-managed from Settings so adding or rotating one needs no
- * deploy. Keyed by the same `slug` as `CONNECTOR_SEEDS`
- * (src/connectors/connector-seed-definitions.ts).
+ * A platform-level connector provider: the full config for a connector
+ * every organization can seed into its own `connector_definitions`
+ * (`src/connectors/connector-seed.ts`), platform admin-managed from
+ * Settings so adding, editing, or removing one needs no deploy. Mirrors
+ * `connector_definitions`' own shape minus the per-org connection state
+ * (no account identifier, tokens, or connection status — none of that
+ * belongs at the platform level).
  */
-export const connectorProviderCredentials = pgTable(
-  "connector_provider_credentials",
+export const connectorProviders = pgTable(
+  "connector_providers",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     slug: text("slug").notNull(),
+    displayName: text("display_name").notNull(),
+    /**
+    A single emoji shown next to the provider in the admin UI.
+    */
+    icon: text("icon"),
+    description: text("description").notNull().default(""),
+    authorizeUrl: text("authorize_url").notNull(),
+    tokenUrl: text("token_url").notNull(),
+    scopes: jsonb("scopes").$type<string[]>().notNull().default([]),
+    scopeDelimiter: text("scope_delimiter").notNull().default(" "),
     clientId: text("client_id").notNull(),
     clientSecretCiphertext: text("client_secret_ciphertext").notNull(),
     clientSecretIv: text("client_secret_iv").notNull(),
     clientSecretAuthTag: text("client_secret_auth_tag").notNull(),
+    accountIdentifierUrl: text("account_identifier_url"),
+    accountIdentifierField: text("account_identifier_field"),
+    actions: jsonb("actions")
+      .$type<ConnectorDefinitionAction[]>()
+      .notNull()
+      .default([]),
+    enabled: boolean("enabled").notNull().default(true),
     updatedByWorkosUserId: text("updated_by_workos_user_id").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -86,9 +107,7 @@ export const connectorProviderCredentials = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [
-    unique("connector_provider_credentials_slug_unique").on(table.slug),
-  ],
+  (table) => [unique("connector_providers_slug_unique").on(table.slug)],
 );
 
 /**

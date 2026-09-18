@@ -1,110 +1,194 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState } from "react";
 
 import {
-  deleteConnectorProviderCredentialAction,
-  setConnectorProviderCredentialAction,
-  type ConnectorProviderFormState,
+  createConnectorProviderAction,
+  updateConnectorProviderAction,
 } from "@/app/admin/connector-providers/actions";
+import {
+  BasicFields,
+  ClientFields,
+  OAuthFields,
+  ActionsField,
+  type ProviderDraft,
+  draftFromProvider,
+  emptyDraft,
+} from "@/components/platform/connector-provider-form-fields";
+import { FormSubmitToast } from "@/components/settings/form-submit-toast";
 import { Button } from "@/components/ui/button";
 import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldTitle,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { CONNECTOR_SEEDS } from "@/connectors/connector-seed-definitions";
 
-const initialState: ConnectorProviderFormState = { status: "idle" };
+import type { ConnectorProviderForAdmin } from "@/platform/connector-provider-repository";
 
-export function ConnectorProviderForm({
-  slug,
-  displayName,
-  icon,
-  clientId,
+function PresetButtons({
+  onPick,
 }: {
-  slug: string;
-  displayName: string;
-  icon: string;
-  clientId?: string;
+  onPick: (preset: (typeof CONNECTOR_SEEDS)[number]) => void;
 }) {
-  const [state, action, isPending] = useActionState(
-    setConnectorProviderCredentialAction,
-    initialState,
+  return (
+    <div className="space-y-1.5">
+      <Label>Quick fill from a built-in preset</Label>
+      <div className="flex flex-wrap gap-2">
+        {CONNECTOR_SEEDS.map((preset) => (
+          <Button
+            key={preset.slug}
+            onClick={() => {
+              onPick(preset);
+            }}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <span aria-hidden>{preset.icon}</span> {preset.displayName}
+          </Button>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Fills every field below except client id/secret, which you still supply.
+        You can also ignore every preset and configure a fully custom provider.
+      </p>
+    </div>
+  );
+}
+
+function ProviderFormFields({
+  draft,
+  onChange,
+  isEditing,
+}: {
+  draft: ProviderDraft;
+  onChange: (patch: Partial<ProviderDraft>) => void;
+  isEditing: boolean;
+}) {
+  return (
+    <div className="space-y-4">
+      {isEditing ? null : (
+        <PresetButtons
+          onPick={(preset) => {
+            onChange({
+              slug: preset.slug,
+              icon: preset.icon,
+              displayName: preset.displayName,
+              description: preset.description,
+              authorizeUrl: preset.authorizeUrl,
+              tokenUrl: preset.tokenUrl,
+              scopes: preset.scopes.join(" "),
+              accountIdentifierUrl: preset.accountIdentifierUrl ?? "",
+              accountIdentifierField: preset.accountIdentifierField ?? "",
+              actionsJson: JSON.stringify(preset.actions, null, 2),
+            });
+          }}
+        />
+      )}
+      <BasicFields draft={draft} isEditing={isEditing} onChange={onChange} />
+      <OAuthFields draft={draft} onChange={onChange} />
+      <ClientFields draft={draft} isEditing={isEditing} onChange={onChange} />
+      <ActionsField draft={draft} onChange={onChange} />
+    </div>
+  );
+}
+
+export function CreateConnectorProviderDialog() {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<ProviderDraft>(emptyDraft());
+
+  return (
+    <Dialog
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) setDraft(emptyDraft());
+      }}
+      open={open}
+    >
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          Add provider
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+        <form action={createConnectorProviderAction}>
+          <DialogHeader>
+            <DialogTitle>Add a connector provider</DialogTitle>
+            <DialogDescription>
+              A generic OAuth2 + REST integration every organization can seed
+              into its own connectors, configured here instead of shipped as
+              code.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <ProviderFormFields
+              draft={draft}
+              isEditing={false}
+              onChange={(patch) => {
+                setDraft((current) => ({ ...current, ...patch }));
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="submit">Create provider</Button>
+            <FormSubmitToast message="Connector provider created" />
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function EditConnectorProviderDialog({
+  provider,
+}: {
+  provider: ConnectorProviderForAdmin;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<ProviderDraft>(() =>
+    draftFromProvider(provider),
   );
 
   return (
-    <Field className="rounded-xl border p-4" orientation="vertical">
-      <FieldContent>
-        <div className="flex items-center gap-2">
-          <span aria-hidden className="text-base">
-            {icon}
-          </span>
-          <FieldTitle>{displayName}</FieldTitle>
-          {clientId ? (
-            <span className="text-xs text-emerald-600 dark:text-emerald-400">
-              Configured
-            </span>
-          ) : (
-            <span className="text-xs text-muted-foreground">
-              Not configured
-            </span>
-          )}
-        </div>
-        <FieldDescription>
-          Shared OAuth app credentials every organization&apos;s seeded{" "}
-          {displayName} connector uses.
-        </FieldDescription>
-      </FieldContent>
-      <form action={action} className="grid gap-3 sm:grid-cols-2">
-        <input name="slug" type="hidden" value={slug} />
-        <div className="space-y-1.5">
-          <Label htmlFor={`${slug}-client-id`}>Client ID</Label>
-          <Input
-            defaultValue={clientId}
-            id={`${slug}-client-id`}
-            name="clientId"
-            required
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor={`${slug}-client-secret`}>
-            Client secret{clientId ? " (leave blank to keep current)" : ""}
-          </Label>
-          <Input
-            id={`${slug}-client-secret`}
-            name="clientSecret"
-            required={!clientId}
-            type="password"
-          />
-        </div>
-        <div className="flex items-center gap-2 sm:col-span-2">
-          <Button disabled={isPending} size="sm" type="submit">
-            {isPending ? "Saving…" : "Save"}
-          </Button>
-          {clientId ? (
-            <form action={deleteConnectorProviderCredentialAction}>
-              <input name="slug" type="hidden" value={slug} />
-              <Button size="sm" type="submit" variant="ghost">
-                Remove
-              </Button>
-            </form>
-          ) : null}
-          {state.message ? (
-            <p
-              className={
-                state.status === "error"
-                  ? "text-sm text-destructive"
-                  : "text-sm text-primary"
-              }
-            >
-              {state.message}
-            </p>
-          ) : null}
-        </div>
-      </form>
-    </Field>
+    <Dialog
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) setDraft(draftFromProvider(provider));
+      }}
+      open={open}
+    >
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost">
+          Edit
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
+        <form action={updateConnectorProviderAction}>
+          <input name="id" type="hidden" value={provider.id} />
+          <DialogHeader>
+            <DialogTitle>Edit {provider.displayName}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <ProviderFormFields
+              draft={draft}
+              isEditing
+              onChange={(patch) => {
+                setDraft((current) => ({ ...current, ...patch }));
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="submit">Save changes</Button>
+            <FormSubmitToast message="Connector provider updated" />
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

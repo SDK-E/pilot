@@ -2,6 +2,7 @@ import "server-only";
 
 import { buildAgentInstructions } from "@/agents/agent-instructions";
 import { getAgent } from "@/agents/agent-repository";
+import { getWorkInstructions } from "@/users/user-preference-repository";
 
 import type { AgentKindId } from "@/agents/agent-kinds";
 
@@ -22,12 +23,17 @@ export interface RuntimeAgent {
 export async function loadRuntimeAgent(
   organizationId: string,
   agentId: string,
+  requestingWorkosUserId: string,
 ): Promise<RuntimeAgent | undefined> {
   const agent = await getAgent(organizationId, agentId);
   if (!agent) return undefined;
+  const standingInstructions =
+    agent.baseAgentId === "work"
+      ? await getWorkInstructions(requestingWorkosUserId)
+      : null;
   return {
     id: agent.id,
-    instructions: buildAgentInstructions(agent),
+    instructions: buildAgentInstructions(agent, standingInstructions),
     baseAgentId: agent.baseAgentId,
     enabledToolIds: agent.enabledToolIds,
   };

@@ -8,7 +8,9 @@ export interface ConversationPanelLayout {
 export const defaultUserPreferences = {
   sendMessageShortcut: "mod_enter",
   conversationPanelLayout: null as ConversationPanelLayout | null,
+  workInstructions: null as string | null,
 } as const satisfies {
   sendMessageShortcut: SendMessageShortcut;
   conversationPanelLayout: ConversationPanelLayout | null;
+  workInstructions: string | null;
 };

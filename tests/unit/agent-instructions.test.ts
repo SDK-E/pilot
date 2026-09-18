@@ -23,3 +23,42 @@ test("agent instructions include only configured settings", () => {
     "General instructions:\nAnswer clearly.",
   );
 });
+
+test("agent instructions append the user's standing instructions last, when present", () => {
+  assert.equal(
+    buildAgentInstructions(
+      {
+        instructions: "Turn requests into a plan.",
+        goals: null,
+        tone: null,
+        outputFormat: null,
+      },
+      "Always cite sources.",
+    ),
+    "General instructions:\nTurn requests into a plan.\n\nYour standing instructions from this user:\nAlways cite sources.",
+  );
+});
+
+test("agent instructions omit the standing-instructions section when blank or absent", () => {
+  assert.equal(
+    buildAgentInstructions(
+      {
+        instructions: "Turn requests into a plan.",
+        goals: null,
+        tone: null,
+        outputFormat: null,
+      },
+      " ".repeat(3),
+    ),
+    "General instructions:\nTurn requests into a plan.",
+  );
+  assert.equal(
+    buildAgentInstructions({
+      instructions: "Turn requests into a plan.",
+      goals: null,
+      tone: null,
+      outputFormat: null,
+    }),
+    "General instructions:\nTurn requests into a plan.",
+  );
+});

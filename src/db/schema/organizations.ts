@@ -85,6 +85,12 @@ export const userPreferences = pgTable("user_preferences", {
     conversation: number;
     details: number;
   } | null>(),
+  /**
+   * Standing instructions the user writes once in Settings and that apply to
+   * every Work conversation they start or continue, matching Cowork's
+   * per-user "Settings > Cowork" template. Never used for Chat or Code.
+   */
+  workInstructions: text("work_instructions"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

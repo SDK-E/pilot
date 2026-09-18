@@ -8,6 +8,7 @@ import {
 } from "@/agents/agent-repository";
 import { createConversation } from "@/conversations/conversation-repository";
 import { deriveConversationTitle } from "@/conversations/conversation-title";
+import { getWorkInstructions } from "@/users/user-preference-repository";
 
 import type { AgentKindId } from "@/agents/agent-kinds";
 import type { RuntimeAgent } from "@/conversations/runtime-agent";
@@ -42,12 +43,16 @@ export async function startConversation(input: {
   if (!conversation) {
     return { ok: false, message: "Pilot could not start a conversation." };
   }
+  const standingInstructions =
+    agent.baseAgentId === "work"
+      ? await getWorkInstructions(input.context.user.id)
+      : null;
   return {
     ok: true,
     conversationId: conversation.id,
     agent: {
       id: agent.id,
-      instructions: buildAgentInstructions(agent),
+      instructions: buildAgentInstructions(agent, standingInstructions),
       baseAgentId: agent.baseAgentId,
       enabledToolIds: agent.enabledToolIds,
     },

@@ -14,6 +14,7 @@ import {
   WorkspaceNameSection,
 } from "@/components/settings/organization-sections";
 import { SettingsNav } from "@/components/settings/settings-nav";
+import { WorkInstructionsSection } from "@/components/settings/work-instructions-section";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -230,6 +231,15 @@ export default async function SettingsPage() {
       content: (
         <ComposerSection
           sendMessageShortcut={preferences.sendMessageShortcut}
+        />
+      ),
+    },
+    {
+      id: "work",
+      label: "Work",
+      content: (
+        <WorkInstructionsSection
+          workInstructions={preferences.workInstructions}
         />
       ),
     },

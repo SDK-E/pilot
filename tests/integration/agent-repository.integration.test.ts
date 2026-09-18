@@ -38,7 +38,9 @@ import {
 } from "@/projects/project-repository";
 import {
   getUserPreferences,
+  getWorkInstructions,
   updateUserPreferences,
+  updateWorkInstructions,
 } from "@/users/user-preference-repository";
 
 const suffix = randomUUID().replaceAll("-", "");
@@ -114,12 +116,29 @@ test("preferences default and update per user and organization", async () => {
   assert.deepEqual(await getUserPreferences(userId), {
     sendMessageShortcut: "mod_enter",
     conversationPanelLayout: null,
+    workInstructions: null,
   });
   await updateUserPreferences({
     workosUserId: userId,
     sendMessageShortcut: "enter",
   });
   assert.equal((await getUserPreferences(userId)).sendMessageShortcut, "enter");
+
+  assert.equal(await getWorkInstructions(userId), null);
+  await updateWorkInstructions({
+    workosUserId: userId,
+    workInstructions: "Always cite sources.",
+  });
+  assert.equal(await getWorkInstructions(userId), "Always cite sources.");
+  assert.equal(
+    (await getUserPreferences(userId)).workInstructions,
+    "Always cite sources.",
+  );
+  await updateWorkInstructions({
+    workosUserId: userId,
+    workInstructions: null,
+  });
+  assert.equal(await getWorkInstructions(userId), null);
 
   assert.equal(
     (await getOrganizationPreferences(organizationId)).defaultWorkerId,

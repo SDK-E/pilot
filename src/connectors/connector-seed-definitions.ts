@@ -1,16 +1,11 @@
 /**
- * The connectors Pilot ships out of the box — GitHub, Slack, Notion,
- * Linear, Vercel, and Monday.com — expressed as plain data for the
- * generic connector engine (`base-connector.ts` / `base-connector-adapter.ts`).
- * Seeding these into `connector_definitions` (see
- * `seedDefaultConnectorDefinitions`) is what makes them admin-editable
- * and removable exactly like a connector an admin adds from scratch — see
- * docs/decisions/0023-dynamic-connectors.md.
- *
- * Client id/secret are platform admin-managed (Settings → Admin →
- * Connector providers, backed by `connector_provider_credentials`, keyed
- * by `slug` here) — an admin can edit or delete any seeded connector
- * afterward like any other.
+ * Quick-fill presets for the platform admin's "Add provider" form
+ * (`/admin/connector-providers`) — GitHub, Slack, Notion, Linear, Vercel,
+ * and Monday.com, expressed as plain data for the generic connector engine
+ * (`base-connector.ts` / `base-connector-adapter.ts`). Picking one fills
+ * every field except client id/secret, which the admin still supplies; the
+ * admin can also ignore every preset and configure a totally custom
+ * provider. See docs/decisions/0023-dynamic-connectors.md.
  */
 import type { ConnectorDefinitionAction } from "@/db/schema/connector-definitions";
 
@@ -62,7 +57,7 @@ export const CONNECTOR_SEEDS: ConnectorSeed[] = [
     description: "List channels and read recent messages.",
     authorizeUrl: "https://slack.com/oauth/v2/authorize",
     tokenUrl: "https://slack.com/api/oauth.v2.access",
-    scopes: ["channels:read", "channels:history"],
+    scopes: ["channels:read", "channels:history", "chat:write"],
     scopeDelimiter: ",",
     accountIdentifierUrl: "https://slack.com/api/team.info",
     accountIdentifierField: "team.name",
@@ -77,6 +72,16 @@ export const CONNECTOR_SEEDS: ConnectorSeed[] = [
         listPath: "channels",
         idField: "id",
         titleField: "name",
+      },
+      {
+        id: "post-message",
+        label: "Post message",
+        description: "Post a message to a channel.",
+        method: "POST",
+        urlTemplate: "https://slack.com/api/chat.postMessage",
+        bodyTemplate: '{"channel":"{channel}","text":"{text}"}',
+        idField: "ts",
+        isMutating: true,
       },
     ],
   },

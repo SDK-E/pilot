@@ -2,20 +2,18 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 
-import { CONNECTOR_SEEDS } from "@/connectors/connector-seed-definitions";
 import { encryptToken } from "@/connectors/token-encryption";
 import { db } from "@/db/client";
 import { connectorDefinitions } from "@/db/schema";
-import { getConnectorProviderCredential } from "@/platform/connector-provider-credential-repository";
+import { listEnabledConnectorProviders } from "@/platform/connector-provider-repository";
 
 /**
- * Seeds Pilot's built-in connectors (GitHub, Slack, ...) for an
- * organization that has none yet — a one-time population of
- * `connector_definitions`, not a standing default. Once seeded, each row is
- * an ordinary admin-editable/removable connector; a seed a platform admin
- * hasn't configured credentials for yet (Settings → Admin → Connector
- * providers) is skipped entirely, since an unusable connector would just
- * clutter Settings.
+ * Seeds Pilot's platform-managed connectors for an organization that has
+ * none yet — a one-time population of `connector_definitions`, not a
+ * standing default. Once seeded, each row is an ordinary
+ * admin-editable/removable connector; a provider a platform admin hasn't
+ * enabled yet (Settings → Admin → Connector providers) is skipped
+ * entirely, since an unusable connector would just clutter Settings.
  */
 export async function seedDefaultConnectorDefinitions(input: {
   organizationId: string;
@@ -28,35 +26,29 @@ export async function seedDefaultConnectorDefinitions(input: {
     .limit(1);
   if (existing) return;
 
-  const seededCredentials = await Promise.all(
-    CONNECTOR_SEEDS.map(async (seed) => {
-      const credential = await getConnectorProviderCredential(seed.slug);
-      return credential ? { seed, credential } : null;
-    }),
-  );
-  const rows = seededCredentials.filter((row) => row !== null);
-  if (rows.length === 0) return;
+  const providers = await listEnabledConnectorProviders();
+  if (providers.length === 0) return;
 
   await db.insert(connectorDefinitions).values(
-    rows.map(({ seed, credential }) => {
-      const secret = encryptToken(credential.clientSecret);
+    providers.map((provider) => {
+      const secret = encryptToken(provider.clientSecret);
       return {
         organizationId: input.organizationId,
-        slug: seed.slug,
-        displayName: seed.displayName,
-        icon: seed.icon,
-        description: seed.description,
-        authorizeUrl: seed.authorizeUrl,
-        tokenUrl: seed.tokenUrl,
-        scopes: seed.scopes,
-        scopeDelimiter: seed.scopeDelimiter,
-        clientId: credential.clientId,
+        slug: provider.slug,
+        displayName: provider.displayName,
+        icon: provider.icon,
+        description: provider.description,
+        authorizeUrl: provider.authorizeUrl,
+        tokenUrl: provider.tokenUrl,
+        scopes: provider.scopes,
+        scopeDelimiter: provider.scopeDelimiter,
+        clientId: provider.clientId,
         encryptedClientSecret: secret.ciphertext,
         clientSecretIv: secret.iv,
         clientSecretAuthTag: secret.authTag,
-        accountIdentifierUrl: seed.accountIdentifierUrl,
-        accountIdentifierField: seed.accountIdentifierField,
-        actions: seed.actions,
+        accountIdentifierUrl: provider.accountIdentifierUrl,
+        accountIdentifierField: provider.accountIdentifierField,
+        actions: provider.actions,
         createdByWorkosUserId: input.createdByWorkosUserId,
       };
     }),

@@ -268,7 +268,11 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   const conversation = await getConversation(owner, conversationId.data);
   const agent = conversation
-    ? await loadRuntimeAgent(owner.organizationId, conversation.agentId)
+    ? await loadRuntimeAgent(
+        owner.organizationId,
+        conversation.agentId,
+        owner.userId,
+      )
     : undefined;
   if (!conversation || !agent)
     return error("This conversation is unavailable.", 404);
