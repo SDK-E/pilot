@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, lt } from "drizzle-orm";
+import { and, asc, eq, lt, type SQL } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import { activityEvents, conversations, executions } from "@/db/schema";
@@ -26,16 +26,13 @@ function isUniqueViolation(error: unknown) {
 const STALE_EXECUTION_MS = 10 * 60 * 1000;
 
 /**
- * Closes any execution for this conversation that has sat running well past
- * how long a turn could legitimately take. Without this, a turn abandoned
- * mid-flight (a crash, a killed function) never reaches finishExecution, and
- * executions_conversation_active_unique then blocks that conversation from
- * starting a new turn forever.
+ * Closes a batch of `running` executions matched by `scope` (plus the
+ * shared staleness cutoff) and records the same `execution.failed` activity
+ * event for each. Shared by the conversation-scoped and global reapers
+ * below so the close semantics (status, error message, completedAt,
+ * activity event) never drift between them.
  */
-async function reapStaleExecutions(input: {
-  organizationId: string;
-  conversationId: string;
-}) {
+async function reapExecutionsMatching(scope?: SQL) {
   const staleBefore = new Date(Date.now() - STALE_EXECUTION_MS);
   const reaped = await db
     .update(executions)
@@ -46,21 +43,56 @@ async function reapStaleExecutions(input: {
     })
     .where(
       and(
-        eq(executions.organizationId, input.organizationId),
-        eq(executions.conversationId, input.conversationId),
+        scope,
         eq(executions.status, "running"),
         lt(executions.startedAt, staleBefore),
       ),
     )
-    .returning({ id: executions.id });
+    .returning({
+      id: executions.id,
+      organizationId: executions.organizationId,
+    });
   for (const execution of reaped) {
     await db.insert(activityEvents).values({
-      organizationId: input.organizationId,
+      organizationId: execution.organizationId,
       executionId: execution.id,
       type: "execution.failed",
       summary: "Response failed",
     });
   }
+  return reaped.length;
+}
+
+/**
+ * Closes any execution for this conversation that has sat running well past
+ * how long a turn could legitimately take. Without this, a turn abandoned
+ * mid-flight (a crash, a killed function) never reaches finishExecution, and
+ * executions_conversation_active_unique then blocks that conversation from
+ * starting a new turn forever.
+ */
+async function reapStaleExecutions(input: {
+  organizationId: string;
+  conversationId: string;
+}) {
+  await reapExecutionsMatching(
+    and(
+      eq(executions.organizationId, input.organizationId),
+      eq(executions.conversationId, input.conversationId),
+    ),
+  );
+}
+
+/**
+ * Global counterpart to `reapStaleExecutions`, with no `conversationId` (or
+ * even `organizationId`) filter — it closes every stale `running` execution
+ * across every organization. Conversation-scoped reaping only runs when
+ * that same conversation happens to start its next turn; a conversation
+ * abandoned after a crash and never revisited would otherwise stay
+ * `running` forever. Intended to be driven by a periodic sweep (see the
+ * `/api/cron/reap-stale-runs` route), not by any per-request path.
+ */
+export async function reapAllStaleExecutions() {
+  return reapExecutionsMatching();
 }
 
 /**

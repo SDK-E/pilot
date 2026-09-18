@@ -155,3 +155,15 @@ needs a real dispatcher, which this slice does not add:
   the parity goal of "hands Pilot a task and it keeps going for hours
   unattended" remains not implemented, and README/marketing copy should
   keep saying so.
+- 2026-09-18: added a global, cross-conversation stale-run sweep
+  (`reapAllStaleExecutions`/`reapAllStaleWorkRuns`, driven by a daily
+  Vercel Cron route at `/api/cron/reap-stale-runs`) so a conversation
+  abandoned after a crash and never revisited still gets reaped, not just
+  one that happens to start a new turn. This is still bounded by the same
+  plan-tier ceiling as the rest of this ADR: this Vercel team is on the
+  Hobby plan, whose cron jobs are capped at once per day (confirmed against
+  Vercel's own docs, vercel.com/docs/cron-jobs/usage-and-pricing), and
+  Vercel Queues — the real primitive for sub-minute background dispatch —
+  requires a paid Pro+ plan this team does not have. The cron route is
+  therefore a once-daily sweep only, not the background dispatch loop
+  described above; that remains deferred pending a plan upgrade.

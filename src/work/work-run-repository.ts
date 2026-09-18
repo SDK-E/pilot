@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, sql, type SQL } from "drizzle-orm";
 
 import { WORK_RUN_MAX_STEPS } from "@/agents/agent-kinds";
 import { db } from "@/db/client";
@@ -16,16 +16,11 @@ const NON_TERMINAL_STATUSES = ["running", "cancelling"] as const;
 const STALE_WORK_RUN_MS = 10 * 60 * 1000;
 
 /**
- * Closes any Work run for this conversation left `running`/`cancelling`
- * well past how long a turn could legitimately take. Mirrors
- * `reapStaleExecutions` — without it, a Work run abandoned mid-turn (a
- * crash, a redeploy, a killed function) would show as perpetually in
- * progress with no path back to a usable conversation.
+ * Closes a batch of non-terminal Work runs matched by `scope` (plus the
+ * shared staleness cutoff). Shared by the conversation-scoped and global
+ * reapers below so the close semantics never drift between them.
  */
-async function reapStaleWorkRuns(input: {
-  organizationId: string;
-  conversationId: string;
-}) {
+async function reapWorkRunsMatching(scope?: SQL) {
   const staleBefore = new Date(Date.now() - STALE_WORK_RUN_MS);
   await db
     .update(workRuns)
@@ -37,12 +32,44 @@ async function reapStaleWorkRuns(input: {
     })
     .where(
       and(
-        eq(workRuns.organizationId, input.organizationId),
-        eq(workRuns.conversationId, input.conversationId),
+        scope,
         inArray(workRuns.status, NON_TERMINAL_STATUSES),
         lt(workRuns.startedAt, staleBefore),
       ),
     );
+}
+
+/**
+ * Closes any Work run for this conversation left `running`/`cancelling`
+ * well past how long a turn could legitimately take. Mirrors
+ * `reapStaleExecutions` — without it, a Work run abandoned mid-turn (a
+ * crash, a redeploy, a killed function) would show as perpetually in
+ * progress with no path back to a usable conversation.
+ */
+async function reapStaleWorkRuns(input: {
+  organizationId: string;
+  conversationId: string;
+}) {
+  await reapWorkRunsMatching(
+    and(
+      eq(workRuns.organizationId, input.organizationId),
+      eq(workRuns.conversationId, input.conversationId),
+    ),
+  );
+}
+
+/**
+ * Global counterpart to `reapStaleWorkRuns`, with no `conversationId` (or
+ * `organizationId`) filter — closes every stale non-terminal Work run
+ * across every organization. Conversation-scoped reaping only runs when
+ * that same conversation happens to start its next turn; a conversation
+ * abandoned after a crash and never revisited would otherwise stay
+ * `running`/`cancelling` forever. Intended to be driven by a periodic
+ * sweep (see the `/api/cron/reap-stale-runs` route), not by any
+ * per-request path.
+ */
+export async function reapAllStaleWorkRuns() {
+  await reapWorkRunsMatching();
 }
 
 /**

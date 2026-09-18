@@ -1,3 +1,9 @@
 {
-  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then pnpm db:migrate:deploy; fi && pnpm build"
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then pnpm db:migrate:deploy; fi && pnpm build",
+  "crons": [
+    {
+      "path": "/api/cron/reap-stale-runs",
+      "schedule": "0 3 * * *"
+    }
+  ]
 }
