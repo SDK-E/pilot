@@ -47,6 +47,7 @@ export function AgentCapabilitiesSection({
               <Switch
                 aria-label="Web search"
                 defaultChecked={webSearchEnabled}
+                key={String(webSearchEnabled)}
                 name="webSearchEnabled"
                 value="true"
               />
@@ -61,6 +62,7 @@ export function AgentCapabilitiesSection({
               <Switch
                 aria-label="Code sandbox"
                 defaultChecked={codeSandboxEnabled}
+                key={String(codeSandboxEnabled)}
                 name="codeSandboxEnabled"
                 value="true"
               />

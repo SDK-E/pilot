@@ -50,7 +50,11 @@ export function ModelPolicySection({
             {availableModels.length > 0 ? (
               <Field>
                 <FieldLabel htmlFor="primary-model">Primary model</FieldLabel>
-                <Select defaultValue={primaryModelId} name="primaryModelId">
+                <Select
+                  defaultValue={primaryModelId}
+                  key={primaryModelId}
+                  name="primaryModelId"
+                >
                   <SelectTrigger className="w-80" id="primary-model">
                     <SelectValue />
                   </SelectTrigger>
@@ -80,6 +84,7 @@ export function ModelPolicySection({
               <Switch
                 aria-label="Retry once with the fallback model"
                 defaultChecked={retryEnabled}
+                key={String(retryEnabled)}
                 name="retryEnabled"
                 value="true"
               />

@@ -192,6 +192,7 @@ function ComposerSection({
         <CardContent className="pt-4">
           <RadioGroup
             defaultValue={sendMessageShortcut}
+            key={sendMessageShortcut}
             name="sendMessageShortcut"
           >
             {SHORTCUTS.map((shortcut) => (

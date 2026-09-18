@@ -52,6 +52,7 @@ export function DefaultAgentSection({
               <FieldLabel htmlFor="default-agent">Agent</FieldLabel>
               <Select
                 defaultValue={defaultAgentId ?? agents[0]?.id}
+                key={defaultAgentId ?? agents[0]?.id}
                 name="agentId"
               >
                 <SelectTrigger className="w-64" id="default-agent">
@@ -202,6 +203,7 @@ export function WorkspaceNameSection({
             <Input
               defaultValue={organizationName}
               id="workspace-name"
+              key={organizationName}
               maxLength={200}
               name="name"
               required

@@ -32,6 +32,7 @@ export function WorkInstructionsSection({
             aria-label="Work standing instructions"
             className="min-h-32"
             defaultValue={workInstructions ?? ""}
+            key={workInstructions}
             maxLength={4000}
             name="workInstructions"
             placeholder="e.g. Always cite sources. Prefer bullet points over long paragraphs. Flag anything that needs my approval before it's final."
