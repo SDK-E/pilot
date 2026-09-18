@@ -29,8 +29,9 @@ REQUIRED_CONNECTORS=(
   CONNECTOR_TOKEN_ENCRYPTION_KEY
   CONNECTOR_STATE_SIGNING_SECRET
 )
-# Verifies the daily Vercel Cron request to /api/cron/reap-stale-runs.
-# Production-only — never set this in a local .env.local.
+# Verifies the external HTTP cron scheduler's request (e.g. cron-job.org)
+# to /api/cron/reap-stale-runs. Production-only — never set this in a
+# local .env.local.
 REQUIRED_PRODUCTION=(
   CRON_SECRET
 )
@@ -83,7 +84,7 @@ check_group "Chat/Work/Code runtime (pilot-ai M2M call)" "${REQUIRED_RUNTIME[@]}
 check_group "Platform admin (model gateways)" "${REQUIRED_PLATFORM[@]}"
 check_group "Connectors (per-provider OAuth credentials: Settings → Admin → Connector providers)" "${REQUIRED_CONNECTORS[@]}"
 if [ "$ENVIRONMENT" = "production" ]; then
-  check_group "Production-only (Vercel Cron)" "${REQUIRED_PRODUCTION[@]}"
+  check_group "Production-only (external cron)" "${REQUIRED_PRODUCTION[@]}"
 fi
 
 echo "-- Optional / platform-managed --"

@@ -156,14 +156,20 @@ needs a real dispatcher, which this slice does not add:
   unattended" remains not implemented, and README/marketing copy should
   keep saying so.
 - 2026-09-18: added a global, cross-conversation stale-run sweep
-  (`reapAllStaleExecutions`/`reapAllStaleWorkRuns`, driven by a daily
-  Vercel Cron route at `/api/cron/reap-stale-runs`) so a conversation
-  abandoned after a crash and never revisited still gets reaped, not just
-  one that happens to start a new turn. This is still bounded by the same
-  plan-tier ceiling as the rest of this ADR: this Vercel team is on the
-  Hobby plan, whose cron jobs are capped at once per day (confirmed against
-  Vercel's own docs, vercel.com/docs/cron-jobs/usage-and-pricing), and
-  Vercel Queues — the real primitive for sub-minute background dispatch —
-  requires a paid Pro+ plan this team does not have. The cron route is
-  therefore a once-daily sweep only, not the background dispatch loop
-  described above; that remains deferred pending a plan upgrade.
+  (`reapAllStaleExecutions`/`reapAllStaleWorkRuns`) at
+  `/api/cron/reap-stale-runs`, so a conversation abandoned after a crash
+  and never revisited still gets reaped, not just one that happens to
+  start a new turn. This Vercel team is on the Hobby plan, whose cron jobs
+  are capped at once per day (confirmed against Vercel's own docs,
+  vercel.com/docs/cron-jobs/usage-and-pricing) — rather than accept that
+  ceiling, the route is triggered by an external HTTP cron scheduler
+  (cron-job.org: free, unlimited jobs, down to 1-minute intervals, custom
+  headers) instead of Vercel's own `crons` config, so the sweep itself
+  isn't limited to once daily. Vercel Queues — the real primitive for
+  sub-minute background _dispatch_ (continuing a run's actual work, not
+  just reaping abandoned ones) — still requires a paid Pro+ plan this team
+  does not have; an external cron hitting a stateless sweep route sidesteps
+  the cron-frequency ceiling but cannot substitute for a queue, since there
+  is still no mechanism to resume a step-by-step run between HTTP requests.
+  The background dispatch loop described above therefore remains deferred
+  pending a plan upgrade.

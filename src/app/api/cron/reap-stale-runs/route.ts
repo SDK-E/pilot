@@ -1,6 +1,8 @@
 /**
- * Global stale-run sweep, triggered daily by Vercel Cron (see the `crons`
- * entry in vercel.json). `reapStaleExecutions`/`reapStaleWorkRuns`
+ * Global stale-run sweep, triggered by an external HTTP cron scheduler
+ * (e.g. cron-job.org — free, unlimited jobs, down to 1-minute intervals;
+ * chosen over Vercel Cron because this project's Vercel plan caps cron jobs
+ * at once per day). `reapStaleExecutions`/`reapStaleWorkRuns`
  * (src/executions/execution-repository.ts, src/work/work-run-repository.ts)
  * only close a stale `running` execution/work_run when that same
  * conversation happens to start its next turn, scoped to that one
@@ -14,11 +16,9 @@
  * `getWorkspaceSession()`" rule — there is no WorkOS session to check for a
  * system-to-system cron invocation. It is not listed in `src/proxy.ts`'s
  * matcher either, for the same reason: that middleware exists to attach a
- * WorkOS session, which this request never has. Instead it authenticates
- * the standard Vercel Cron way, verifying the request carries
- * `Authorization: Bearer ${CRON_SECRET}` (see
- * https://vercel.com/docs/cron-jobs/manage-cron-jobs, "Securing cron jobs")
- * — Vercel attaches this header automatically to its own cron invocations;
+ * WorkOS session, which this request never has. Instead it authenticates by
+ * requiring the request to carry `Authorization: Bearer ${CRON_SECRET}`,
+ * a value only this route and the external scheduler's saved header know;
  * any request without the matching secret is rejected.
  */
 export const runtime = "nodejs";
