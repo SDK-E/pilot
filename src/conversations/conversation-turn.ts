@@ -20,6 +20,7 @@ import {
   sanitizeWebResponse,
   saveMessageSources,
 } from "@/conversations/message-sources";
+import { resolveModelPlan } from "@/conversations/model-plan";
 import { buildRuntimeRequest } from "@/conversations/runtime-request";
 import {
   finishTurnAgentRun,
@@ -38,12 +39,11 @@ import type { OrganizationCapabilities } from "@/conversations/tool-authorizatio
 
 export type { TurnInput } from "@/conversations/turn-shared";
 
-// pilot-ai's own `maxDuration` for /v1/chat/completions is 300s (pilot-ai/vercel.json),
-// this Vercel plan's hard ceiling. Stay clearly under that so Pilot never
-// races pilot-ai's hard cutoff and tears down a response pilot-ai would
-// otherwise have delivered in time.
+// This route's own `maxDuration` is 300s (this Vercel plan's hard ceiling —
+// see the stream route). Stay clearly under it so Pilot's own timeout fires
+// first and can hand off to ADR-0026's chunked continuation, rather than
+// Vercel tearing the request down mid-response with no recovery.
 const STREAM_TIMEOUT_MS = 260_000;
-const FALLBACK_MODEL_ID = "kilo/kilo-auto/free";
 
 /**
  * Opens the execution the runtime reports to, then records the user's
@@ -231,9 +231,10 @@ async function runStreamingTurn(
     ...policy,
     hasActiveCustomConnector: customConnectorActive,
   };
-  const models = policy.retryEnabled
-    ? [policy.primaryModelId, FALLBACK_MODEL_ID]
-    : [policy.primaryModelId];
+  const models = resolveModelPlan({
+    policy,
+    requestedModelId: input.requestedModelId,
+  });
 
   for (const [attempt, modelId] of models.entries()) {
     const request = await buildRuntimeRequest(

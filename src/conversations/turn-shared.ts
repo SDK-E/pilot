@@ -37,6 +37,13 @@ export interface TurnInput {
    * execution instead of opening a second one. See ADR-0026.
    */
   continuingRunId?: string;
+  /**
+   * An explicit per-message model pick from the composer's model picker — a
+   * selector string (`gw:...`, `byok:...`, or a bare model id). Omitted
+   * means fall back to the org's `primaryModelId` preference, subject to
+   * usage-limit-driven BYOK substitution — see `model-plan.ts`.
+   */
+  requestedModelId?: string;
 }
 
 export function storedCount(value: number | undefined): number | undefined {

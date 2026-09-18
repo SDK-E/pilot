@@ -1,5 +1,6 @@
 import "server-only";
 
+import { resolveByokCredential } from "@/byok/byok-repository";
 import { buildAttachmentContext } from "@/conversations/attachment-context";
 import {
   allowedToolIds,
@@ -20,11 +21,25 @@ import type { TurnInput } from "@/conversations/turn-shared";
 const MAX_INSTRUCTIONS_LENGTH = 20_000;
 
 /**
- * Resolves a `gw:<gatewayId>:<modelId>` value into the Mastra model id plus
- * the credential to call it with. A plain string (no `gw:` prefix) passes
- * through unchanged for pilot-ai to resolve from its own environment.
+ * Resolves a `gw:<gatewayId>:<modelId>` or `byok:<credentialId>:<modelId>`
+ * value into the Mastra model id plus the credential to call it with. A
+ * plain string (neither prefix) passes through unchanged for pilot-ai to
+ * resolve from its own environment.
  */
-async function resolveWorkerModel(modelId: string) {
+async function resolveWorkerModel(modelId: string, actingUserId: string) {
+  if (modelId.startsWith("byok:")) {
+    const credential = await resolveByokCredential(modelId, actingUserId);
+    if (!credential) {
+      throw new Error(
+        "This key is no longer available. Check it in Settings → API Keys.",
+      );
+    }
+    return {
+      modelId: `openai/${credential.modelId}`,
+      apiKey: credential.apiKey,
+      baseUrl: credential.baseUrl,
+    };
+  }
   if (!modelId.startsWith("gw:"))
     return { modelId, apiKey: undefined, baseUrl: undefined };
   const credential = await resolveGatewayCredential(modelId);
@@ -89,7 +104,7 @@ export async function buildRuntimeRequest(
     requestedSkillIds.length > 0
       ? listSkills(input.organizationId)
       : Promise.resolve([]),
-    resolveWorkerModel(modelId),
+    resolveWorkerModel(modelId, input.userId),
   ]);
   // Never trust the caller's own skillIds as authorization (AGENTS.md) — a
   // skill not granted to this agent must never contribute its instructions

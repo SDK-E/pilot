@@ -48,6 +48,10 @@ const promptField = z.string().trim().min(1).max(10_000);
 const connectorToolIdsField = z.array(z.string()).max(20).optional();
 const skillIdsField = z.array(z.uuid()).max(10).optional();
 const attachmentIdsField = z.array(z.uuid()).max(20).optional();
+// The composer's model picker — a selector string (`gw:...`, `byok:...`, or
+// a bare model id). Omitted means fall back to the org's preference; see
+// `resolveModelPlan`.
+const requestedModelIdField = z.string().min(1).max(300).optional();
 
 const inputSchema = z.discriminatedUnion("mode", [
   z.object({
@@ -56,6 +60,7 @@ const inputSchema = z.discriminatedUnion("mode", [
     connectorToolIds: connectorToolIdsField,
     skillIds: skillIdsField,
     attachmentIds: attachmentIdsField,
+    requestedModelId: requestedModelIdField,
   }),
   z.object({
     mode: z.literal("edit"),
@@ -64,6 +69,7 @@ const inputSchema = z.discriminatedUnion("mode", [
     connectorToolIds: connectorToolIdsField,
     skillIds: skillIdsField,
     attachmentIds: attachmentIdsField,
+    requestedModelId: requestedModelIdField,
   }),
   z.object({ mode: z.literal("regenerate"), messageId: z.uuid() }),
   z.object({ mode: z.literal("continue"), messageId: z.uuid() }),
@@ -94,6 +100,7 @@ interface EditRequest {
   connectorToolIds?: readonly string[];
   skillIds?: readonly string[];
   attachmentIds?: readonly string[];
+  requestedModelId?: string;
 }
 
 async function startEdit(
@@ -126,6 +133,7 @@ async function startEdit(
       requestedConnectorToolIds: edit.connectorToolIds,
       activeSkillIds: edit.skillIds,
       attachmentIds: edit.attachmentIds,
+      requestedModelId: edit.requestedModelId,
     },
     clientSignal,
   );
@@ -227,6 +235,7 @@ function runTurn(
         requestedConnectorToolIds: input.connectorToolIds,
         activeSkillIds: input.skillIds,
         attachmentIds: input.attachmentIds,
+        requestedModelId: input.requestedModelId,
       },
       clientSignal,
     );
@@ -239,6 +248,7 @@ function runTurn(
         connectorToolIds: input.connectorToolIds,
         skillIds: input.skillIds,
         attachmentIds: input.attachmentIds,
+        requestedModelId: input.requestedModelId,
       },
       clientSignal,
     );
