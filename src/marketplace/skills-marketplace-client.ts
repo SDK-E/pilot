@@ -35,35 +35,45 @@ export interface MarketplaceSkillDetail {
 export type MarketplaceResult<T> =
   { ok: true; data: T } | { ok: false; error: string };
 
+const OIDC_SETUP_MESSAGE =
+  "This project needs Secure Backend Access with OIDC Federation enabled (Vercel dashboard → Settings → Security) so Pilot can call skills.sh's API.";
+
 /**
- * Whether this deployment can call skills.sh's API at all — it requires
- * Vercel OIDC Federation to be enabled for the project (Vercel dashboard →
- * Settings → OIDC Federation), which mints `VERCEL_OIDC_TOKEN` at runtime.
- * Never enabled locally unless `vercel env pull` has been run. The
- * marketplace page uses this to show a clear setup notice instead of a
- * confusing fetch failure.
+ * Fetches the OIDC token that authenticates every skills.sh call. A Vercel
+ * *build* gets this as the `VERCEL_OIDC_TOKEN` env var, but a running
+ * Vercel Function (this code path — a page request, not a build) instead
+ * gets it via a request-scoped `x-vercel-oidc-token` header that
+ * `getVercelOidcToken()` reads through `@vercel/oidc`'s own request
+ * context — `process.env.VERCEL_OIDC_TOKEN` is never populated here, so
+ * checking it (as this used to) always reported "not configured" even with
+ * OIDC Federation correctly enabled. Missing that header — OIDC Federation
+ * genuinely off — is the only expected failure mode; anything else here is
+ * a real bug, not a setup gap, so it's left to throw and get logged instead
+ * of being folded into the same message.
  */
-export function isMarketplaceConfigured(): boolean {
-  return Boolean(process.env.VERCEL_OIDC_TOKEN?.trim());
+async function fetchOidcToken(): Promise<
+  { ok: true; token: string } | { ok: false; error: string }
+> {
+  try {
+    return { ok: true, token: await getVercelOidcToken() };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("x-vercel-oidc-token")) throw error;
+    return { ok: false, error: OIDC_SETUP_MESSAGE };
+  }
 }
 
 async function callSkillsApi<T>(
   path: string,
   revalidateSeconds: number,
 ): Promise<MarketplaceResult<T>> {
-  if (!isMarketplaceConfigured()) {
-    return {
-      ok: false,
-      error:
-        "The skills marketplace needs Vercel OIDC Federation enabled for this project.",
-    };
-  }
+  // Called fresh inside the request, not hoisted to module scope — the
+  // token is short-lived and request-scoped (see @vercel/oidc's own docs).
+  const tokenResult = await fetchOidcToken();
+  if (!tokenResult.ok) return tokenResult;
   try {
-    // Called fresh inside the request, not hoisted to module scope — the
-    // token is short-lived and request-scoped (see @vercel/oidc's own docs).
-    const token = await getVercelOidcToken();
     const response = await fetch(`${BASE_URL}${path}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${tokenResult.token}` },
       next: { revalidate: revalidateSeconds },
     });
     if (!response.ok) {

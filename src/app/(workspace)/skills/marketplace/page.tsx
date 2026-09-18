@@ -4,10 +4,7 @@ import { MarketplaceBrowser } from "@/components/skills/marketplace-browser";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/workspace/page-header";
-import {
-  isMarketplaceConfigured,
-  listMarketplaceSkills,
-} from "@/marketplace/skills-marketplace-client";
+import { listMarketplaceSkills } from "@/marketplace/skills-marketplace-client";
 import { requireWorkspaceSession } from "@/organizations/workspace-session";
 import { listSkills } from "@/skills/skill-repository";
 
@@ -20,31 +17,17 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Skills marketplace" };
 
 function MarketplaceBody({
-  isConfigured,
   leaderboard,
   installedMarketplaceIds,
 }: {
-  isConfigured: boolean;
-  leaderboard: MarketplaceResult<{ data: MarketplaceSkill[] }> | undefined;
+  leaderboard: MarketplaceResult<{ data: MarketplaceSkill[] }>;
   installedMarketplaceIds: string[];
 }) {
-  if (!isConfigured) {
-    return (
-      <Alert>
-        <AlertTitle>Marketplace not connected yet</AlertTitle>
-        <AlertDescription>
-          Enable OIDC Federation for this project in the Vercel dashboard
-          (Settings → OIDC Federation) so Pilot can call skills.sh&apos;s API.
-          No key or signup is required beyond that toggle.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  if (!leaderboard?.ok) {
+  if (!leaderboard.ok) {
     return (
       <Alert variant="destructive">
         <AlertTitle>Marketplace unavailable</AlertTitle>
-        <AlertDescription>{leaderboard?.error}</AlertDescription>
+        <AlertDescription>{leaderboard.error}</AlertDescription>
       </Alert>
     );
   }
@@ -59,16 +42,14 @@ function MarketplaceBody({
 /**
  * Browses skills published to skills.sh's public directory and installs
  * one into this organization with a single click (see
- * `installMarketplaceSkillAction`). Requires Vercel OIDC Federation on this
- * project — see `isMarketplaceConfigured`.
+ * `installMarketplaceSkillAction`). Requires Secure Backend Access with
+ * OIDC Federation enabled for this Vercel project — see
+ * `skills-marketplace-client.ts`'s `fetchOidcToken`.
  */
 export default async function SkillsMarketplacePage() {
   const { organizationId, membership } = await requireWorkspaceSession();
-  const isConfigured = isMarketplaceConfigured();
   const [leaderboard, organizationSkills] = await Promise.all([
-    isConfigured
-      ? listMarketplaceSkills({ view: "trending", perPage: 60 })
-      : Promise.resolve(undefined),
+    listMarketplaceSkills({ view: "trending", perPage: 60 }),
     listSkills(organizationId),
   ]);
   const installedMarketplaceIds = organizationSkills
@@ -89,7 +70,6 @@ export default async function SkillsMarketplacePage() {
       />
       <MarketplaceBody
         installedMarketplaceIds={installedMarketplaceIds}
-        isConfigured={isConfigured}
         leaderboard={leaderboard}
       />
     </main>
