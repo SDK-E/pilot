@@ -10,6 +10,11 @@ export interface SkillConfiguration {
   description: string;
   instructions: string;
   toolIds: string[];
+  /**
+  Set only when installing from the marketplace — see skills.ts's schema comment.
+  */
+  marketplaceId?: string;
+  marketplaceUrl?: string;
 }
 
 const skillColumns = {
@@ -18,6 +23,8 @@ const skillColumns = {
   description: skills.description,
   instructions: skills.instructions,
   toolIds: skills.toolIds,
+  marketplaceId: skills.marketplaceId,
+  marketplaceUrl: skills.marketplaceUrl,
   archived: skills.archived,
   createdAt: skills.createdAt,
   updatedAt: skills.updatedAt,
@@ -74,6 +81,49 @@ export function listSkills(organizationId: string) {
       ),
     )
     .orderBy(desc(skills.createdAt));
+}
+
+/**
+ * Installs (or re-installs) a marketplace skill: creates the org's skill
+ * row, or updates the existing one for this exact `marketplaceId` in place
+ * if the skill was already installed before — including un-archiving it, so
+ * re-adding a skill someone deleted brings it back instead of erroring on
+ * the unique constraint. Tool grants are never touched by a re-install; an
+ * admin's own choices there are local to this organization and outlive
+ * whatever the upstream skill ships.
+ */
+export async function upsertMarketplaceSkill(
+  organizationId: string,
+  createdByWorkosUserId: string,
+  skill: Required<
+    Pick<SkillConfiguration, "marketplaceId" | "marketplaceUrl">
+  > &
+    Omit<SkillConfiguration, "toolIds" | "marketplaceId" | "marketplaceUrl">,
+) {
+  const [installed] = await db
+    .insert(skills)
+    .values({
+      name: skill.name,
+      description: skill.description,
+      instructions: skill.instructions,
+      marketplaceId: skill.marketplaceId,
+      marketplaceUrl: skill.marketplaceUrl,
+      organizationId,
+      createdByWorkosUserId,
+    })
+    .onConflictDoUpdate({
+      target: [skills.organizationId, skills.marketplaceId],
+      set: {
+        name: skill.name,
+        description: skill.description,
+        instructions: skill.instructions,
+        marketplaceUrl: skill.marketplaceUrl,
+        archived: false,
+        updatedAt: new Date(),
+      },
+    })
+    .returning(skillColumns);
+  return installed;
 }
 
 export async function getSkill(organizationId: string, skillId: string) {

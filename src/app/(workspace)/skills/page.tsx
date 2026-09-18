@@ -1,4 +1,4 @@
-import { RiAddLine } from "@remixicon/react";
+import { RiAddLine, RiStoreLine } from "@remixicon/react";
 import Link from "next/link";
 
 import { SkillCard } from "@/components/skills/skill-card";
@@ -30,11 +30,18 @@ export default async function SkillsPage() {
     <main className="mx-auto w-full max-w-5xl space-y-8 p-6">
       <PageHeader
         actions={
-          <Button asChild size="sm" variant="outline">
-            <Link href="/skills/new">
-              <RiAddLine aria-hidden="true" /> New skill
-            </Link>
-          </Button>
+          <>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/skills/marketplace">
+                <RiStoreLine aria-hidden="true" /> Browse marketplace
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/skills/new">
+                <RiAddLine aria-hidden="true" /> New skill
+              </Link>
+            </Button>
+          </>
         }
         description="Reusable instructions and tool grants agents and messages can turn on."
         eyebrow={membership.organizationName}

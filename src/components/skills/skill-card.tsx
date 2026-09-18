@@ -30,6 +30,7 @@ export function SkillCard({ skill }: { skill: Skill }) {
           </ItemDescription>
           <p className="mt-1 text-xs text-muted-foreground">
             {tools.length > 0 ? tools.join(" · ") : "No tools"}
+            {skill.marketplaceId ? " · From the marketplace" : null}
           </p>
         </ItemContent>
       </Link>
