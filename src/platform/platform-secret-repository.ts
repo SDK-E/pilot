@@ -10,6 +10,14 @@ export const GITHUB_MARKETPLACE_WEBHOOK_SECRET_KEY =
   "github_marketplace_webhook_secret";
 
 /**
+ * Authenticates `/api/cron/*` routes (`Authorization: Bearer <value>`,
+ * checked by `isVerifiedCronRequest`, `src/lib/cron-auth.ts`) against the
+ * external HTTP scheduler's (cron-job.org) saved header. Admin-managed like
+ * every other entry here so rotating it needs no deploy.
+ */
+export const CRON_SECRET_KEY = "cron_secret";
+
+/**
  * Existence only, no decryption — for an admin UI's "configured" badge.
  */
 export async function hasPlatformSecret(key: string): Promise<boolean> {

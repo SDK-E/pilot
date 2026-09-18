@@ -3,8 +3,8 @@
 import { useActionState } from "react";
 
 import {
-  deleteGithubMarketplaceWebhookSecretAction,
-  setGithubMarketplaceWebhookSecretAction,
+  deletePlatformSecretFieldAction,
+  setPlatformSecretFieldAction,
   type ConnectorProviderFormState,
 } from "@/app/admin/connector-providers/actions";
 import { Button } from "@/components/ui/button";
@@ -19,18 +19,21 @@ import { Input } from "@/components/ui/input";
 const initialState: ConnectorProviderFormState = { status: "idle" };
 
 export function PlatformSecretForm({
+  secretKey,
   label,
   description,
   configured,
 }: {
+  secretKey: string;
   label: string;
   description: string;
   configured: boolean;
 }) {
   const [state, action, isPending] = useActionState(
-    setGithubMarketplaceWebhookSecretAction,
+    setPlatformSecretFieldAction.bind(null, secretKey),
     initialState,
   );
+  const deleteAction = deletePlatformSecretFieldAction.bind(null, secretKey);
 
   return (
     <Field className="rounded-xl border p-4" orientation="vertical">
@@ -61,7 +64,7 @@ export function PlatformSecretForm({
           {isPending ? "Saving…" : "Save"}
         </Button>
         {configured ? (
-          <form action={deleteGithubMarketplaceWebhookSecretAction}>
+          <form action={deleteAction}>
             <Button size="sm" type="submit" variant="ghost">
               Remove
             </Button>

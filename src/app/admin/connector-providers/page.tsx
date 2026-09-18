@@ -6,6 +6,7 @@ import {
   listConnectorProviders,
 } from "@/platform/connector-provider-repository";
 import {
+  CRON_SECRET_KEY,
   GITHUB_MARKETPLACE_WEBHOOK_SECRET_KEY,
   hasPlatformSecret,
 } from "@/platform/platform-secret-repository";
@@ -15,10 +16,32 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Connector providers" };
 
+/**
+ * Every single-value platform secret rendered by the section below — add a
+ * new entry here to put another one behind this same admin-managed,
+ * no-deploy-required form instead of an env var. See ADR-0024.
+ */
+const PLATFORM_SECRET_FIELDS = [
+  {
+    key: GITHUB_MARKETPLACE_WEBHOOK_SECRET_KEY,
+    label: "GitHub Marketplace webhook secret",
+    description:
+      "Verifies the X-Hub-Signature-256 header on Pilot's GitHub Marketplace listing webhook.",
+  },
+  {
+    key: CRON_SECRET_KEY,
+    label: "Cron scheduler secret",
+    description:
+      "Verifies the Authorization: Bearer header on requests to /api/cron/* from the external HTTP scheduler (cron-job.org). Must match the value saved in that scheduler's job configuration.",
+  },
+] as const;
+
 export default async function ConnectorProvidersPage() {
-  const [summaries, hasWebhookSecret] = await Promise.all([
+  const [summaries, secretsConfigured] = await Promise.all([
     listConnectorProviders(),
-    hasPlatformSecret(GITHUB_MARKETPLACE_WEBHOOK_SECRET_KEY),
+    Promise.all(
+      PLATFORM_SECRET_FIELDS.map((field) => hasPlatformSecret(field.key)),
+    ),
   ]);
   const details = await Promise.all(
     summaries.map((summary) => getConnectorProvider(summary.id)),
@@ -36,11 +59,15 @@ export default async function ConnectorProvidersPage() {
       <ConnectorProvidersSection providers={providers} />
       <div className="space-y-3">
         <h2 className="text-sm font-medium">Other platform secrets</h2>
-        <PlatformSecretForm
-          configured={hasWebhookSecret}
-          description="Verifies the X-Hub-Signature-256 header on Pilot's GitHub Marketplace listing webhook."
-          label="GitHub Marketplace webhook secret"
-        />
+        {PLATFORM_SECRET_FIELDS.map((field, index) => (
+          <PlatformSecretForm
+            key={field.key}
+            configured={secretsConfigured[index] ?? false}
+            description={field.description}
+            label={field.label}
+            secretKey={field.key}
+          />
+        ))}
       </div>
     </div>
   );

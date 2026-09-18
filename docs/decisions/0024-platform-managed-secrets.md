@@ -60,7 +60,17 @@ control pilot-ai's own safety switch. Their independence is the point.
   slug, URLs, and actions can be configured from scratch.
 - **`platform_secrets`**: a generic key/value table, same encryption, for
   single-value platform secrets not tied to a connector provider or model
-  gateway. Holds `github_marketplace_webhook_secret` today.
+  gateway. Holds `github_marketplace_webhook_secret` and `cron_secret`
+  (`/api/cron/*`'s bearer secret, `isVerifiedCronRequest`,
+  `src/lib/cron-auth.ts` — see ADR-0026; moved here on 2026-09-18, since it
+  was ordinary rotatable app config that had been living as a Vercel env
+  var, not a topology or master-key value). Each field on the admin page is
+  driven by one entry in `PLATFORM_SECRET_FIELDS`
+  (`src/app/admin/connector-providers/page.tsx`) — adding a future
+  single-value secret is one array entry plus a `PlatformSecretForm`, using
+  the same generic `setPlatformSecretFieldAction`/`deletePlatformSecretFieldAction`
+  every field already shares (bound to that field's key client-side), not a
+  new form or a new pair of actions.
   `isValidMarketplaceWebhookSignature` (`github-marketplace-webhook.ts`)
   is a pure, synchronous function that takes the secret as a parameter —
   the webhook route resolves it from `platform-secret-repository.ts` and
@@ -85,5 +95,9 @@ control pilot-ai's own safety switch. Their independence is the point.
   platform admin adds and enables at least one provider from
   `/admin/connector-providers`.
 - `.env.example` and `scripts/check-env.sh` list `CONNECTOR_TOKEN_ENCRYPTION_KEY`
-  and `CONNECTOR_STATE_SIGNING_SECRET` under "Connectors"; providers and
-  the webhook secret are configured from `/admin/connector-providers`.
+  and `CONNECTOR_STATE_SIGNING_SECRET` under "Connectors"; providers, the
+  webhook secret, and the cron scheduler secret are all configured from
+  `/admin/connector-providers` — `check-env.sh` no longer has a
+  "production-only" env var group, since nothing left in this app's
+  configuration is both required and legitimately env-only for production
+  alone.

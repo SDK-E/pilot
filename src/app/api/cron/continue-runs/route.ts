@@ -111,7 +111,7 @@ async function resumeOne(run: {
 }
 
 export async function GET(request: Request) {
-  if (!isVerifiedCronRequest(request)) {
+  if (!(await isVerifiedCronRequest(request))) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 

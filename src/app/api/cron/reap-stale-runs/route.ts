@@ -18,7 +18,7 @@ import { isVerifiedCronRequest } from "@/lib/cron-auth";
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  if (!isVerifiedCronRequest(request)) {
+  if (!(await isVerifiedCronRequest(request))) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 

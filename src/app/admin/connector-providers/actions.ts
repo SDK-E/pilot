@@ -11,7 +11,6 @@ import {
 } from "@/platform/connector-provider-repository";
 import {
   deletePlatformSecret,
-  GITHUB_MARKETPLACE_WEBHOOK_SECRET_KEY,
   setPlatformSecret,
 } from "@/platform/platform-secret-repository";
 import {
@@ -193,7 +192,15 @@ const secretSchema = z.object({
   value: z.string().trim().min(1, "A value is required.").max(2000),
 });
 
-export async function setGithubMarketplaceWebhookSecretAction(
+/**
+ * Generic set/delete for any single-value `platform_secrets` entry —
+ * `PlatformSecretForm` binds `key` client-side (`action.bind(null, key)`)
+ * so each secret on the page (the GitHub webhook secret, the cron
+ * scheduler's bearer secret, and any future one) reuses the same pair of
+ * actions instead of getting its own.
+ */
+export async function setPlatformSecretFieldAction(
+  key: string,
   _previous: ConnectorProviderFormState,
   formData: FormData,
 ): Promise<ConnectorProviderFormState> {
@@ -207,7 +214,7 @@ export async function setGithubMarketplaceWebhookSecretAction(
     };
   }
   await setPlatformSecret({
-    key: GITHUB_MARKETPLACE_WEBHOOK_SECRET_KEY,
+    key,
     value: parsed.data.value,
     updatedByWorkosUserId: session.user.id,
   });
@@ -215,9 +222,9 @@ export async function setGithubMarketplaceWebhookSecretAction(
   return { status: "success", message: "Saved." };
 }
 
-export async function deleteGithubMarketplaceWebhookSecretAction() {
+export async function deletePlatformSecretFieldAction(key: string) {
   const session = await requirePlatformAdmin();
   requireSuperadmin(session);
-  await deletePlatformSecret(GITHUB_MARKETPLACE_WEBHOOK_SECRET_KEY);
+  await deletePlatformSecret(key);
   revalidatePath("/admin/connector-providers");
 }
