@@ -2,6 +2,45 @@
 
 Updated 2026-09-18. This is an implementation record, not a completion claim.
 
+## Step visibility across chunked turns, composer skills, skills marketplace (2026-09-18)
+
+Chunked execution (below) had an unintended side effect: a deferred turn
+closes the client's fetch stream cleanly, which the client read as "turn
+finished," silently killing the live activity poll and rendering an
+auto-resuming turn identically to a genuine stop for however long
+`/api/cron/continue-runs` kept working it in the background. Fixed by
+having `useActivityPolling` (`use-activity-polling.ts`) track the
+conversation's active agent run directly — already returned by the
+activity endpoint, just unused client-side — instead of the fetch stream's
+own open/closed state; it now keeps polling for as long as the run is
+non-terminal and auto-resyncs the transcript once it finishes
+(`use-background-run-resync.ts`). The last message's step trace and a
+"still working" notice render live through an auto-resuming chunk instead
+of going quiet until a reload.
+
+Separately, the composer's `SkillPicker` hid itself entirely whenever the
+current agent had zero granted skills (`skill-picker.tsx`'s old `if
+(skills.length === 0) return null`), indistinguishable from the feature not
+existing. It now always renders, offers ungranted organization skills with
+a one-click "Add" (`setAgentSkillEnabledAction`,
+`agent-repository.ts`'s `setAgentSkillEnabled`), and links to creating a
+new one. While threading agent-scoped grants through to the runtime
+request, found and fixed the actual authorization gap this depended on:
+`buildRuntimeRequest` (`runtime-request.ts`) resolved whatever `skillIds`
+the request body sent against every organization skill, not just the ones
+granted to the agent handling the turn — fixed by intersecting with
+`grantedSkillIds`.
+
+`/skills/marketplace` browses skills.sh's public skill directory (its
+documented `/api/v1` API, authenticated via Vercel OIDC Federation and
+`@vercel/oidc` rather than an API key — needs that toggle enabled once per
+Vercel project, see `skills-marketplace-client.ts`) and installs a skill
+into the organization with one click, fetching its SKILL.md and upserting
+it as a normal org skill (migration 0050 adds `marketplace_id`/
+`marketplace_url` to `skills`, unique per organization). An installed
+skill still needs to be granted to an agent the normal way — this page
+only gets it into the organization's skill list.
+
 ## Chunked async execution for every agent kind (2026-09-18)
 
 Every agent turn — Chat, Work, and Code, not only Work — now survives this
