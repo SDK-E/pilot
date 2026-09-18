@@ -1,6 +1,12 @@
 import "server-only";
 
 import {
+  GITHUB_TOKEN_KEY,
+  getPlatformSecret,
+  LANGSEARCH_API_KEY_KEY,
+} from "@/platform/platform-secret-repository";
+
+import {
   PilotAiRuntimeError,
   runtimeRequestSchema,
   type RuntimeEvent,
@@ -41,7 +47,11 @@ function runtimeUrl(path: string): URL {
 }
 
 async function runtimeHeaders(request: RuntimeRequest) {
-  const runtimeToken = await getPilotRuntimeToken();
+  const [runtimeToken, langsearchApiKey, githubToken] = await Promise.all([
+    getPilotRuntimeToken(),
+    getPlatformSecret(LANGSEARCH_API_KEY_KEY),
+    getPlatformSecret(GITHUB_TOKEN_KEY),
+  ]);
   return {
     "content-type": "application/json",
     "x-pilot-runtime-token": runtimeToken,
@@ -57,6 +67,8 @@ async function runtimeHeaders(request: RuntimeRequest) {
     ...(request.worker.gatewayBaseUrl && {
       "x-pilot-model-gateway-base-url": request.worker.gatewayBaseUrl,
     }),
+    ...(langsearchApiKey && { "x-pilot-langsearch-api-key": langsearchApiKey }),
+    ...(githubToken && { "x-pilot-github-token": githubToken }),
     ...(request.project && {
       "x-pilot-project-id": request.project.id,
       "x-pilot-project-instructions": request.project.instructions ?? "",

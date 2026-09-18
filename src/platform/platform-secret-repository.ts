@@ -18,6 +18,19 @@ export const GITHUB_MARKETPLACE_WEBHOOK_SECRET_KEY =
 export const CRON_SECRET_KEY = "cron_secret";
 
 /**
+ * Forwarded to pilot-ai as the `x-pilot-langsearch-api-key` header so its
+ * web-search tool never reads its own environment for this.
+ */
+export const LANGSEARCH_API_KEY_KEY = "langsearch_api_key";
+
+/**
+ * Forwarded to pilot-ai as the `x-pilot-github-token` header, raising the
+ * unauthenticated rate limit on its public-web GitHub tool. Optional — an
+ * unset value simply leaves that tool at the unauthenticated rate limit.
+ */
+export const GITHUB_TOKEN_KEY = "github_token";
+
+/**
  * Existence only, no decryption — for an admin UI's "configured" badge.
  */
 export async function hasPlatformSecret(key: string): Promise<boolean> {

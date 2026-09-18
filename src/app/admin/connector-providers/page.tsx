@@ -8,7 +8,9 @@ import {
 import {
   CRON_SECRET_KEY,
   GITHUB_MARKETPLACE_WEBHOOK_SECRET_KEY,
+  GITHUB_TOKEN_KEY,
   hasPlatformSecret,
+  LANGSEARCH_API_KEY_KEY,
 } from "@/platform/platform-secret-repository";
 
 import type { ConnectorProviderForAdmin } from "@/platform/connector-provider-repository";
@@ -33,6 +35,18 @@ const PLATFORM_SECRET_FIELDS = [
     label: "Cron scheduler secret",
     description:
       "Verifies the Authorization: Bearer header on requests to /api/cron/* from the external HTTP scheduler (cron-job.org). Must match the value saved in that scheduler's job configuration.",
+  },
+  {
+    key: LANGSEARCH_API_KEY_KEY,
+    label: "LangSearch API key",
+    description:
+      "Forwarded to pilot-ai's web-search tool. Required for that tool to work at all.",
+  },
+  {
+    key: GITHUB_TOKEN_KEY,
+    label: "GitHub token",
+    description:
+      "Forwarded to pilot-ai's public-web GitHub tool to raise its unauthenticated rate limit. Optional.",
   },
 ] as const;
 
