@@ -65,7 +65,7 @@ export function SkillForm({ skill }: { skill?: Skill }) {
           className="min-h-32"
           defaultValue={skill?.instructions}
           id="skill-instructions"
-          maxLength={5000}
+          maxLength={8000}
           name="instructions"
           placeholder="Extra instructions appended to the agent's own when this skill is active"
         />

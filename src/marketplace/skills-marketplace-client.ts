@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getVercelOidcToken } from "@vercel/oidc";
+import { unstable_cache } from "next/cache";
 
 const BASE_URL = "https://skills.sh/api/v1";
 
@@ -63,10 +64,7 @@ async function fetchOidcToken(): Promise<
   }
 }
 
-async function callSkillsApi<T>(
-  path: string,
-  revalidateSeconds: number,
-): Promise<MarketplaceResult<T>> {
+async function fetchSkillsApi<T>(path: string): Promise<MarketplaceResult<T>> {
   // Called fresh inside the request, not hoisted to module scope — the
   // token is short-lived and request-scoped (see @vercel/oidc's own docs).
   const tokenResult = await fetchOidcToken();
@@ -74,7 +72,7 @@ async function callSkillsApi<T>(
   try {
     const response = await fetch(`${BASE_URL}${path}`, {
       headers: { Authorization: `Bearer ${tokenResult.token}` },
-      next: { revalidate: revalidateSeconds },
+      cache: "no-store",
     });
     if (!response.ok) {
       if (response.status === 429) {
@@ -96,6 +94,39 @@ async function callSkillsApi<T>(
       error: "The skills marketplace is unavailable right now.",
     };
   }
+}
+
+/**
+ * Shared across every request and every organization — the skills.sh
+ * catalog is the same for everyone, so there is no per-user or per-org
+ * scoping to key on. Wrapping with `unstable_cache` (keyed only on `path`,
+ * matching skills.sh's own documented cache windows: 30-60s for the
+ * leaderboard/search, 5min for detail/curated) rather than relying on
+ * `fetch`'s own Next.js cache means a cache hit skips minting a fresh OIDC
+ * token at all, not just the network call — `fetchSkillsApi`'s
+ * `cache: "no-store"` is deliberate: letting `fetch` additionally cache on
+ * the Authorization header (which changes as the OIDC token rotates) would
+ * just fragment this cache for no benefit. Two separate wrappers, not one
+ * parameterized by revalidate time, since `unstable_cache`'s options are
+ * fixed at wrap time, not per call.
+ */
+const cachedFetchShort = unstable_cache(
+  (path: string) => fetchSkillsApi<unknown>(path),
+  ["skills-marketplace-api-short"],
+  { revalidate: 30, tags: ["skills-marketplace"] },
+);
+const cachedFetchLong = unstable_cache(
+  (path: string) => fetchSkillsApi<unknown>(path),
+  ["skills-marketplace-api-long"],
+  { revalidate: 300, tags: ["skills-marketplace"] },
+);
+
+async function callSkillsApi<T>(
+  path: string,
+  revalidateSeconds: number,
+): Promise<MarketplaceResult<T>> {
+  const cached = revalidateSeconds <= 60 ? cachedFetchShort : cachedFetchLong;
+  return (await cached(path)) as MarketplaceResult<T>;
 }
 
 /**

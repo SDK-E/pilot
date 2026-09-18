@@ -1,4 +1,9 @@
 const MAX_INSTRUCTIONS_LENGTH = 8000;
+// Must match the skill edit form's own description cap
+// (src/app/(workspace)/skills/actions.ts's skillFormSchema) — otherwise a
+// marketplace skill installs fine but immediately fails validation the
+// moment its edit form is re-submitted, even unmodified.
+const MAX_DESCRIPTION_LENGTH = 300;
 const FRONTMATTER_PATTERN = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
 
 /**
@@ -35,9 +40,13 @@ export function parseSkillMarkdown(contents: string): {
     body.length > MAX_INSTRUCTIONS_LENGTH
       ? `${body.slice(0, MAX_INSTRUCTIONS_LENGTH).trim()}\n\n[Truncated — see the full skill at its marketplace source.]`
       : body;
+  const description = readFrontmatterField(frontmatter, "description");
   return {
     name: readFrontmatterField(frontmatter, "name"),
-    description: readFrontmatterField(frontmatter, "description"),
+    description:
+      description && description.length > MAX_DESCRIPTION_LENGTH
+        ? `${description.slice(0, MAX_DESCRIPTION_LENGTH - 1).trim()}…`
+        : description,
     body: truncated,
   };
 }

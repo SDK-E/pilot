@@ -28,7 +28,11 @@ const error = (message: string): SkillFormState => ({
 const skillFormSchema = z.object({
   name: z.string().trim().min(1, "Name is required.").max(100),
   description: z.string().trim().max(300).optional(),
-  instructions: z.string().trim().max(5000).optional(),
+  // Must stay >= skill-markdown.ts's MAX_INSTRUCTIONS_LENGTH (8000) — a
+  // marketplace-installed skill's instructions can be that long, and this
+  // form re-validates the full value on every save, including an
+  // unmodified re-save.
+  instructions: z.string().trim().max(8000).optional(),
   toolIds: z.array(z.enum(TOOL_IDS)),
 });
 
