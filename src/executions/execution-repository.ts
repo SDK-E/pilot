@@ -19,11 +19,11 @@ function isUniqueViolation(error: unknown) {
 }
 
 // Comfortably longer than the stream route's own worst case (STREAM_TIMEOUT_MS
-// = 760s in conversation-turn.ts, applied per model attempt, times up to two
-// attempts with its one fallback-model retry = up to ~1520s) so this never
+// = 260s in conversation-turn.ts, applied per model attempt, times up to two
+// attempts with its one fallback-model retry = up to ~520s) so this never
 // races a turn that is still legitimately in flight - only one abandoned by a
 // crash or a killed function before its own finishExecution ever ran.
-const STALE_EXECUTION_MS = 30 * 60 * 1000;
+const STALE_EXECUTION_MS = 10 * 60 * 1000;
 
 /**
  * Closes any execution for this conversation that has sat running well past

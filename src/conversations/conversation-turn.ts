@@ -36,11 +36,11 @@ import type { OrganizationCapabilities } from "@/conversations/tool-authorizatio
 
 export type { TurnInput } from "@/conversations/turn-shared";
 
-// pilot-ai's own `maxDuration` for /v1/chat/completions is 800s (pilot-ai/vercel.json),
-// Vercel's absolute function ceiling. Stay clearly under that so Pilot never
+// pilot-ai's own `maxDuration` for /v1/chat/completions is 300s (pilot-ai/vercel.json),
+// this Vercel plan's hard ceiling. Stay clearly under that so Pilot never
 // races pilot-ai's hard cutoff and tears down a response pilot-ai would
 // otherwise have delivered in time.
-const STREAM_TIMEOUT_MS = 760_000;
+const STREAM_TIMEOUT_MS = 260_000;
 const FALLBACK_MODEL_ID = "kilo/kilo-auto/free";
 
 /**
