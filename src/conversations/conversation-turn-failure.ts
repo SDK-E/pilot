@@ -188,5 +188,18 @@ export async function handleStreamFailure(context: {
       partialText,
     );
   }
+  if (!clientSignal.aborted) {
+    // A genuine failure (not a user-initiated stop): log the real cause
+    // server-side. The client only ever sees a generic message, so without
+    // this, a mid-stream failure (as opposed to a failure to even start —
+    // see the stream route's own catch) leaves no server-side trace at all.
+    // eslint-disable-next-line no-console -- only path to surface this server-side
+    console.error("Stream attempt failed mid-turn:", {
+      conversationId: input.conversationId,
+      executionId: turn.execution.id,
+      name: cause instanceof Error ? cause.name : "unknown",
+      message: cause instanceof Error ? cause.message : String(cause),
+    });
+  }
   return { isResolved: false, cause };
 }
