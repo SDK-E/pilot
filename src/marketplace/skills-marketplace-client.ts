@@ -15,6 +15,14 @@ export interface MarketplaceSkill {
   url: string;
 }
 
+interface CuratedOwner {
+  owner: string;
+  totalInstalls: number;
+  featuredRepo: string;
+  featuredSkill: string;
+  skills: MarketplaceSkill[];
+}
+
 export interface MarketplaceSkillDetail {
   id: string;
   source: string;
@@ -106,6 +114,26 @@ export async function searchMarketplaceSkills(params: {
   if (params.owner) query.set("owner", params.owner);
   if (params.limit !== undefined) query.set("limit", String(params.limit));
   return callSkillsApi(`/skills/search?${query.toString()}`, 30);
+}
+
+/**
+ * The official curated set: skills published by the companies/orgs that
+ * build the technology the skill is about (skills.sh's `/official`).
+ * Flattened across every curated owner into one list, matching the shape
+ * every other view already renders in — the page doesn't group by owner.
+ */
+export async function listCuratedMarketplaceSkills(): Promise<
+  MarketplaceResult<{ data: MarketplaceSkill[] }>
+> {
+  const result = await callSkillsApi<{ data: CuratedOwner[] }>(
+    "/skills/curated",
+    300,
+  );
+  if (!result.ok) return result;
+  return {
+    ok: true,
+    data: { data: result.data.data.flatMap((owner) => owner.skills) },
+  };
 }
 
 /**

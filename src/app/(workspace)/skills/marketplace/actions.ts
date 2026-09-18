@@ -6,6 +6,8 @@ import { z } from "zod";
 import { parseSkillMarkdown } from "@/marketplace/skill-markdown";
 import {
   getMarketplaceSkillDetail,
+  listCuratedMarketplaceSkills,
+  listMarketplaceSkills,
   searchMarketplaceSkills,
   type MarketplaceSkill,
 } from "@/marketplace/skills-marketplace-client";
@@ -47,6 +49,34 @@ export async function searchMarketplaceSkillsAction(
   const session = await getWorkspaceSession();
   if (!isWorkspaceSession(session)) return { ok: false, skills: [] };
   const result = await searchMarketplaceSkills({ q: parsed.data, limit: 60 });
+  if (!result.ok) return { ok: false, skills: [], error: result.error };
+  return { ok: true, skills: result.data.data };
+}
+
+const marketplaceViewSchema = z.enum([
+  "all-time",
+  "trending",
+  "hot",
+  "official",
+]);
+export type MarketplaceView = z.infer<typeof marketplaceViewSchema>;
+
+/**
+ * Backs the marketplace page's view filter (All time / Trending / Hot /
+ * Official) — called client-side, same as the search action above, so
+ * switching views doesn't need a full page navigation.
+ */
+export async function listMarketplaceSkillsByViewAction(
+  view: MarketplaceView,
+): Promise<{ ok: boolean; skills: MarketplaceSkill[]; error?: string }> {
+  const parsed = marketplaceViewSchema.safeParse(view);
+  if (!parsed.success) return { ok: false, skills: [] };
+  const session = await getWorkspaceSession();
+  if (!isWorkspaceSession(session)) return { ok: false, skills: [] };
+  const result =
+    parsed.data === "official"
+      ? await listCuratedMarketplaceSkills()
+      : await listMarketplaceSkills({ view: parsed.data, perPage: 60 });
   if (!result.ok) return { ok: false, skills: [], error: result.error };
   return { ok: true, skills: result.data.data };
 }

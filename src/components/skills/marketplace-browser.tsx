@@ -1,12 +1,11 @@
 "use client";
 
 import { RiCheckLine, RiSearchLine, RiSparklingLine } from "@remixicon/react";
-import { useEffect, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
-import {
-  installMarketplaceSkillAction,
-  searchMarketplaceSkillsAction,
-} from "@/app/(workspace)/skills/marketplace/actions";
+import { installMarketplaceSkillAction } from "@/app/(workspace)/skills/marketplace/actions";
+import { MarketplaceViewTabs } from "@/components/skills/marketplace-view-tabs";
+import { useMarketplaceSkills } from "@/components/skills/use-marketplace-skills";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,10 +16,17 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import type { MarketplaceSkill } from "@/marketplace/skills-marketplace-client";
 
-const SEARCH_DEBOUNCE_MS = 350;
+type SourceTypeFilter = "all" | "github" | "well-known";
 
 function formatInstalls(installs: number) {
   if (installs >= 1_000_000) return `${(installs / 1_000_000).toFixed(1)}M`;
@@ -113,6 +119,32 @@ function MarketplaceSkillRow({
   );
 }
 
+function SourceTypeSelect({
+  value,
+  onChange,
+}: {
+  value: SourceTypeFilter;
+  onChange: (value: SourceTypeFilter) => void;
+}) {
+  return (
+    <Select
+      onValueChange={(next) => {
+        onChange(next as SourceTypeFilter);
+      }}
+      value={value}
+    >
+      <SelectTrigger aria-label="Filter by source" className="w-40">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Every source</SelectItem>
+        <SelectItem value="github">GitHub repos</SelectItem>
+        <SelectItem value="well-known">Well-known</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function MarketplaceBrowser({
   initialSkills,
   installedMarketplaceIds,
@@ -120,66 +152,64 @@ export function MarketplaceBrowser({
   initialSkills: MarketplaceSkill[];
   installedMarketplaceIds: string[];
 }) {
-  const [query, setQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<MarketplaceSkill[]>();
-  const [searchError, setSearchError] = useState<string>();
-  const [isSearching, startSearch] = useTransition();
+  const {
+    query,
+    setQuery,
+    view,
+    setView,
+    skills,
+    isQueryActive,
+    isPending,
+    error,
+  } = useMarketplaceSkills(initialSkills);
+  const [sourceType, setSourceType] = useState<SourceTypeFilter>("all");
   const [installed, setInstalled] = useState(
     () => new Set(installedMarketplaceIds),
   );
 
-  const trimmedQuery = query.trim();
-  const isQueryActive = trimmedQuery.length >= 2;
-
-  useEffect(() => {
-    if (!isQueryActive) return;
-    const timeout = setTimeout(() => {
-      startSearch(async () => {
-        const result = await searchMarketplaceSkillsAction(trimmedQuery);
-        setSearchResults(result.skills);
-        setSearchError(result.ok ? undefined : result.error);
-      });
-    }, SEARCH_DEBOUNCE_MS);
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [isQueryActive, trimmedQuery]);
-
-  const skills = isQueryActive
-    ? (searchResults ?? initialSkills)
-    : initialSkills;
+  const filteredSkills = useMemo(
+    () =>
+      sourceType === "all"
+        ? skills
+        : skills.filter((skill) => skill.sourceType === sourceType),
+    [skills, sourceType],
+  );
   const markInstalled = (marketplaceId: string) => {
     setInstalled((current) => new Set(current).add(marketplaceId));
   };
 
   return (
     <div className="space-y-4">
-      <div className="relative max-w-sm">
-        <RiSearchLine
-          aria-hidden="true"
-          className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          aria-label="Search skills"
-          className="pl-8"
-          onChange={(event) => {
-            setQuery(event.target.value);
-          }}
-          placeholder="Search skills…"
-          value={query}
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-sm">
+          <RiSearchLine
+            aria-hidden="true"
+            className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            aria-label="Search skills"
+            className="pl-8"
+            onChange={(event) => {
+              setQuery(event.target.value);
+            }}
+            placeholder="Search skills…"
+            value={query}
+          />
+        </div>
+        <SourceTypeSelect onChange={setSourceType} value={sourceType} />
+        {isQueryActive ? null : (
+          <MarketplaceViewTabs onChange={setView} value={view} />
+        )}
       </div>
-      {isQueryActive && searchError ? (
-        <p className="text-sm text-destructive">{searchError}</p>
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {isPending ? (
+        <p className="text-xs text-muted-foreground">Loading…</p>
       ) : null}
-      {isQueryActive && isSearching ? (
-        <p className="text-xs text-muted-foreground">Searching…</p>
-      ) : null}
-      {skills.length === 0 ? (
+      {filteredSkills.length === 0 ? (
         <p className="text-sm text-muted-foreground">No skills found.</p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
-          {skills.map((skill) => (
+          {filteredSkills.map((skill) => (
             <li key={skill.id}>
               <MarketplaceSkillRow
                 isInstalled={installed.has(skill.id)}
