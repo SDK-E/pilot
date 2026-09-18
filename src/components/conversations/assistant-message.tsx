@@ -44,6 +44,23 @@ function AssistantMessageBody({ message }: { message: PersistedMessage }) {
   );
 }
 
+function PartialMessageNotice({ isAutoResuming }: { isAutoResuming: boolean }) {
+  if (!isAutoResuming) {
+    return (
+      <p className="text-xs text-muted-foreground">Stopped before finishing.</p>
+    );
+  }
+  return (
+    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <span
+        aria-hidden="true"
+        className="size-1.5 shrink-0 animate-pulse rounded-full bg-current"
+      />
+      Still working — this will pick back up automatically.
+    </p>
+  );
+}
+
 function CopyMessageAction({
   isCopied,
   onClick,
@@ -72,6 +89,7 @@ function CopyMessageAction({
 export function AssistantMessage({
   message,
   isLoading,
+  isAutoResuming,
   onAnswer,
   copiedId,
   onCopy,
@@ -83,6 +101,7 @@ export function AssistantMessage({
 }: {
   message: PersistedMessage;
   isLoading: boolean;
+  isAutoResuming: boolean;
   onAnswer: (text: string) => void;
   copiedId?: string;
   onCopy: (id: string, content: string) => void;
@@ -97,13 +116,11 @@ export function AssistantMessage({
     <Message from="assistant">
       <MessageContent className={assistantContentClassName(message.isError)}>
         {activities.length > 0 ? (
-          <MessageActivityTrace events={activities} />
+          <MessageActivityTrace events={activities} isLive={isAutoResuming} />
         ) : null}
         <AssistantMessageBody message={message} />
         {message.isPartial ? (
-          <p className="text-xs text-muted-foreground">
-            Stopped before finishing.
-          </p>
+          <PartialMessageNotice isAutoResuming={isAutoResuming} />
         ) : null}
         {message.sources?.length ? (
           <SourceList sources={message.sources} />

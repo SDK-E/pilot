@@ -33,6 +33,20 @@ export type PersistedActivity = TimelineActivity & {
 };
 
 /**
+ * The conversation's active agent run, as `getActiveAgentRun` returns it —
+ * non-null while a turn is still genuinely in progress, including while
+ * paused between chunks (`needs_continuation`) waiting for
+ * `/api/cron/continue-runs` to resume it. See ADR-0026.
+ */
+export interface PersistedAgentRun {
+  id: string;
+  status: "running" | "cancelling" | "needs_continuation";
+  stepCount: number;
+  maxSteps: number;
+  startedAt: string;
+}
+
+/**
 Panel ids of the conversation page, as the resizable group reports them.
 */
 export type PanelLayout = Record<string, number> & {

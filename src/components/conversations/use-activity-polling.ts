@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { readJson } from "@/lib/read-json";
 
-import type { PersistedActivity } from "./conversation-types";
+import type {
+  PersistedActivity,
+  PersistedAgentRun,
+} from "./conversation-types";
 
 const ACTIVITY_POLL_MS = 400;
 
@@ -13,7 +16,18 @@ const ACTIVITY_POLL_MS = 400;
  * interval so the user can watch the agent's steps as they happen, including
  * short-lived tool calls that would otherwise complete between two slower
  * polls and never visibly appear. The stream itself is authoritative; polling
- * is best effort and stops as soon as the stream ends.
+ * is best effort and stops once neither the local stream nor a background
+ * agent run (see below) is still active.
+ *
+ * A turn deferred mid-chunk (ADR-0026's `needs_continuation`) closes the
+ * client's fetch stream cleanly — `isStreaming` goes false — well before the
+ * turn is actually done; `/api/cron/continue-runs` keeps working it in the
+ * background, possibly for further chunks. Each poll response's `workRun`
+ * reflects that: non-null for as long as the run is genuinely still
+ * non-terminal. Polling keeps itself alive off that field directly (not off
+ * a snapshot taken when the effect last ran), so a turn's activity — and the
+ * fact that it's still going at all — stays visible across the entire
+ * deferred/resumed gap, not just the first chunk.
  */
 export function useActivityPolling(
   conversationId: string,
@@ -21,44 +35,54 @@ export function useActivityPolling(
   isStreaming: boolean,
 ) {
   const [activities, setActivities] = useState(initialActivities);
+  const [backgroundRun, setBackgroundRun] = useState<PersistedAgentRun | null>(
+    null,
+  );
+  const isStreamingRef = useRef(isStreaming);
 
   useEffect(() => {
+    isStreamingRef.current = isStreaming;
     let isCancelled = false;
-    const refresh = async () => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const scheduleNext = (shouldContinue: boolean) => {
+      if (isCancelled || !shouldContinue) return;
+      timeoutId = setTimeout(() => void poll(), ACTIVITY_POLL_MS);
+    };
+
+    const poll = async () => {
       try {
         const response = await fetch(
           `/api/conversations/${conversationId}/activity`,
           { cache: "no-store" },
         );
-        if (isCancelled || !response.ok) return;
-        const payload = await readJson<{ activities?: PersistedActivity[] }>(
-          response,
-        );
+        if (isCancelled) return;
+        if (!response.ok) {
+          scheduleNext(isStreamingRef.current);
+          return;
+        }
+        const payload = await readJson<{
+          activities?: PersistedActivity[];
+          workRun?: PersistedAgentRun | null;
+        }>(response);
         if (payload.activities) setActivities(payload.activities);
+        const workRun = payload.workRun ?? null;
+        setBackgroundRun(workRun);
+        scheduleNext(isStreamingRef.current || workRun !== null);
       } catch {
         // Best effort: see above.
+        scheduleNext(isStreamingRef.current);
       }
     };
 
-    if (!isStreaming) {
-      // The interval below can stop one tick before the terminal event
-      // (execution.completed/failed) lands, leaving a step showing as still
-      // in progress. One more fetch right as streaming ends catches it.
-      void refresh();
-      return () => {
-        isCancelled = true;
-      };
-    }
-
-    void refresh();
-    const interval = setInterval(() => void refresh(), ACTIVITY_POLL_MS);
+    void poll();
     return () => {
       isCancelled = true;
-      clearInterval(interval);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [conversationId, isStreaming]);
 
-  return activities;
+  return { activities, backgroundRun };
 }
 
 /**

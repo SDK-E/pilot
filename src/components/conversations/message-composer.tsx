@@ -69,6 +69,7 @@ function AttachmentPreviews() {
 
 interface MessageComposerProps {
   conversationId: string;
+  agentId: string;
   agentName: string;
   placeholder: string;
   draft: string;
@@ -85,6 +86,7 @@ interface MessageComposerProps {
 
 export function MessageComposer({
   conversationId,
+  agentId,
   agentName,
   placeholder,
   draft,
@@ -200,6 +202,7 @@ export function MessageComposer({
               selected={connectorToolIds}
             />
             <SkillPicker
+              agentId={agentId}
               disabled={isBusy}
               onChange={setSkillIds}
               selected={skillIds}

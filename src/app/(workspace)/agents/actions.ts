@@ -12,6 +12,7 @@ import {
   DEFAULT_MODEL_ID,
   getAgent,
   listAgents,
+  setAgentSkillEnabled,
   updateAgent,
   type AgentConfiguration,
 } from "@/agents/agent-repository";
@@ -161,6 +162,34 @@ export async function updateAgentAction(
     }
     throw error_;
   }
+}
+
+/**
+ * Grants or revokes one skill for an agent — the composer's own quick-grant
+ * affordance (`SkillPicker`), so a skill the org already has can be turned
+ * on for the current agent without leaving the conversation for the full
+ * agent edit form. Returns plainly rather than via `AgentFormState`/
+ * `revalidatePath`, since it's called directly from a client component, not
+ * a `<form action>`, and the composer updates its own local skill list
+ * optimistically instead of waiting on a server-driven re-render.
+ */
+export async function setAgentSkillEnabledAction(
+  agentId: string,
+  skillId: string,
+  shouldGrant: boolean,
+): Promise<{ ok: boolean }> {
+  const parsedAgentId = z.uuid().safeParse(agentId);
+  const parsedSkillId = z.uuid().safeParse(skillId);
+  if (!parsedAgentId.success || !parsedSkillId.success) return { ok: false };
+  const session = await getWorkspaceSession();
+  if (!isWorkspaceSession(session)) return { ok: false };
+  const updated = await setAgentSkillEnabled(
+    session.organizationId,
+    parsedAgentId.data,
+    parsedSkillId.data,
+    shouldGrant,
+  );
+  return { ok: Boolean(updated) };
 }
 
 export async function duplicateAgentAction(

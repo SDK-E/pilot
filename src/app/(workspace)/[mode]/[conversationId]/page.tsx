@@ -86,9 +86,7 @@ export default async function ConversationPage({
     ...organizationPreferences,
     hasActiveCustomConnector: customConnectorActive,
   });
-  const skills = organizationSkills.filter((skill) =>
-    grantedSkillIds(agent, organizationSkills).includes(skill.id),
-  );
+  const granted = new Set(grantedSkillIds(agent, organizationSkills));
 
   return (
     <ConversationShell
@@ -109,7 +107,11 @@ export default async function ConversationPage({
       hasConnector={hasConnector}
       scratchpad={scratchpad}
       plan={plan}
-      skills={skills.map((skill) => ({ id: skill.id, name: skill.name }))}
+      skills={organizationSkills.map((skill) => ({
+        id: skill.id,
+        name: skill.name,
+        granted: granted.has(skill.id),
+      }))}
       initialPanelLayout={preferences.conversationPanelLayout ?? undefined}
       runtimeConfigured={Boolean(process.env.PILOT_AI_RUNTIME_URL?.trim())}
     />

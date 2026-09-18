@@ -55,6 +55,7 @@ export async function startConversation(input: {
       instructions: buildAgentInstructions(agent, standingInstructions),
       baseAgentId: agent.baseAgentId,
       enabledToolIds: agent.enabledToolIds,
+      enabledSkillIds: agent.enabledSkillIds,
     },
   };
 }

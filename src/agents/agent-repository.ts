@@ -115,6 +115,33 @@ export async function updateAgent(
   return updated;
 }
 
+/**
+ * Grants or revokes one skill for an agent without touching any of its
+ * other fields — used by the composer's quick-grant affordance, which only
+ * ever knows about a single skill at a time, unlike the full agent edit
+ * form's `updateAgent`.
+ */
+export async function setAgentSkillEnabled(
+  organizationId: string,
+  agentId: string,
+  skillId: string,
+  shouldGrant: boolean,
+) {
+  const agent = await getAgent(organizationId, agentId);
+  if (!agent) return;
+  const current = agent.enabledSkillIds;
+  let next = current.filter((id) => id !== skillId);
+  if (shouldGrant) next = [...next, skillId];
+  const [updated] = await db
+    .update(workers)
+    .set({ enabledSkillIds: next, updatedAt: new Date() })
+    .where(
+      and(eq(workers.organizationId, organizationId), eq(workers.id, agentId)),
+    )
+    .returning({ id: workers.id });
+  return updated;
+}
+
 export async function archiveAgent(organizationId: string, agentId: string) {
   const [archived] = await db
     .update(workers)

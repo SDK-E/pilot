@@ -24,6 +24,7 @@ export interface RenderMessageOptions {
   conversationId: string;
   copiedId?: string;
   copy: (id: string, content: string) => void;
+  isBackgroundRunning: boolean;
   isLoading: boolean;
   lastMessageId?: string;
   pendingPrompt?: string;
@@ -55,14 +56,28 @@ function renderMessage(
     );
   }
   const isLast = message.id === options.lastMessageId && !options.pendingPrompt;
+  // A run auto-resuming in the background (ADR-0026) will continue this
+  // exact message itself — a manual Continue click here would race it into
+  // starting a second, overlapping turn.
+  const isAutoResuming =
+    isLast && Boolean(message.isPartial) && options.isBackgroundRunning;
+  // A resumed chunk's steps are recorded against its own new execution and
+  // only get backfilled onto this message once that chunk itself finishes or
+  // defers again (see finishExecution/didDeferTurn) — until then they carry
+  // no conversationMessageId. Folding those in while auto-resuming is what
+  // keeps the step trace live through the resumed chunk instead of going
+  // quiet until the next reload.
   return (
     <AssistantMessage
       activities={options.activities.filter(
-        (activity) => activity.conversationMessageId === message.id,
+        (activity) =>
+          activity.conversationMessageId === message.id ||
+          (isAutoResuming && activity.conversationMessageId === null),
       )}
-      canContinue={isLast && Boolean(message.isPartial)}
+      canContinue={isLast && Boolean(message.isPartial) && !isAutoResuming}
       canRegenerate={isLast && !message.isPartial}
       copiedId={options.copiedId}
+      isAutoResuming={isAutoResuming}
       isLoading={options.isLoading}
       key={message.id}
       message={message}

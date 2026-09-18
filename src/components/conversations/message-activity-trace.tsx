@@ -21,8 +21,16 @@ import type { PersistedActivity } from "./conversation-types";
  */
 export function MessageActivityTrace({
   events,
+  isLive,
 }: {
   events: PersistedActivity[];
+  /**
+   * True while these steps belong to a chunk still actively running in the
+   * background (ADR-0026's auto-resume) rather than a finished turn — opened
+   * by default so the "must-have" mid-progress feedback doesn't hide behind
+   * an extra click, and labeled as in-progress instead of "worked through."
+   */
+  isLive?: boolean;
 }) {
   const isFailed = events.some((event) => event.type === "execution.failed");
   const steps = buildActivitySteps(events);
@@ -32,12 +40,13 @@ export function MessageActivityTrace({
   if (!isFailed && steps.length === 0) return null;
   const stepCount = steps.length;
   const stepNoun = stepCount === 1 ? "step" : "steps";
-  const headerLabel = isFailed
-    ? "Response failed"
+  const inProgressLabel = isLive
+    ? `Working — ${stepCount} ${stepNoun} so far`
     : `Worked through ${stepCount} ${stepNoun}`;
+  const headerLabel = isFailed ? "Response failed" : inProgressLabel;
 
   return (
-    <ChainOfThought className="max-w-xl" defaultOpen={false}>
+    <ChainOfThought className="max-w-xl" defaultOpen={Boolean(isLive)}>
       <ChainOfThoughtHeader className="text-xs">
         {headerLabel}
       </ChainOfThoughtHeader>

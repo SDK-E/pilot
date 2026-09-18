@@ -88,6 +88,7 @@ function AttachmentChips({
 }
 
 interface ComposerFooterProps {
+  agentId: string;
   agentName: string;
   attachments: ConversationShellProps["attachments"];
   hasConnector: boolean;
@@ -99,6 +100,7 @@ interface ComposerFooterProps {
 }
 
 function ComposerFooter({
+  agentId,
   agentName,
   attachments,
   hasConnector,
@@ -113,11 +115,12 @@ function ComposerFooter({
       <AttachmentChips attachments={attachments} />
       {runtimeConfigured ? (
         <MessageComposer
+          agentId={agentId}
           agentName={agentName}
           hasConnector={hasConnector}
           conversationId={conversationId}
           draft={stream.draft}
-          isLoading={stream.isLoading}
+          isLoading={stream.isLoading || stream.isBackgroundRunning}
           onCancel={stream.cancel}
           onRestoreLastPrompt={stream.restoreLastPrompt}
           onSend={stream.send}
@@ -211,6 +214,7 @@ export function ConversationShell(props: ConversationShellProps) {
       agentName={agent.name}
       completion={stream.completion}
       conversationId={conversation.id}
+      isBackgroundRunning={stream.isBackgroundRunning}
       isDetailsPanelVisible={panels.isDesktop}
       isLoading={stream.isLoading}
       messages={stream.messages}
@@ -226,6 +230,7 @@ export function ConversationShell(props: ConversationShellProps) {
 
   const composer = (
     <ComposerFooter
+      agentId={agent.id}
       agentName={agent.name}
       attachments={props.attachments}
       hasConnector={props.hasConnector}

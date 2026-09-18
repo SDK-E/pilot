@@ -4,6 +4,7 @@ import { useCompletion } from "@ai-sdk/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { activitiesSince, useActivityPolling } from "./use-activity-polling";
+import { useBackgroundRunResync } from "./use-background-run-resync";
 import { useInitialMessage } from "./use-initial-message";
 import { useTranscript } from "./use-transcript";
 
@@ -74,11 +75,12 @@ export function useConversationStream(input: {
   });
   const { complete, isLoading, setCompletion, setInput, stop } =
     completionState;
-  const activities = useActivityPolling(
+  const { activities, backgroundRun } = useActivityPolling(
     conversationId,
     input.initialActivities,
     isLoading,
   );
+  useBackgroundRunResync(backgroundRun, isLoading, transcript.sync);
 
   const send = useCallback(
     (raw: string, options: MessageSendOptions = {}) => {
@@ -197,6 +199,12 @@ export function useConversationStream(input: {
     draft: completionState.input,
     setDraft: setInput,
     isLoading,
+    // Still genuinely in progress even though the fetch stream itself has
+    // closed — a deferred turn (ADR-0026) resuming via
+    // `/api/cron/continue-runs`. Kept separate from `isLoading` rather than
+    // folded into it: `isLoading` also gates the live streaming-reply bubble,
+    // which has nothing to resume into once the fetch that fed it is gone.
+    isBackgroundRunning: backgroundRun !== null,
     send,
     editMessage,
     regenerate,

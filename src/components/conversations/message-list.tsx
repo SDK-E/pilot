@@ -113,6 +113,7 @@ interface MessageListProps {
   pendingPrompt?: string;
   completion: string;
   isLoading: boolean;
+  isBackgroundRunning: boolean;
   isDetailsPanelVisible: boolean;
   streamActivities: PersistedActivity[];
   onAnswer: (text: string) => void;
@@ -140,6 +141,7 @@ export function MessageList({
   pendingPrompt,
   completion,
   isLoading,
+  isBackgroundRunning,
   isDetailsPanelVisible,
   streamActivities,
   onAnswer,
@@ -176,6 +178,7 @@ export function MessageList({
               conversationId,
               copiedId,
               copy: (id, content) => void copy(id, content),
+              isBackgroundRunning,
               isLoading,
               lastMessageId,
               onAnswer,

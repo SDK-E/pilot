@@ -8,6 +8,7 @@ import {
 import { resolveGatewayCredential } from "@/model-gateways/model-gateway-repository";
 import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 import {
+  grantedSkillIds,
   resolveSkillsInstructions,
   resolveSkillsToolIds,
 } from "@/skills/agent-skill-grants";
@@ -78,18 +79,25 @@ export async function buildRuntimeRequest(
   modelId: string,
   capabilities: OrganizationCapabilities,
 ): Promise<RuntimeRequest> {
-  const activeSkillIds = input.activeSkillIds ?? [];
+  const requestedSkillIds = input.activeSkillIds ?? [];
   const [project, organizationSkills, model] = await Promise.all([
     getProjectMemoryContextForConversation({
       organizationId: input.organizationId,
       conversationId: input.conversationId,
       userId: input.userId,
     }),
-    activeSkillIds.length > 0
+    requestedSkillIds.length > 0
       ? listSkills(input.organizationId)
       : Promise.resolve([]),
     resolveWorkerModel(modelId),
   ]);
+  // Never trust the caller's own skillIds as authorization (AGENTS.md) — a
+  // skill not granted to this agent must never contribute its instructions
+  // or tools just because it happens to belong to the same organization.
+  const activeSkillIds = grantedSkillIds(
+    input.agent,
+    organizationSkills,
+  ).filter((skillId) => requestedSkillIds.includes(skillId));
   const instructions = await resolveInstructions(
     input,
     activeSkillIds,
