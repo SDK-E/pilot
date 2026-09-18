@@ -1,5 +1,7 @@
 import "server-only";
 
+import { finishWorkRun } from "@/work/work-run-repository";
+
 import type { RuntimeAgent } from "@/conversations/runtime-agent";
 
 export interface TurnInput {
@@ -39,4 +41,22 @@ export function storedCount(value: number | undefined): number | undefined {
 
 export function owner(input: TurnInput) {
   return { organizationId: input.organizationId, userId: input.userId };
+}
+
+/**
+ * Closes the durable Work-run record opened for this turn (see
+ * `startWorkRun` in `beginTurn`), if this turn's kind is `work`. A no-op
+ * for Chat and Code, which never open one.
+ */
+export async function finishTurnWorkRun(
+  input: TurnInput,
+  turn: { execution: { id: string } },
+  errorMessage?: string,
+) {
+  if (input.agent.baseAgentId !== "work") return;
+  await finishWorkRun({
+    organizationId: input.organizationId,
+    executionId: turn.execution.id,
+    errorMessage,
+  });
 }

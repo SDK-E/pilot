@@ -17,11 +17,17 @@ import type { ConnectorDefinitionAction } from "@/db/schema/connector-definition
 
 const MAX_LIST_ITEMS = 25;
 
+/**
+ * A missing/null param substitutes as an empty string rather than leaving
+ * the literal `{placeholder}` in the URL — this is what lets an optional
+ * param like `{cursor}` sit in every paginated action's `urlTemplate` and
+ * still produce a valid first-page call before any cursor exists.
+ */
 function substitute(template: string, params: Record<string, unknown>): string {
-  return template.replaceAll(/\{(\w+)\}/g, (match, key: string) => {
+  return template.replaceAll(/\{(\w+)\}/g, (_match, key: string) => {
     const value = params[key];
     return value === undefined || value === null
-      ? match
+      ? ""
       : encodeURIComponent(scalarToString(value));
   });
 }

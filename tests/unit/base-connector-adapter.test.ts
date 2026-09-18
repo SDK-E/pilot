@@ -202,3 +202,64 @@ test("Slack's seeded post-message action confirmation-gates chat.postMessage end
     },
   });
 });
+
+test("Slack's seeded list-channels action round-trips response_metadata.next_cursor into the next call's cursor param", async (t) => {
+  const slackSeed = CONNECTOR_SEEDS.find((seed) => seed.slug === "slack");
+  assert.ok(slackSeed, "expected a seeded slack connector");
+  const listChannels = slackSeed.actions.find(
+    (action) => action.id === "list-channels",
+  );
+  assert.ok(listChannels, "expected slack seed to define list-channels");
+  assert.equal(listChannels.nextCursorPath, "response_metadata.next_cursor");
+
+  const fetchMock = t.mock.method(globalThis, "fetch", () =>
+    Promise.resolve(
+      Response.json({
+        ok: true,
+        channels: [{ id: "C1", name: "general" }],
+        response_metadata: { next_cursor: "dGVhbTpDMDYxRkE1UEI=" },
+      }),
+    ),
+  );
+
+  const first = await runConnectorDefinitionAction({
+    accessToken: "xoxb-token",
+    actions: slackSeed.actions,
+    action: "list-channels",
+    params: { limit: 100 },
+  });
+
+  const firstCall = fetchMock.mock.calls[0];
+  assert.ok(firstCall, "expected a first fetch call");
+  const [firstUrl] = firstCall.arguments as [string];
+  assert.equal(
+    firstUrl,
+    "https://slack.com/api/conversations.list?limit=100&exclude_archived=true&cursor=",
+    "an absent cursor must substitute as empty, not the literal {cursor} placeholder",
+  );
+  assert.equal(
+    (first as { nextCursor?: string }).nextCursor,
+    "dGVhbTpDMDYxRkE1UEI=",
+    "nextCursorPath must read Slack's response_metadata.next_cursor",
+  );
+
+  await runConnectorDefinitionAction({
+    accessToken: "xoxb-token",
+    actions: slackSeed.actions,
+    action: "list-channels",
+    params: {
+      limit: 100,
+      cursor: (first as { nextCursor?: string }).nextCursor,
+    },
+  });
+
+  assert.equal(fetchMock.mock.callCount(), 2);
+  const secondCall = fetchMock.mock.calls[1];
+  assert.ok(secondCall, "expected a second fetch call for the next page");
+  const [secondUrl] = secondCall.arguments as [string];
+  assert.equal(
+    secondUrl,
+    "https://slack.com/api/conversations.list?limit=100&exclude_archived=true&cursor=dGVhbTpDMDYxRkE1UEI%3D",
+    "the cursor returned from the first call must substitute into the next call's urlTemplate",
+  );
+});

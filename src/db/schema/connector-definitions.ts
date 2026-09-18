@@ -38,7 +38,11 @@ export interface ConnectorDefinitionAction {
   */
   listPath?: string;
   /**
-  Dot-path to the next-page cursor in the JSON response, if the API paginates.
+  Dot-path to the next-page cursor in the JSON response, if the API
+  paginates. When set, `urlTemplate` (and `bodyTemplate`, for POST) should
+  include a `{cursor}` placeholder — the fixed param name every paginated
+  action uses — so the value this path extracts substitutes back in on the
+  caller's next call via `params.cursor`.
   */
   nextCursorPath?: string;
   idField?: string;

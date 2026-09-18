@@ -3,6 +3,7 @@ import "server-only";
 import { appendConversationMessageContent } from "@/conversations/conversation-message-repository";
 import { createConversationMessage } from "@/conversations/conversation-repository";
 import {
+  finishTurnWorkRun,
   owner,
   storedCount,
   type TurnInput,
@@ -98,4 +99,5 @@ export async function failTurn(
     conversationMessageId: messageId,
     errorMessage: reason,
   });
+  await finishTurnWorkRun(input, turn, reason);
 }

@@ -6,6 +6,7 @@ import {
   isWorkspaceSession,
   sessionFailureResponse,
 } from "@/organizations/workspace-session";
+import { getActiveWorkRun } from "@/work/work-run-repository";
 
 export const runtime = "nodejs";
 
@@ -22,13 +23,20 @@ export async function GET(_request: Request, { params }: RouteContext) {
   if (!conversationId.success) {
     return Response.json({ error: "Conversation not found." }, { status: 404 });
   }
-  const activities = await listConversationActivity(
-    session.organizationId,
-    conversationId.data,
-    session.user.id,
-  );
+  const [activities, workRun] = await Promise.all([
+    listConversationActivity(
+      session.organizationId,
+      conversationId.data,
+      session.user.id,
+    ),
+    getActiveWorkRun(
+      session.organizationId,
+      conversationId.data,
+      session.user.id,
+    ),
+  ]);
   return Response.json(
-    { activities },
+    { activities, workRun: workRun ?? null },
     { headers: { "cache-control": "no-store" } },
   );
 }

@@ -65,11 +65,13 @@ export const CONNECTOR_SEEDS: ConnectorSeed[] = [
       {
         id: "list-channels",
         label: "List channels",
-        description: "List the workspace's channels.",
+        description:
+          "List the workspace's channels. Pass the cursor from a previous call's nextCursor to get the next page.",
         method: "GET",
         urlTemplate:
-          "https://slack.com/api/conversations.list?limit={limit}&exclude_archived=true",
+          "https://slack.com/api/conversations.list?limit={limit}&exclude_archived=true&cursor={cursor}",
         listPath: "channels",
+        nextCursorPath: "response_metadata.next_cursor",
         idField: "id",
         titleField: "name",
       },

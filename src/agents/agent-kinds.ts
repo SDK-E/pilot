@@ -104,6 +104,17 @@ export const AGENT_KINDS: Record<AgentKindId, AgentKind> = {
   },
 };
 
+/**
+ * The step ceiling pilot-ai's own runtime enforces for a Work-kind run
+ * (`AGENT_KINDS.work.limits.maxSteps` in
+ * `pilot-ai/src/mastra/agents/kinds.ts`). Duplicated here, not imported,
+ * because Pilot and pilot-ai are separate deployables; this is Work's
+ * budget contract surfaced to `work_runs` and the UI, not a second place
+ * that enforces it — pilot-ai's agent loop remains the actual enforcement.
+ * Keep this in sync by hand if that ceiling ever changes.
+ */
+export const WORK_RUN_MAX_STEPS = 150;
+
 export function isAgentKindId(value: unknown): value is AgentKindId {
   return (
     typeof value === "string" &&

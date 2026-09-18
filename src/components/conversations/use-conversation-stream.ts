@@ -12,6 +12,7 @@ import type {
   PersistedActivity,
   PersistedMessage,
 } from "./conversation-types";
+import type { AgentKindId } from "@/agents/agent-kinds";
 
 export type { TransientTurn } from "./use-transcript";
 
@@ -36,8 +37,14 @@ export function useConversationStream(input: {
   conversationId: string;
   initialMessages: PersistedMessage[];
   initialActivities: PersistedActivity[];
+  /**
+   * Only a `work` conversation has a durable run record to cancel
+   * server-side; omitted or any other kind skips that call entirely so
+   * Chat and Code keep their existing client-abort-only Stop behavior.
+   */
+  kind?: AgentKindId;
 }) {
-  const { conversationId } = input;
+  const { conversationId, kind } = input;
   const transcript = useTranscript(conversationId, input.initialMessages);
   const [pendingPrompt, setPendingPrompt] = useState<string>();
   const [streamStartedAt, setStreamStartedAt] = useState<number>();
@@ -145,13 +152,27 @@ export function useConversationStream(input: {
   // immediately, which would flash the reply away before it reappears.
   const cancel = useCallback(() => {
     stop();
+    // The client abort above only stops compute if this same tab is still
+    // the one holding the request open. For a Work conversation, also ask
+    // the server to close the durable run record immediately (rather than
+    // waiting for its stale-run reaper), so the conversation is free for a
+    // new turn right away even if the original request can't be reached
+    // from here — see ADR-0025's cancellation section for what this does
+    // and does not guarantee.
+    if (kind === "work") {
+      void fetch(`/api/conversations/${conversationId}/work/cancel`, {
+        method: "POST",
+      }).catch(() => {
+        // Best-effort: the stale-run reaper is the fallback if this fails.
+      });
+    }
     setTimeoutError(undefined);
     setInput("");
     setTimeout(() => {
       setCompletion("");
       finishTurn();
     }, STOP_SYNC_DELAY_MS);
-  }, [finishTurn, setCompletion, setInput, stop]);
+  }, [conversationId, finishTurn, kind, setCompletion, setInput, stop]);
 
   const restoreLastPrompt = useCallback(() => {
     cancel();

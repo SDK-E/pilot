@@ -188,6 +188,7 @@ export function ConversationShell(props: ConversationShellProps) {
     conversationId: conversation.id,
     initialMessages: messagesWithAttachments,
     initialActivities: props.activities,
+    kind,
   });
   const panels = usePanelLayout(props.initialPanelLayout);
   const backHref = modeHref(kind);

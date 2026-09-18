@@ -22,6 +22,7 @@ import {
 } from "@/conversations/message-sources";
 import { buildRuntimeRequest } from "@/conversations/runtime-request";
 import {
+  finishTurnWorkRun,
   owner,
   storedCount,
   type TurnInput,
@@ -31,6 +32,7 @@ import {
   startExecution,
 } from "@/executions/execution-repository";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
+import { startWorkRun } from "@/work/work-run-repository";
 
 import type { OrganizationCapabilities } from "@/conversations/tool-authorization";
 
@@ -61,6 +63,17 @@ async function beginTurn(input: TurnInput, reuseUserMessageId?: string) {
     conversationId: input.conversationId,
   });
   if (!execution) throw new Error("Pilot could not start this turn.");
+  // A durable Work-run record is opened only for the `work` kind — Chat and
+  // Code turns never get one, so their behavior is unchanged. See
+  // ADR-0025.
+  if (input.agent.baseAgentId === "work") {
+    await startWorkRun({
+      organizationId: input.organizationId,
+      workerId: input.agent.id,
+      conversationId: input.conversationId,
+      executionId: execution.id,
+    });
+  }
   const userMessage = reuseUserMessageId
     ? { id: reuseUserMessageId }
     : await createConversationMessage(owner(input), {
@@ -120,6 +133,7 @@ async function persistQuestion(
     conversationMessageId: message.id,
     runtimeRunId: event.runId,
   });
+  await finishTurnWorkRun(input, turn);
   return message;
 }
 
@@ -170,6 +184,7 @@ async function persistReply(
     conversationMessageId: message.id,
     runtimeRunId: reply.runId,
   });
+  await finishTurnWorkRun(input, turn);
   return { message, text: cleaned.text };
 }
 
