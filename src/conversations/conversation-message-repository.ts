@@ -52,6 +52,36 @@ export async function getConversationMessage(
   return message;
 }
 
+/**
+ * The most recent message in a conversation, organization-scoped only (not
+ * creator-scoped) — used by `/api/cron/continue-runs`, which already knows
+ * the conversation from a claimed `agent_runs` row rather than a user
+ * request, so there is no caller identity to further scope by.
+ */
+export async function getLatestMessage(
+  organizationId: string,
+  conversationId: string,
+) {
+  const [message] = await db
+    .select({
+      id: conversationMessages.id,
+      role: conversationMessages.role,
+      content: conversationMessages.content,
+      isPartial: conversationMessages.isPartial,
+      createdAt: conversationMessages.createdAt,
+    })
+    .from(conversationMessages)
+    .where(
+      and(
+        eq(conversationMessages.organizationId, organizationId),
+        eq(conversationMessages.conversationId, conversationId),
+      ),
+    )
+    .orderBy(desc(conversationMessages.createdAt))
+    .limit(1);
+  return message;
+}
+
 /*
  * True when no other message in the conversation comes after this one.
  * Compares with `gte`, not `gt`, and excludes the message by id rather than

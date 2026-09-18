@@ -13,7 +13,7 @@ import { attachConversationAttachmentsToMessage } from "@/conversations/attachme
 import { appendConversationMessageContent } from "@/conversations/conversation-message-repository";
 import { createConversationMessage } from "@/conversations/conversation-repository";
 import {
-  failTurn,
+  handleStreamFailure,
   StreamAttemptError,
 } from "@/conversations/conversation-turn-failure";
 import {
@@ -22,17 +22,17 @@ import {
 } from "@/conversations/message-sources";
 import { buildRuntimeRequest } from "@/conversations/runtime-request";
 import {
-  finishTurnWorkRun,
+  finishTurnAgentRun,
   owner,
   storedCount,
   type TurnInput,
 } from "@/conversations/turn-shared";
+import { startAgentRun } from "@/executions/agent-run-repository";
 import {
   finishExecution,
   startExecution,
 } from "@/executions/execution-repository";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
-import { startWorkRun } from "@/work/work-run-repository";
 
 import type { OrganizationCapabilities } from "@/conversations/tool-authorization";
 
@@ -63,17 +63,15 @@ async function beginTurn(input: TurnInput, reuseUserMessageId?: string) {
     conversationId: input.conversationId,
   });
   if (!execution) throw new Error("Pilot could not start this turn.");
-  // A durable Work-run record is opened only for the `work` kind — Chat and
-  // Code turns never get one, so their behavior is unchanged. See
-  // ADR-0025.
-  if (input.agent.baseAgentId === "work") {
-    await startWorkRun({
-      organizationId: input.organizationId,
-      workerId: input.agent.id,
-      conversationId: input.conversationId,
-      executionId: execution.id,
-    });
-  }
+  // Every agent kind gets a durable run record now — see ADR-0025/ADR-0026.
+  await startAgentRun({
+    organizationId: input.organizationId,
+    workerId: input.agent.id,
+    conversationId: input.conversationId,
+    executionId: execution.id,
+    kind: input.agent.baseAgentId,
+    continuingRunId: input.continuingRunId,
+  });
   const userMessage = reuseUserMessageId
     ? { id: reuseUserMessageId }
     : await createConversationMessage(owner(input), {
@@ -133,7 +131,7 @@ async function persistQuestion(
     conversationMessageId: message.id,
     runtimeRunId: event.runId,
   });
-  await finishTurnWorkRun(input, turn);
+  await finishTurnAgentRun(input, turn);
   return message;
 }
 
@@ -184,7 +182,7 @@ async function persistReply(
     conversationMessageId: message.id,
     runtimeRunId: reply.runId,
   });
-  await finishTurnWorkRun(input, turn);
+  await finishTurnAgentRun(input, turn);
   return { message, text: cleaned.text };
 }
 
@@ -287,11 +285,15 @@ export async function streamMessage(
   const turn = await beginTurn(input, reuseUserMessageId);
   const encoder = new TextEncoder();
   const controller = new AbortController();
+  let didTimeout = false;
   const abort = () => {
     controller.abort();
   };
   clientSignal.addEventListener("abort", abort, { once: true });
-  const timeout = setTimeout(abort, STREAM_TIMEOUT_MS);
+  const timeout = setTimeout(() => {
+    didTimeout = true;
+    abort();
+  }, STREAM_TIMEOUT_MS);
 
   return new ReadableStream<Uint8Array>({
     async start(stream) {
@@ -301,17 +303,17 @@ export async function streamMessage(
         });
         stream.close();
       } catch (error) {
-        const partialText =
-          error instanceof StreamAttemptError ? error.partialText : "";
-        const cause = error instanceof StreamAttemptError ? error.cause : error;
-        await failTurn(
+        const { isResolved, cause } = await handleStreamFailure({
           input,
           turn,
-          clientSignal.aborted
-            ? "Generation cancelled"
-            : "Runtime generation failed",
-          partialText,
-        );
+          error,
+          didTimeout,
+          clientSignal,
+        });
+        if (isResolved) {
+          stream.close();
+          return;
+        }
         stream.error(
           cause instanceof PilotAiRuntimeError
             ? cause

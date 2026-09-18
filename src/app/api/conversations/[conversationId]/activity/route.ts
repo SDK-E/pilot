@@ -1,12 +1,12 @@
 import { z } from "zod";
 
+import { getActiveAgentRun } from "@/executions/agent-run-repository";
 import { listConversationActivity } from "@/executions/execution-repository";
 import {
   getWorkspaceSession,
   isWorkspaceSession,
   sessionFailureResponse,
 } from "@/organizations/workspace-session";
-import { getActiveWorkRun } from "@/work/work-run-repository";
 
 export const runtime = "nodejs";
 
@@ -29,7 +29,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       conversationId.data,
       session.user.id,
     ),
-    getActiveWorkRun(
+    getActiveAgentRun(
       session.organizationId,
       conversationId.data,
       session.user.id,

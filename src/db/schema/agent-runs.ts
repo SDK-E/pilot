@@ -1,9 +1,12 @@
 /**
- * Durable run state for Work-kind conversations, tracked separately from
- * `executions` (which is turn-scoped and shared by every agent kind). One
- * row exists per Work turn's execution, carrying the state a Work run needs
- * that Chat and Code never do: a step budget, a cancellation flag, and
- * enough timestamps to detect and close out a run abandoned by a crash.
+ * Durable run state for a turn, tracked separately from `executions` (which
+ * is only the turn's HTTP-call-scoped reservation). One row exists per
+ * turn's execution, carrying a step budget, a cancellation flag, and enough
+ * timestamps to detect and close out a run abandoned by a crash — plus
+ * `needs_continuation`, set when a turn is cut off by its own internal time
+ * budget rather than finishing or failing, so it can be resumed by the
+ * `/api/cron/continue-runs` sweep instead of being lost. See ADR-0025 and
+ * ADR-0026.
  */
 import {
   index,
@@ -20,8 +23,8 @@ import { conversations } from "./conversations";
 import { executions } from "./executions";
 import { organizations } from "./organizations";
 
-export const workRuns = pgTable(
-  "work_runs",
+export const agentRuns = pgTable(
+  "agent_runs",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     organizationId: text("organization_id")
@@ -37,10 +40,18 @@ export const workRuns = pgTable(
       .notNull()
       .references(() => executions.id, { onDelete: "cascade" }),
     status: text("status")
-      .$type<"running" | "cancelling" | "cancelled" | "completed" | "failed">()
+      .$type<
+        | "running"
+        | "cancelling"
+        | "cancelled"
+        | "completed"
+        | "failed"
+        | "needs_continuation"
+      >()
       .notNull(),
     maxSteps: integer("max_steps").notNull(),
     stepCount: integer("step_count").default(0).notNull(),
+    continuationCount: integer("continuation_count").default(0).notNull(),
     cancelRequestedAt: timestamp("cancel_requested_at", {
       withTimezone: true,
     }),
@@ -54,12 +65,12 @@ export const workRuns = pgTable(
     errorMessage: text("error_message"),
   },
   (table) => [
-    uniqueIndex("work_runs_execution_id_unique").on(table.executionId),
-    index("work_runs_conversation_started_at_index").on(
+    uniqueIndex("agent_runs_execution_id_unique").on(table.executionId),
+    index("agent_runs_conversation_started_at_index").on(
       table.conversationId,
       table.startedAt,
     ),
-    index("work_runs_organization_status_index").on(
+    index("agent_runs_organization_status_index").on(
       table.organizationId,
       table.status,
     ),

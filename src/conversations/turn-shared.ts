@@ -1,6 +1,6 @@
 import "server-only";
 
-import { finishWorkRun } from "@/work/work-run-repository";
+import { finishAgentRun } from "@/executions/agent-run-repository";
 
 import type { RuntimeAgent } from "@/conversations/runtime-agent";
 
@@ -31,6 +31,12 @@ export interface TurnInput {
    * `attachConversationAttachmentsToMessage`.
    */
   attachmentIds?: readonly string[];
+  /**
+   * Set only by `/api/cron/continue-runs`: the `agent_runs` row this turn
+   * resumes, so `startAgentRun` re-points that same row at this chunk's new
+   * execution instead of opening a second one. See ADR-0026.
+   */
+  continuingRunId?: string;
 }
 
 export function storedCount(value: number | undefined): number | undefined {
@@ -44,17 +50,15 @@ export function owner(input: TurnInput) {
 }
 
 /**
- * Closes the durable Work-run record opened for this turn (see
- * `startWorkRun` in `beginTurn`), if this turn's kind is `work`. A no-op
- * for Chat and Code, which never open one.
+ * Closes the durable run record opened for this turn (see `startAgentRun`
+ * in `beginTurn`) — every agent kind gets one.
  */
-export async function finishTurnWorkRun(
+export async function finishTurnAgentRun(
   input: TurnInput,
   turn: { execution: { id: string } },
   errorMessage?: string,
 ) {
-  if (input.agent.baseAgentId !== "work") return;
-  await finishWorkRun({
+  await finishAgentRun({
     organizationId: input.organizationId,
     executionId: turn.execution.id,
     errorMessage,

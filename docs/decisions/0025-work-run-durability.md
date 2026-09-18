@@ -173,3 +173,13 @@ needs a real dispatcher, which this slice does not add:
   is still no mechanism to resume a step-by-step run between HTTP requests.
   The background dispatch loop described above therefore remains deferred
   pending a plan upgrade.
+- 2026-09-18: the background dispatch loop above is now built —
+  [ADR-0026](0026-chunked-async-execution.md) — without a plan upgrade, via
+  a different mechanism than the one anticipated here: a turn cut off by its
+  own internal timeout defers into `needs_continuation` and a second,
+  1-minute external cron job (`/api/cron/continue-runs`) resumes it
+  automatically, chunk by chunk, reusing the existing manual "Continue"
+  mechanism instead of a step-by-step resume inside pilot-ai. This closes
+  the "hands Pilot a task and it keeps going" gap for every agent kind, not
+  only Work — see ADR-0026 for what it does and does not fully solve
+  (notably, cross-chunk step-budget enforcement).

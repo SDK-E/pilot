@@ -6,11 +6,11 @@ import { eq } from "drizzle-orm";
 
 import { createConversation } from "@/conversations/conversation-repository";
 import { db } from "@/db/client";
-import { executions, organizations, workRuns, workers } from "@/db/schema";
+import { agentRuns, executions, organizations, workers } from "@/db/schema";
+import { reapAllStaleAgentRuns } from "@/executions/agent-run-repository";
 import { reapAllStaleExecutions } from "@/executions/execution-repository";
-import { reapAllStaleWorkRuns } from "@/work/work-run-repository";
 
-// Well past STALE_EXECUTION_MS/STALE_WORK_RUN_MS (10 minutes), so the sweep
+// Well past STALE_EXECUTION_MS/STALE_AGENT_RUN_MS (10 minutes), so the sweep
 // always treats these as abandoned rather than still in flight.
 const STALE_STARTED_AT = new Date(Date.now() - 60 * 60 * 1000);
 
@@ -70,7 +70,7 @@ test("the global reaper closes stale runs across every organization, not just th
       .returning({ id: executions.id });
     assert.ok(executionA && executionB);
 
-    await db.insert(workRuns).values({
+    await db.insert(agentRuns).values({
       organizationId: orgB.organizationId,
       workerId: orgB.agentId,
       conversationId: orgB.conversationId,
@@ -78,11 +78,12 @@ test("the global reaper closes stale runs across every organization, not just th
       status: "running",
       maxSteps: 150,
       startedAt: STALE_STARTED_AT,
+      updatedAt: STALE_STARTED_AT,
     });
 
     const reapedCount = await reapAllStaleExecutions();
     assert.ok(reapedCount >= 2);
-    await reapAllStaleWorkRuns();
+    await reapAllStaleAgentRuns();
 
     const [closedA] = await db
       .select({ status: executions.status })
@@ -95,11 +96,11 @@ test("the global reaper closes stale runs across every organization, not just th
     assert.equal(closedA?.status, "failed");
     assert.equal(closedB?.status, "failed");
 
-    const [closedWorkRun] = await db
-      .select({ status: workRuns.status })
-      .from(workRuns)
-      .where(eq(workRuns.executionId, executionB.id));
-    assert.equal(closedWorkRun?.status, "failed");
+    const [closedAgentRun] = await db
+      .select({ status: agentRuns.status })
+      .from(agentRuns)
+      .where(eq(agentRuns.executionId, executionB.id));
+    assert.equal(closedAgentRun?.status, "failed");
   } finally {
     await db
       .delete(organizations)

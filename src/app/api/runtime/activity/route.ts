@@ -47,9 +47,9 @@ export async function POST(request: Request) {
 
   const { appendSkillActivity, appendToolActivity } =
     await import("@/executions/execution-repository");
-  const { recordWorkRunStep } = await import("@/work/work-run-repository");
-  // A no-op for Chat/Code executions, which never have a `work_runs` row.
-  await recordWorkRunStep({
+  const { recordAgentRunStep } =
+    await import("@/executions/agent-run-repository");
+  await recordAgentRunStep({
     organizationId: input.data.organizationId,
     executionId: input.data.executionId,
   });

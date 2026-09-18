@@ -1,6 +1,26 @@
 # Pilot implementation status
 
-Updated 2026-09-15. This is an implementation record, not a completion claim.
+Updated 2026-09-18. This is an implementation record, not a completion claim.
+
+## Chunked async execution for every agent kind (2026-09-18)
+
+Every agent turn — Chat, Work, and Code, not only Work — now survives this
+Vercel plan's 300s Hobby `maxDuration` ceiling instead of being killed by it.
+See [ADR-0026](decisions/0026-chunked-async-execution.md) for the mechanism
+(`conversation-turn.ts` deferring a turn its own internal timeout cuts off,
+`/api/cron/continue-runs` resuming it automatically). `work_runs` was
+generalized to every kind, renamed to `agent_runs`
+(`src/executions/agent-run-repository.ts`, migration 0049), and gained a
+`needs_continuation` status plus `continuation_count`. The Work-only cancel
+endpoint moved to `/api/conversations/[conversationId]/cancel` and now works
+for every kind.
+
+A real, separate bug was fixed alongside this: the client's own
+`RESPONSE_TIMEOUT_MS` watchdog (`use-conversation-stream.ts`) was set to
+155s — _below_ the server's 260s internal timeout — so the client was
+aborting slow-but-healthy turns (e.g. web research) on its own, well before
+the server ever got a chance to respond, and showing "The response timed
+out" even though nothing was actually wrong. Raised to 295s.
 
 ## Marketing site (2026-09-15)
 

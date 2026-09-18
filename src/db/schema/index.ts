@@ -6,7 +6,7 @@ export * from "./agents";
 export * from "./conversations";
 export * from "./projects";
 export * from "./executions";
-export * from "./work-runs";
+export * from "./agent-runs";
 export * from "./connector-definitions";
 export * from "./platform";
 export * from "./skills";
