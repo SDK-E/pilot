@@ -22,8 +22,9 @@ import type { RuntimeAgent } from "@/conversations/runtime-agent";
 import type { SessionFailure } from "@/organizations/workspace-session";
 
 export const runtime = "nodejs";
-// Comfortably above conversation-turn.ts's STREAM_TIMEOUT_MS plus a retry.
-export const maxDuration = 180;
+// At Vercel's absolute function ceiling (Fluid Compute) — as long as this
+// platform allows a single request to run.
+export const maxDuration = 800;
 
 /**
  * This route's client (`useCompletion`) reads a non-OK response with
