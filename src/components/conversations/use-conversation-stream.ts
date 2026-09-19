@@ -1,11 +1,11 @@
 "use client";
 
-import { useCompletion } from "@ai-sdk/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { activitiesSince, useActivityPolling } from "./use-activity-polling";
 import { useBackgroundRunResync } from "./use-background-run-resync";
 import { useInitialMessage } from "./use-initial-message";
+import { useSseCompletion } from "./use-sse-completion";
 import { useTranscript } from "./use-transcript";
 
 import type {
@@ -56,10 +56,8 @@ export function useConversationStream(input: {
     void transcript.sync();
   }, [transcript]);
 
-  const completionState = useCompletion({
+  const completionState = useSseCompletion({
     api: `/api/conversations/${conversationId}/stream`,
-    experimental_throttle: 50,
-    streamProtocol: "text",
     onError: (cause) => {
       const message = cause.message || "Pilot could not complete this message.";
       if (lastPrompt.current)

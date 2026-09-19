@@ -78,7 +78,7 @@ export default async function ConversationPage({
     getUserPreferences(user.id),
     getOrganizationPreferences(organizationId),
     listSkills(organizationId),
-    hasActiveCustomConnector(organizationId),
+    hasActiveCustomConnector(organizationId, user.id),
   ]);
   if (!messages) notFound();
 

@@ -117,6 +117,7 @@ test("preferences default and update per user and organization", async () => {
     sendMessageShortcut: "mod_enter",
     conversationPanelLayout: null,
     workInstructions: null,
+    generalInstructions: null,
   });
   await updateUserPreferences({
     workosUserId: userId,

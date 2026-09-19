@@ -9,9 +9,7 @@ export interface ConnectorDefinitionSummary {
   icon: string | null;
   description: string;
   definitionStatus: "active" | "disabled";
-  connectionStatus: "not_connected" | "active" | "error";
-  accountIdentifier: string | null;
-  lastErrorMessage: string | null;
+  allowPersonalConnections: boolean;
   actions: ConnectorDefinitionAction[];
 }
 
@@ -42,6 +40,7 @@ export interface ConnectorDefinitionConfig {
   accountIdentifierUrl: string | null;
   accountIdentifierField: string | null;
   actions: ConnectorDefinitionAction[];
+  allowPersonalConnections: boolean;
   createdByWorkosUserId: string;
 }
 
@@ -59,10 +58,14 @@ export interface DecryptedConnectorDefinition {
   accountIdentifierUrl: string | null;
   accountIdentifierField: string | null;
   actions: ConnectorDefinitionAction[];
+  allowPersonalConnections: boolean;
 }
 
 export interface DecryptedConnectorDefinitionConnection {
+  connectionId: string;
   connectorDefinitionId: string;
+  scope: "organization" | "personal";
+  ownerWorkosUserId: string | null;
   accountIdentifier: string | null;
   accessToken: string;
   refreshToken: string | null;
@@ -77,8 +80,6 @@ export const connectorDefinitionSummaryColumns = {
   icon: connectorDefinitions.icon,
   description: connectorDefinitions.description,
   definitionStatus: connectorDefinitions.definitionStatus,
-  connectionStatus: connectorDefinitions.connectionStatus,
-  accountIdentifier: connectorDefinitions.accountIdentifier,
-  lastErrorMessage: connectorDefinitions.lastErrorMessage,
+  allowPersonalConnections: connectorDefinitions.allowPersonalConnections,
   actions: connectorDefinitions.actions,
 };

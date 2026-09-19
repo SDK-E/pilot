@@ -4,10 +4,10 @@ import { runConnectorDefinitionAction } from "@/connectors/adapters/base-connect
 import { refreshDefinitionToken } from "@/connectors/base-connector";
 import {
   listConnectorDefinitions,
-  markConnectorDefinitionError,
-  resolveConnectorDefinitionConnection,
-  saveConnectorDefinitionConnection,
-  touchConnectorDefinitionLastUsed,
+  markConnectorConnectionError,
+  resolveConnectorConnection,
+  saveConnectorConnection,
+  touchConnectorConnectionLastUsed,
 } from "@/connectors/connector-definition-repository";
 import {
   connectorErrorResponse,
@@ -17,7 +17,7 @@ import {
 
 async function ensureFreshDefinitionAccessToken(
   connection: NonNullable<
-    Awaited<ReturnType<typeof resolveConnectorDefinitionConnection>>
+    Awaited<ReturnType<typeof resolveConnectorConnection>>
   >,
 ): Promise<string | null> {
   const expiresSoon =
@@ -30,9 +30,11 @@ async function ensureFreshDefinitionAccessToken(
       connection,
       connection.refreshToken,
     );
-    await saveConnectorDefinitionConnection({
+    await saveConnectorConnection({
       organizationId: connection.organizationId,
-      id: connection.connectorDefinitionId,
+      connectorDefinitionId: connection.connectorDefinitionId,
+      scope: connection.scope,
+      ownerWorkosUserId: connection.ownerWorkosUserId,
       accountIdentifier: connection.accountIdentifier ?? "",
       accessToken: refreshed.accessToken,
       refreshToken: refreshed.refreshToken ?? connection.refreshToken,
@@ -48,24 +50,45 @@ async function ensureFreshDefinitionAccessToken(
         : "Token refresh failed; will retry on the next call.";
     // eslint-disable-next-line no-console -- only path to surface this server-side; no secrets logged
     console.error("Custom connector token refresh failed:", error);
-    await markConnectorDefinitionError({
-      id: connection.connectorDefinitionId,
+    await markConnectorConnectionError({
+      connectionId: connection.connectionId,
       message,
     });
     return null;
   }
 }
 
-async function listConnectors(organizationId: string): Promise<Response> {
-  const definitions = await listConnectorDefinitions(organizationId);
+/**
+ * `requestedSlugs` is the composer's per-message connector picker: `null`
+ * means every connector this org has defined is eligible for listing (the
+ * per-user, per-connector connection check below still applies); a set
+ * narrows the list to just those slugs for this turn.
+ */
+async function listConnectors(
+  organizationId: string,
+  actingUserId: string,
+  requestedSlugs: readonly string[] | null,
+): Promise<Response> {
+  const allDefinitions = await listConnectorDefinitions(organizationId);
+  const definitions = allDefinitions.filter(
+    (definition) =>
+      definition.definitionStatus === "active" &&
+      (requestedSlugs === null || requestedSlugs.includes(definition.slug)),
+  );
+  const connected = await Promise.all(
+    definitions.map(async (definition) => {
+      const connection = await resolveConnectorConnection({
+        organizationId,
+        slug: definition.slug,
+        actingUserId,
+      });
+      return connection ? definition : null;
+    }),
+  );
   return Response.json({
     result: {
-      connectors: definitions
-        .filter(
-          (definition) =>
-            definition.definitionStatus === "active" &&
-            definition.connectionStatus === "active",
-        )
+      connectors: connected
+        .filter((definition) => definition !== null)
         .map((definition) => ({
           slug: definition.slug,
           displayName: definition.displayName,
@@ -84,14 +107,29 @@ async function listConnectors(organizationId: string): Promise<Response> {
 
 async function callConnectorAction(input: {
   organizationId: string;
+  actingUserId: string;
   connectorSlug: string;
   action: string;
   params: Record<string, unknown>;
   confirm: boolean;
+  requestedSlugs: readonly string[] | null;
 }): Promise<Response> {
-  const connection = await resolveConnectorDefinitionConnection({
+  if (
+    input.requestedSlugs !== null &&
+    !input.requestedSlugs.includes(input.connectorSlug)
+  ) {
+    return Response.json(
+      {
+        error: "This connector wasn't enabled for this message.",
+        kind: "not-found",
+      },
+      { status: 404 },
+    );
+  }
+  const connection = await resolveConnectorConnection({
     organizationId: input.organizationId,
     slug: input.connectorSlug,
+    actingUserId: input.actingUserId,
   });
   if (!connection) {
     return Response.json(
@@ -117,7 +155,7 @@ async function callConnectorAction(input: {
       params: input.params,
       confirmed: input.confirm,
     });
-    await touchConnectorDefinitionLastUsed(connection.connectorDefinitionId);
+    await touchConnectorConnectionLastUsed(connection.connectionId);
     return Response.json({ result });
   } catch (error) {
     return connectorErrorResponse(
@@ -130,17 +168,25 @@ async function callConnectorAction(input: {
 /**
  * Dispatches `connector` — one agent-facing tool shared by every connector.
  * `list-connectors` is a meta-action needing no connection; every other
- * action targets one connector by `connectorSlug`.
+ * action targets one connector by `connectorSlug`. `requestedSlugs` is this
+ * turn's per-message connector-slug restriction (see
+ * `executions.requestedConnectorSlugs`), `null` meaning no restriction.
  */
 export async function dispatchCustomConnector(input: {
   organizationId: string;
+  actingUserId: string;
   action: string;
   params: Record<string, unknown>;
   connectorSlug: string | undefined;
   confirm?: boolean;
+  requestedSlugs: readonly string[] | null;
 }): Promise<Response> {
   if (input.action === "list-connectors")
-    return listConnectors(input.organizationId);
+    return listConnectors(
+      input.organizationId,
+      input.actingUserId,
+      input.requestedSlugs,
+    );
 
   if (!input.connectorSlug) {
     return Response.json(
@@ -153,9 +199,11 @@ export async function dispatchCustomConnector(input: {
   }
   return callConnectorAction({
     organizationId: input.organizationId,
+    actingUserId: input.actingUserId,
     connectorSlug: input.connectorSlug,
     action: input.action,
     params: input.params,
     confirm: input.confirm ?? false,
+    requestedSlugs: input.requestedSlugs,
   });
 }

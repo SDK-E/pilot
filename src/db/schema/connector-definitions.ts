@@ -1,12 +1,14 @@
 /**
- * Admin-defined ("custom") connectors: an org admin configures a generic
- * OAuth2 + REST integration from Settings instead of it being a built-in
- * TypeScript provider (see `src/connectors/providers/*` for the built-in,
- * code-defined ones). One row is both the connector's configuration and
- * (once connected) its single organization-wide OAuth connection — there is
- * no personal-scope variant for custom connectors, unlike the built-in ones.
+ * One dynamic connector: a generic OAuth2 + REST integration, whether
+ * seeded by Pilot itself (GitHub, Slack, ...) or added by an admin from
+ * Settings — both are just rows here, driven by the same engine
+ * (`src/connectors/base-connector.ts`). This table holds only a
+ * connector's *configuration*; its OAuth connection state (possibly more
+ * than one — an org-wide connection and/or any number of personal ones,
+ * see `allowPersonalConnections`) lives in `connector_connections`.
  */
 import {
+  boolean,
   jsonb,
   pgTable,
   text,
@@ -90,25 +92,12 @@ export const connectorDefinitions = pgTable(
       .$type<"active" | "disabled">()
       .notNull()
       .default("active"),
-    // --- connection state (org-wide, at most one) ---
-    accountIdentifier: text("account_identifier"),
-    encryptedAccessToken: text("encrypted_access_token"),
-    accessTokenIv: text("access_token_iv"),
-    accessTokenAuthTag: text("access_token_auth_tag"),
-    encryptedRefreshToken: text("encrypted_refresh_token"),
-    refreshTokenIv: text("refresh_token_iv"),
-    refreshTokenAuthTag: text("refresh_token_auth_tag"),
-    tokenExpiresAt: timestamp("token_expires_at", { withTimezone: true }),
-    grantedScopes: jsonb("granted_scopes")
-      .$type<string[]>()
+    // When true, any member may connect their own personal account to this
+    // connector (in addition to, or instead of, the org-wide connection an
+    // admin can still set up) — see `connector_connections.scope`.
+    allowPersonalConnections: boolean("allow_personal_connections")
       .notNull()
-      .default([]),
-    connectionStatus: text("connection_status")
-      .$type<"not_connected" | "active" | "error">()
-      .notNull()
-      .default("not_connected"),
-    lastErrorMessage: text("last_error_message"),
-    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+      .default(false),
     createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()

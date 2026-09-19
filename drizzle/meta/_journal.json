@@ -372,6 +372,41 @@
       "when": 1789749710354,
       "tag": "0052_tricky_rockslide",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1789751269147,
+      "tag": "0053_clean_shaman",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1789764856133,
+      "tag": "0054_violet_longshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1789764872750,
+      "tag": "0055_fair_molecule_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1789765907370,
+      "tag": "0056_many_silhouette",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1789782026213,
+      "tag": "0057_wise_robbie_robertson",
+      "breakpoints": true
     }
   ]
 }

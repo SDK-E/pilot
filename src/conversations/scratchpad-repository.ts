@@ -48,6 +48,7 @@ export async function getRuntimeConversation(input: {
       workerId: executions.workerId,
       conversationId: executions.conversationId,
       userId: conversations.createdByWorkosUserId,
+      requestedConnectorSlugs: executions.requestedConnectorSlugs,
     })
     .from(executions)
     .innerJoin(conversations, eq(executions.conversationId, conversations.id))

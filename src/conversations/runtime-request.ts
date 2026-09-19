@@ -6,7 +6,13 @@ import {
   allowedToolIds,
   type OrganizationCapabilities,
 } from "@/conversations/tool-authorization";
+import { resolveInstructionLayers } from "@/conversations/turn-instructions";
 import { resolveGatewayCredential } from "@/model-gateways/model-gateway-repository";
+import {
+  grantedPluginIds,
+  resolvePluginsToolIds,
+} from "@/plugins/agent-plugin-grants";
+import { listPlugins } from "@/plugins/plugin-repository";
 import { getProjectMemoryContextForConversation } from "@/projects/project-repository";
 import {
   grantedSkillIds,
@@ -59,22 +65,30 @@ async function resolveInstructions(
   input: TurnInput,
   activeSkillIds: readonly string[],
   organizationSkills: Awaited<ReturnType<typeof listSkills>>,
+  projectId: string | undefined,
 ) {
   const scope = {
     organizationId: input.organizationId,
     conversationId: input.conversationId,
     userId: input.userId,
   };
-  const attachmentContext = await buildAttachmentContext({
-    ...scope,
-    maximumCharacters:
-      MAX_INSTRUCTIONS_LENGTH - input.agent.instructions.length - 2,
-  });
+  const [attachmentContext, instructionLayers] = await Promise.all([
+    buildAttachmentContext({
+      ...scope,
+      maximumCharacters:
+        MAX_INSTRUCTIONS_LENGTH - input.agent.instructions.length - 2,
+    }),
+    resolveInstructionLayers(input, projectId),
+  ]);
   const skillInstructions = resolveSkillsInstructions(
     activeSkillIds,
     organizationSkills,
   );
-  const extraInstructions = [attachmentContext, skillInstructions]
+  const extraInstructions = [
+    attachmentContext,
+    skillInstructions,
+    ...instructionLayers,
+  ]
     .filter(Boolean)
     .join("\n\n");
   return extraInstructions
@@ -88,35 +102,63 @@ async function resolveInstructions(
  * the tool grant narrowed/extended by the message's connector toggle and
  * skills (see `allowedToolIds`), and the model/gateway credential to use.
  */
+/**
+ * Resolves everything the turn needs from the database in one pass: the
+ * project memory context, the agent's active skills/plugins (server-derived
+ * — never trusting the caller's own skillIds as authorization, AGENTS.md),
+ * and the model/gateway credential to use.
+ */
+async function resolveTurnContext(input: TurnInput, modelId: string) {
+  const requestedSkillIds = input.activeSkillIds ?? [];
+  const [project, organizationSkills, organizationPlugins, model] =
+    await Promise.all([
+      getProjectMemoryContextForConversation({
+        organizationId: input.organizationId,
+        conversationId: input.conversationId,
+        userId: input.userId,
+      }),
+      requestedSkillIds.length > 0
+        ? listSkills(input.organizationId)
+        : Promise.resolve([]),
+      input.agent.enabledPluginIds.length > 0
+        ? listPlugins(input.organizationId)
+        : Promise.resolve([]),
+      resolveWorkerModel(modelId, input.userId),
+    ]);
+  const activeSkillIds = grantedSkillIds(
+    input.agent,
+    organizationSkills,
+  ).filter((skillId) => requestedSkillIds.includes(skillId));
+  const activePluginIds = grantedPluginIds(input.agent, organizationPlugins);
+  return {
+    project,
+    organizationSkills,
+    organizationPlugins,
+    model,
+    activeSkillIds,
+    activePluginIds,
+  };
+}
+
 export async function buildRuntimeRequest(
   input: TurnInput,
   executionId: string,
   modelId: string,
   capabilities: OrganizationCapabilities,
 ): Promise<RuntimeRequest> {
-  const requestedSkillIds = input.activeSkillIds ?? [];
-  const [project, organizationSkills, model] = await Promise.all([
-    getProjectMemoryContextForConversation({
-      organizationId: input.organizationId,
-      conversationId: input.conversationId,
-      userId: input.userId,
-    }),
-    requestedSkillIds.length > 0
-      ? listSkills(input.organizationId)
-      : Promise.resolve([]),
-    resolveWorkerModel(modelId, input.userId),
-  ]);
-  // Never trust the caller's own skillIds as authorization (AGENTS.md) — a
-  // skill not granted to this agent must never contribute its instructions
-  // or tools just because it happens to belong to the same organization.
-  const activeSkillIds = grantedSkillIds(
-    input.agent,
+  const {
+    project,
     organizationSkills,
-  ).filter((skillId) => requestedSkillIds.includes(skillId));
+    organizationPlugins,
+    model,
+    activeSkillIds,
+    activePluginIds,
+  } = await resolveTurnContext(input, modelId);
   const instructions = await resolveInstructions(
     input,
     activeSkillIds,
     organizationSkills,
+    project?.id,
   );
   return {
     organizationId: input.organizationId,
@@ -135,6 +177,10 @@ export async function buildRuntimeRequest(
       activeSkillToolIds: resolveSkillsToolIds(
         activeSkillIds,
         organizationSkills,
+      ),
+      activePluginToolIds: resolvePluginsToolIds(
+        activePluginIds,
+        organizationPlugins,
       ),
     }),
     project: project && {

@@ -6,7 +6,7 @@ import { z } from "zod";
 import {
   createConnectorDefinition,
   deleteConnectorDefinition,
-  disconnectConnectorDefinition,
+  disconnectConnectorConnection,
   setConnectorDefinitionStatus,
   updateConnectorDefinition,
 } from "@/connectors/connector-definition-repository";
@@ -79,6 +79,7 @@ const definitionFieldsSchema = z.object({
   accountIdentifierUrl: z.url().max(2000).optional(),
   accountIdentifierField: z.string().trim().max(200).optional(),
   actionsJson: z.string().max(20_000).optional(),
+  allowPersonalConnections: z.boolean(),
 });
 type DefinitionFields = z.infer<typeof definitionFieldsSchema>;
 
@@ -95,6 +96,8 @@ function parseDefinitionFields(formData: FormData): DefinitionFields {
     accountIdentifierUrl: formValue(formData, "accountIdentifierUrl"),
     accountIdentifierField: formValue(formData, "accountIdentifierField"),
     actionsJson: formValue(formData, "actionsJson"),
+    allowPersonalConnections:
+      formData.get("allowPersonalConnections") === "true",
   });
 }
 
@@ -108,7 +111,10 @@ function splitScopes(raw: string | undefined): string[] {
 /**
  * Creates an admin-defined connector: a generic OAuth2 + REST integration
  * configured from Settings instead of shipped as a built-in TypeScript
- * provider. Org-wide only — see docs/decisions/0023-dynamic-connectors.md.
+ * provider — see docs/decisions/0023-dynamic-connectors.md. Its OAuth
+ * connection(s) are configured separately, after creation (see
+ * `disconnectCustomConnectorAction` and
+ * `disconnectPersonalConnectorConnectionAction`).
  */
 export async function createCustomConnectorAction(formData: FormData) {
   const session = await requireAdmin();
@@ -142,6 +148,7 @@ export async function createCustomConnectorAction(formData: FormData) {
     accountIdentifierUrl: fields.accountIdentifierUrl ?? null,
     accountIdentifierField: fields.accountIdentifierField ?? null,
     actions: parseActionsJson(fields.actionsJson),
+    allowPersonalConnections: fields.allowPersonalConnections,
     createdByWorkosUserId: session.user.id,
   });
   revalidatePath("/settings");
@@ -168,6 +175,7 @@ export async function updateCustomConnectorAction(formData: FormData) {
     accountIdentifierUrl: fields.accountIdentifierUrl ?? null,
     accountIdentifierField: fields.accountIdentifierField ?? null,
     actions: parseActionsJson(fields.actionsJson),
+    allowPersonalConnections: fields.allowPersonalConnections,
   });
   revalidatePath("/settings");
 }
@@ -184,12 +192,36 @@ export async function setCustomConnectorEnabledAction(formData: FormData) {
   revalidatePath("/settings");
 }
 
+/**
+ * Disconnects the shared org-wide connection — admin-only, since it's used
+ * by every member's turns.
+ */
 export async function disconnectCustomConnectorAction(formData: FormData) {
   const session = await requireAdmin();
   const id = z.uuid().parse(formData.get("id"));
-  await disconnectConnectorDefinition({
+  await disconnectConnectorConnection({
     organizationId: session.organizationId,
-    id,
+    connectorDefinitionId: id,
+    scope: "organization",
+    ownerWorkosUserId: null,
+  });
+  revalidatePath("/settings");
+}
+
+/**
+ * Disconnects the signed-in member's own personal connection — any member
+ * may do this for their own connection, no admin role required.
+ */
+export async function disconnectPersonalConnectorConnectionAction(
+  formData: FormData,
+) {
+  const session = await requireWorkspaceSession();
+  const id = z.uuid().parse(formData.get("id"));
+  await disconnectConnectorConnection({
+    organizationId: session.organizationId,
+    connectorDefinitionId: id,
+    scope: "personal",
+    ownerWorkosUserId: session.user.id,
   });
   revalidatePath("/settings");
 }

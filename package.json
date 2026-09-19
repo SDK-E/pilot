@@ -46,7 +46,6 @@
     "deploy:clean:production": "bash scripts/clean-deployments.sh production"
   },
   "dependencies": {
-    "@ai-sdk/react": "4.0.96",
     "@neondatabase/serverless": "1.1.0",
     "@radix-ui/react-use-controllable-state": "^1.2.6",
     "@react-pdf/renderer": "^4.9.0",

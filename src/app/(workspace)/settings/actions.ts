@@ -26,6 +26,7 @@ import {
   LOCAL_ORGANIZATION_COOKIE,
   requireWorkspaceSession,
 } from "@/organizations/workspace-session";
+import { updateUsageLimitPolicy } from "@/usage/usage-limit-repository";
 import {
   updateUserPreferences,
   updateWorkInstructions,
@@ -95,6 +96,41 @@ export async function updateModelPolicyAction(formData: FormData) {
     throw new Error("That model isn't available. Choose one from the list.");
   }
   await updateOrganizationModelPolicy({ organizationId, ...input.data });
+  revalidatePath("/", "layout");
+}
+
+const usageLimitPolicySchema = z.object({
+  fiveHourTokenLimit: z.coerce.number().int().positive().nullable(),
+  weeklyTokenLimit: z.coerce.number().int().positive().nullable(),
+});
+
+/**
+ * A blank field means unlimited — never a hardcoded constant. Mirrors
+ * `updateModelPolicyAction`'s own admin-only check.
+ */
+export async function updateUsageLimitPolicyAction(formData: FormData) {
+  const fiveHourRaw = formData.get("fiveHourTokenLimit");
+  const weeklyRaw = formData.get("weeklyTokenLimit");
+  const input = usageLimitPolicySchema.safeParse({
+    fiveHourTokenLimit:
+      typeof fiveHourRaw === "string" && fiveHourRaw.trim()
+        ? fiveHourRaw
+        : null,
+    weeklyTokenLimit:
+      typeof weeklyRaw === "string" && weeklyRaw.trim() ? weeklyRaw : null,
+  });
+  if (!input.success) throw new Error("Enter a positive number of tokens.");
+  const { organizationId, membership, user } = await requireWorkspaceSession();
+  if (!ADMIN_ROLES.has(membership.role.slug)) {
+    throw new Error(
+      "Only organization owners and admins can change usage limits.",
+    );
+  }
+  await updateUsageLimitPolicy({
+    organizationId,
+    updatedByWorkosUserId: user.id,
+    ...input.data,
+  });
   revalidatePath("/", "layout");
 }
 

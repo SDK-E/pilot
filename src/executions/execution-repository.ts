@@ -105,13 +105,22 @@ export async function startExecution(input: {
   organizationId: string;
   workerId: string;
   conversationId: string;
+  requestedConnectorSlugs?: readonly string[];
 }) {
   await reapStaleExecutions(input);
   let execution;
   try {
     [execution] = await db
       .insert(executions)
-      .values({ ...input, status: "running" })
+      .values({
+        organizationId: input.organizationId,
+        workerId: input.workerId,
+        conversationId: input.conversationId,
+        requestedConnectorSlugs: input.requestedConnectorSlugs
+          ? [...input.requestedConnectorSlugs]
+          : undefined,
+        status: "running",
+      })
       .returning({ id: executions.id });
   } catch (error) {
     if (isUniqueViolation(error)) return;

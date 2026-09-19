@@ -9,6 +9,7 @@ import {
   isWorkspaceSession,
   sessionFailureResponse,
 } from "@/organizations/workspace-session";
+import { getUsageWindowState } from "@/usage/usage-limit-repository";
 
 export const runtime = "nodejs";
 
@@ -48,9 +49,10 @@ export async function GET() {
   const session = await getWorkspaceSession();
   if (!isWorkspaceSession(session)) return sessionFailureResponse(session);
 
-  const [platformModels, byokCredentials] = await Promise.all([
+  const [platformModels, byokCredentials, usage] = await Promise.all([
     listSelectableModels(),
     listByokCredentials(session.organizationId, session.user.id),
+    getUsageWindowState(session.organizationId, session.user.id),
   ]);
 
   const enabledCredentials = byokCredentials.filter(
@@ -88,8 +90,13 @@ export async function GET() {
       }),
   );
 
-  return Response.json({ platform, byok } satisfies {
+  return Response.json({
+    platform,
+    byok,
+    usageExhausted: usage.fiveHourExceeded || usage.weeklyExceeded,
+  } satisfies {
     platform: SelectableModelResponse[];
     byok: SelectableModelResponse[];
+    usageExhausted: boolean;
   });
 }

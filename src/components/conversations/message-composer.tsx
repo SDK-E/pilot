@@ -11,28 +11,25 @@ import {
 } from "@/components/ai-elements/attachments";
 import {
   PromptInput,
-  PromptInputActionAddAttachments,
-  PromptInputActionAddScreenshot,
-  PromptInputActionMenu,
-  PromptInputActionMenuContent,
-  PromptInputActionMenuTrigger,
   PromptInputBody,
   PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
-  PromptInputTools,
   type PromptInputMessage,
   usePromptInputAttachments,
 } from "@/components/ai-elements/prompt-input";
+import { CommandPalette } from "@/components/conversations/command-palette";
 import { useSendMessageShortcut } from "@/components/conversations/composer-preferences";
 import {
   COMPOSER_WRAPPER_CLASSNAME,
   useComposerSubmitState,
 } from "@/components/conversations/composer-shared";
 import { ComposerStatus } from "@/components/conversations/composer-status";
-import { ConnectorToggleMenu } from "@/components/conversations/connector-toggle-menu";
-import { SkillPicker } from "@/components/conversations/skill-picker";
+import { ComposerTools } from "@/components/conversations/composer-tools";
 import { useAttachmentUpload } from "@/components/conversations/use-attachment-upload";
+import { useSelectableCommands } from "@/components/conversations/use-selectable-commands";
+import { useSelectableConnectors } from "@/components/conversations/use-selectable-connectors";
+import { useSelectableModels } from "@/components/conversations/use-selectable-models";
 import {
   shouldInsertComposerNewline,
   submitOnShortcut,
@@ -44,6 +41,81 @@ import type { ComposerSkill } from "@/components/conversations/skill-picker";
 const ACCEPTED_FILES =
   ".pdf,.txt,.md,.csv,.html,.json,.xml,.zip,.docx,.xlsx,.pptx,image/jpeg,image/png,image/webp,image/gif,image/svg+xml";
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
+
+interface ComposerTextareaProps {
+  draft: string;
+  setDraft: (value: string) => void;
+  agentName: string;
+  placeholder: string;
+  isBusy: boolean;
+  errorId: string;
+  validationError: string | undefined;
+  setValidationError: (value: string | undefined) => void;
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  shortcut: ReturnType<typeof useSendMessageShortcut>;
+  onOpenPalette: () => void;
+}
+
+function ComposerTextarea({
+  draft,
+  setDraft,
+  agentName,
+  placeholder,
+  isBusy,
+  errorId,
+  validationError,
+  setValidationError,
+  textareaRef,
+  shortcut,
+  onOpenPalette,
+}: ComposerTextareaProps) {
+  const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (submitOnShortcut(event, shortcut)) return;
+    if (
+      draft === "" &&
+      event.key === "/" &&
+      event.currentTarget.selectionStart === 0
+    ) {
+      event.preventDefault();
+      onOpenPalette();
+      return;
+    }
+    if (shouldInsertComposerNewline(event, shortcut)) {
+      event.preventDefault();
+      const textarea = event.currentTarget;
+      const at = textarea.selectionStart;
+      setDraft(
+        `${textarea.value.slice(0, at)}\n${textarea.value.slice(textarea.selectionEnd)}`,
+      );
+      requestAnimationFrame(() => {
+        textarea.setSelectionRange(at + 1, at + 1);
+      });
+    }
+  };
+
+  return (
+    <PromptInputBody>
+      <PromptInputTextarea
+        aria-describedby={validationError ? errorId : undefined}
+        aria-invalid={validationError ? true : undefined}
+        aria-label={`Message ${agentName}`}
+        className="max-h-52 min-h-11 px-3 py-2.5 text-sm leading-6"
+        disabled={isBusy}
+        maxLength={10_000}
+        onChange={(event) => {
+          setDraft(event.currentTarget.value);
+          if (validationError) setValidationError(undefined);
+        }}
+        onKeyDown={onKeyDown}
+        placeholder={placeholder}
+        ref={textareaRef}
+        required
+        rows={1}
+        value={draft}
+      />
+    </PromptInputBody>
+  );
+}
 
 function AttachmentPreviews() {
   const attachments = usePromptInputAttachments();
@@ -106,7 +178,13 @@ export function MessageComposer({
   const [validationError, setValidationError] = useState<string>();
   const upload = useAttachmentUpload(conversationId);
   const [connectorToolIds, setConnectorToolIds] = useState<string[]>();
+  const [connectorSlugs, setConnectorSlugs] = useState<string[]>();
   const [skillIds, setSkillIds] = useState<string[]>([]);
+  const [requestedModelId, setRequestedModelId] = useState<string>();
+  const [isPaletteOpen, setPaletteOpen] = useState(false);
+  const selectableModels = useSelectableModels();
+  const selectableConnectors = useSelectableConnectors();
+  const selectableCommands = useSelectableCommands();
   const isBusy = isLoading || upload.isUploading;
   const submitState = useComposerSubmitState({
     isBusy: upload.isUploading,
@@ -129,22 +207,13 @@ export function MessageComposer({
       if (!uploaded) return;
       attachmentIds = uploaded;
     }
-    onSend(text, { attachmentIds, connectorToolIds, skillIds });
-  };
-
-  const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (submitOnShortcut(event, shortcut)) return;
-    if (shouldInsertComposerNewline(event, shortcut)) {
-      event.preventDefault();
-      const textarea = event.currentTarget;
-      const at = textarea.selectionStart;
-      setDraft(
-        `${textarea.value.slice(0, at)}\n${textarea.value.slice(textarea.selectionEnd)}`,
-      );
-      requestAnimationFrame(() => {
-        textarea.setSelectionRange(at + 1, at + 1);
-      });
-    }
+    onSend(text, {
+      attachmentIds,
+      connectorToolIds,
+      connectorSlugs,
+      skillIds,
+      requestedModelId,
+    });
   };
 
   const errorMessage = timeoutError ?? upload.error ?? streamError;
@@ -163,55 +232,39 @@ export function MessageComposer({
         onSubmit={(message) => submit(message)}
       >
         <AttachmentPreviews />
-        <PromptInputBody>
-          <PromptInputTextarea
-            aria-describedby={validationError ? errorId : undefined}
-            aria-invalid={validationError ? true : undefined}
-            aria-label={`Message ${agentName}`}
-            className="max-h-52 min-h-11 px-3 py-2.5 text-sm leading-6"
-            disabled={isBusy}
-            maxLength={10_000}
-            onChange={(event) => {
-              setDraft(event.currentTarget.value);
-              if (validationError) setValidationError(undefined);
-            }}
-            onKeyDown={onKeyDown}
-            placeholder={placeholder}
-            ref={textareaRef}
-            required
-            rows={1}
-            value={draft}
-          />
-        </PromptInputBody>
+        <ComposerTextarea
+          agentName={agentName}
+          draft={draft}
+          errorId={errorId}
+          isBusy={isBusy}
+          onOpenPalette={() => {
+            setPaletteOpen(true);
+          }}
+          placeholder={placeholder}
+          setDraft={setDraft}
+          setValidationError={setValidationError}
+          shortcut={shortcut}
+          textareaRef={textareaRef}
+          validationError={validationError}
+        />
         <PromptInputFooter className="px-1 pb-1">
-          <PromptInputTools>
-            <PromptInputActionMenu>
-              <PromptInputActionMenuTrigger
-                disabled={isBusy}
-                tooltip="Add files"
-              />
-              <PromptInputActionMenuContent>
-                <PromptInputActionAddAttachments label="Add files" />
-                <PromptInputActionAddScreenshot label="Add screenshot" />
-              </PromptInputActionMenuContent>
-            </PromptInputActionMenu>
-            <ConnectorToggleMenu
-              disabled={isBusy}
-              hasConnector={hasConnector}
-              onChange={setConnectorToolIds}
-              selected={connectorToolIds}
-            />
-            <SkillPicker
-              agentId={agentId}
-              disabled={isBusy}
-              onChange={setSkillIds}
-              selected={skillIds}
-              skills={skills}
-            />
-            <span className="px-1 text-xs text-muted-foreground">
-              {agentName}
-            </span>
-          </PromptInputTools>
+          <ComposerTools
+            agentId={agentId}
+            agentName={agentName}
+            connectors={selectableConnectors}
+            connectorSlugs={connectorSlugs}
+            connectorToolIds={connectorToolIds}
+            hasConnector={hasConnector}
+            isBusy={isBusy}
+            onConnectorSlugsChange={setConnectorSlugs}
+            onConnectorToolIdsChange={setConnectorToolIds}
+            onRequestedModelIdChange={setRequestedModelId}
+            onSkillIdsChange={setSkillIds}
+            requestedModelId={requestedModelId}
+            selectableModels={selectableModels}
+            skillIds={skillIds}
+            skills={skills}
+          />
           <PromptInputSubmit
             className="transition-transform active:scale-90"
             disabled={isStopControlDisabled}
@@ -228,6 +281,16 @@ export function MessageComposer({
         onRestoreLastPrompt={onRestoreLastPrompt}
         timeoutError={timeoutError}
         validationError={validationError}
+      />
+      <CommandPalette
+        commands={selectableCommands}
+        isOpen={isPaletteOpen}
+        onOpenChange={setPaletteOpen}
+        onSelect={(command) => {
+          setDraft(command.promptTemplate);
+          setPaletteOpen(false);
+          textareaRef.current?.focus();
+        }}
       />
     </div>
   );

@@ -7,6 +7,7 @@ import { DeleteAgentButton } from "@/components/agents/delete-agent-button";
 import { DuplicateAgentButton } from "@/components/agents/duplicate-agent-button";
 import { PageHeader } from "@/components/workspace/page-header";
 import { requireWorkspaceSession } from "@/organizations/workspace-session";
+import { listPlugins } from "@/plugins/plugin-repository";
 import { listSkills } from "@/skills/skill-repository";
 
 import type { Metadata } from "next";
@@ -21,9 +22,10 @@ export default async function AgentPage({
   const { agentId } = await params;
   if (!z.uuid().safeParse(agentId).success) notFound();
   const { organizationId } = await requireWorkspaceSession();
-  const [agent, skills] = await Promise.all([
+  const [agent, skills, plugins] = await Promise.all([
     getAgent(organizationId, agentId),
     listSkills(organizationId),
+    listPlugins(organizationId),
   ]);
   if (!agent || agent.archived) notFound();
 
@@ -42,6 +44,7 @@ export default async function AgentPage({
       <AgentForm
         agent={agent}
         defaultKind={agent.baseAgentId}
+        plugins={plugins}
         skills={skills}
       />
     </main>

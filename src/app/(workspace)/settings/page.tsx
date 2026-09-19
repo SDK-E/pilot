@@ -1,18 +1,7 @@
 import { withAuth } from "@workos-inc/authkit-nextjs";
 import { redirect } from "next/navigation";
 
-import { listAgents } from "@/agents/agent-repository";
-import { AgentCapabilitiesSection } from "@/components/settings/agent-capabilities-section";
-import { ConnectorsSection } from "@/components/settings/connectors-section";
 import { FormSubmitToast } from "@/components/settings/form-submit-toast";
-import { ModelPolicySection } from "@/components/settings/model-policy-section";
-import {
-  DefaultAgentSection,
-  DeleteWorkspaceSection,
-  DomainVerificationSection,
-  LocalDomainVerificationSection,
-  WorkspaceNameSection,
-} from "@/components/settings/organization-sections";
 import { SettingsNav } from "@/components/settings/settings-nav";
 import { WorkInstructionsSection } from "@/components/settings/work-instructions-section";
 import { Button } from "@/components/ui/button";
@@ -34,24 +23,14 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/workspace/page-header";
-import { listConnectorDefinitionsForSettings } from "@/connectors/connector-definition-repository";
-import { listSelectableModels } from "@/model-gateways/model-gateway-repository";
-import { listOrganizationDomains } from "@/organizations/local-domain-verification";
-import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
-import {
-  getWorkspaceSession,
-  isWorkspaceSession,
-  type WorkspaceSession,
-} from "@/organizations/workspace-session";
 import { getUserPreferences } from "@/users/user-preference-repository";
 
 import { updateMessageShortcutAction } from "./actions";
+import { loadOrganizationSettingsGroups } from "./load-organization-sections";
 
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Settings" };
-
-const ADMIN_ROLES = new Set(["owner", "admin"]);
 
 const SHORTCUTS = [
   {
@@ -65,115 +44,6 @@ const SHORTCUTS = [
     hint: "Shift + Enter adds a new line.",
   },
 ] as const;
-
-function buildAgentsAndCapabilitiesSection({
-  agents,
-  organization,
-  isAdmin,
-  availableModels,
-}: {
-  agents: { id: string; name: string }[];
-  organization: Awaited<ReturnType<typeof getOrganizationPreferences>>;
-  isAdmin: boolean;
-  availableModels: Awaited<ReturnType<typeof listSelectableModels>>;
-}) {
-  return (
-    <>
-      <DefaultAgentSection
-        agents={agents}
-        defaultAgentId={organization.defaultWorkerId}
-      />
-      {isAdmin ? (
-        <>
-          <ModelPolicySection
-            availableModels={availableModels}
-            primaryModelId={organization.primaryModelId}
-            retryEnabled={organization.retryEnabled}
-          />
-          <AgentCapabilitiesSection
-            codeSandboxEnabled={organization.codeSandboxEnabled}
-            webSearchEnabled={organization.webSearchEnabled}
-          />
-        </>
-      ) : null}
-    </>
-  );
-}
-
-function buildOrganizationSection({
-  session,
-  domains,
-  isAdmin,
-}: {
-  session: WorkspaceSession;
-  domains: Awaited<ReturnType<typeof listOrganizationDomains>>;
-  isAdmin: boolean;
-}) {
-  if (!isAdmin) return null;
-  return (
-    <>
-      {session.kind === "local" ? (
-        <WorkspaceNameSection
-          organizationName={session.membership.organizationName}
-        />
-      ) : null}
-      {session.kind === "workos" ? <DomainVerificationSection /> : null}
-      {session.kind === "local" ? (
-        <LocalDomainVerificationSection domains={domains} />
-      ) : null}
-    </>
-  );
-}
-
-function buildDangerZoneSection({
-  session,
-  isOwner,
-}: {
-  session: WorkspaceSession;
-  isOwner: boolean;
-}) {
-  if (!isOwner || session.kind !== "local") return null;
-  return (
-    <DeleteWorkspaceSection
-      organizationId={session.organizationId}
-      organizationName={session.membership.organizationName}
-    />
-  );
-}
-
-async function loadOrganizationSettingsGroups(): Promise<{
-  agentsAndCapabilities: React.ReactNode;
-  connectors: React.ReactNode;
-  organization: React.ReactNode;
-  dangerZone: React.ReactNode;
-} | null> {
-  const session = await getWorkspaceSession();
-  if (!isWorkspaceSession(session)) return null;
-  const [organization, agents, domains, connectors, availableModels] =
-    await Promise.all([
-      getOrganizationPreferences(session.organizationId),
-      listAgents(session.organizationId),
-      session.kind === "local"
-        ? listOrganizationDomains(session.organizationId)
-        : Promise.resolve([]),
-      listConnectorDefinitionsForSettings(session.organizationId),
-      listSelectableModels(),
-    ]);
-  const isAdmin = ADMIN_ROLES.has(session.membership.role.slug);
-  const isOwner = session.membership.role.slug === "owner";
-
-  return {
-    agentsAndCapabilities: buildAgentsAndCapabilitiesSection({
-      agents,
-      availableModels,
-      isAdmin,
-      organization,
-    }),
-    connectors: isAdmin ? <ConnectorsSection definitions={connectors} /> : null,
-    organization: buildOrganizationSection({ domains, isAdmin, session }),
-    dangerZone: buildDangerZoneSection({ isOwner, session }),
-  };
-}
 
 function ComposerSection({
   sendMessageShortcut,
@@ -217,15 +87,13 @@ function ComposerSection({
   );
 }
 
-export default async function SettingsPage() {
-  const { user } = await withAuth();
-  if (!user) redirect("/sign-in");
-  const [preferences, organizationGroups] = await Promise.all([
-    getUserPreferences(user.id),
-    loadOrganizationSettingsGroups(),
-  ]);
-
-  const sections = [
+function buildSettingsSections(
+  preferences: Awaited<ReturnType<typeof getUserPreferences>>,
+  organizationGroups: Awaited<
+    ReturnType<typeof loadOrganizationSettingsGroups>
+  >,
+) {
+  return [
     {
       id: "general",
       label: "General",
@@ -251,6 +119,20 @@ export default async function SettingsPage() {
           content: organizationGroups.agentsAndCapabilities,
         }
       : null,
+    organizationGroups
+      ? {
+          id: "api-keys",
+          label: "API Keys",
+          content: organizationGroups.apiKeys,
+        }
+      : null,
+    organizationGroups
+      ? {
+          id: "memory",
+          label: "Memory & Instructions",
+          content: organizationGroups.memory,
+        }
+      : null,
     organizationGroups?.connectors
       ? {
           id: "connectors",
@@ -274,6 +156,17 @@ export default async function SettingsPage() {
         }
       : null,
   ].filter((section) => section !== null);
+}
+
+export default async function SettingsPage() {
+  const { user } = await withAuth();
+  if (!user) redirect("/sign-in");
+  const [preferences, organizationGroups] = await Promise.all([
+    getUserPreferences(user.id),
+    loadOrganizationSettingsGroups(),
+  ]);
+
+  const sections = buildSettingsSections(preferences, organizationGroups);
 
   return (
     <main className="mx-auto flex w-full max-w-4xl gap-8 p-6">

@@ -13,26 +13,22 @@ function callbackUrl(request: Request, definitionId: string): string {
 }
 
 /**
- * Starts the OAuth flow for one admin-defined custom connector. Custom
- * connectors are organization-wide only (no personal-scope variant), so
- * only an admin may connect one — unlike the built-in providers, which let
- * any member connect their own personal account.
+ * Starts the OAuth flow for one connector, either its shared org-wide
+ * connection (admin-only) or the caller's own personal connection (any
+ * member, only when the definition's `allowPersonalConnections` is on).
+ * `?scope=personal` requests the latter; anything else means org-wide.
  */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ definitionId: string }> },
 ) {
   const { definitionId } = await params;
+  const url = new URL(request.url);
+  const scope =
+    url.searchParams.get("scope") === "personal"
+      ? ("personal" as const)
+      : ("organization" as const);
   const session = await requireWorkspaceSession();
-  if (!ADMIN_ROLES.has(session.membership.role.slug)) {
-    return NextResponse.json(
-      {
-        error:
-          "Only organization owners and admins can connect a custom connector.",
-      },
-      { status: 403 },
-    );
-  }
 
   const definition = await getDecryptedConnectorDefinition({
     organizationId: session.organizationId,
@@ -42,10 +38,30 @@ export async function GET(
     return NextResponse.json({ error: "Unknown connector." }, { status: 404 });
   }
 
+  if (
+    scope === "organization" &&
+    !ADMIN_ROLES.has(session.membership.role.slug)
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Only organization owners and admins can connect the shared connection.",
+      },
+      { status: 403 },
+    );
+  }
+  if (scope === "personal" && !definition.allowPersonalConnections) {
+    return NextResponse.json(
+      { error: "This connector doesn't allow personal connections." },
+      { status: 403 },
+    );
+  }
+
   const state = signCustomOAuthState({
     organizationId: session.organizationId,
     userId: session.user.id,
     connectorDefinitionId: definition.id,
+    scope,
   });
   const redirectUri = callbackUrl(request, definition.id);
 

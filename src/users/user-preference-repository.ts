@@ -16,6 +16,7 @@ const selectedColumns = {
   sendMessageShortcut: userPreferences.sendMessageShortcut,
   conversationPanelLayout: userPreferences.conversationPanelLayout,
   workInstructions: userPreferences.workInstructions,
+  generalInstructions: userPreferences.generalInstructions,
 };
 
 export async function getUserPreferences(workosUserId: string) {
@@ -75,6 +76,43 @@ export async function updateWorkInstructions(input: {
       target: userPreferences.workosUserId,
       set: {
         workInstructions: input.workInstructions,
+        updatedAt: new Date(),
+      },
+    })
+    .returning(selectedColumns);
+  return preferences;
+}
+
+/**
+ * The user's general instructions only, for the runtime request path — reach
+ * every agent kind (Chat, Work, Code), unlike `getWorkInstructions`.
+ */
+export async function getGeneralInstructions(
+  workosUserId: string,
+): Promise<string | null> {
+  const [row] = await db
+    .select({ generalInstructions: userPreferences.generalInstructions })
+    .from(userPreferences)
+    .where(eq(userPreferences.workosUserId, workosUserId))
+    .limit(1);
+  return row?.generalInstructions ?? null;
+}
+
+export async function updateGeneralInstructions(input: {
+  workosUserId: string;
+  generalInstructions: string | null;
+}) {
+  const [preferences] = await db
+    .insert(userPreferences)
+    .values({
+      workosUserId: input.workosUserId,
+      sendMessageShortcut: defaultUserPreferences.sendMessageShortcut,
+      generalInstructions: input.generalInstructions,
+    })
+    .onConflictDoUpdate({
+      target: userPreferences.workosUserId,
+      set: {
+        generalInstructions: input.generalInstructions,
         updatedAt: new Date(),
       },
     })

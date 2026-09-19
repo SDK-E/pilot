@@ -55,7 +55,5 @@ export const catalogModels = pgTable(
     raw: jsonb("raw").notNull(),
     syncedAt: timestamp("synced_at", { withTimezone: true }).notNull(),
   },
-  (table) => [
-    index("catalog_models_provider_id_index").on(table.providerId),
-  ],
+  (table) => [index("catalog_models_provider_id_index").on(table.providerId)],
 );

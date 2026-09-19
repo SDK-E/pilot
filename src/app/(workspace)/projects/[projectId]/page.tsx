@@ -5,6 +5,7 @@ import { z } from "zod";
 import { DeleteProjectButton } from "@/components/projects/delete-project-button";
 import { ProjectConversations } from "@/components/projects/project-conversations";
 import { ProjectFiles } from "@/components/projects/project-files";
+import { MemorySection } from "@/components/settings/memory-section";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,6 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/workspace/page-header";
 import { listConversations } from "@/conversations/conversation-repository";
+import { listProjectMemories } from "@/memory/memory-repository";
 import { requireWorkspaceSession } from "@/organizations/workspace-session";
 import { listProjectFiles } from "@/projects/project-file-repository";
 import {
@@ -43,12 +45,14 @@ export default async function ProjectPage({
   if (!z.uuid().safeParse(projectId).success) notFound();
   const { organizationId, user } = await requireWorkspaceSession();
   const owner = { organizationId, userId: user.id, projectId };
-  const [project, projectChats, chats, files] = await Promise.all([
-    getProject(owner),
-    listProjectConversations(owner),
-    listConversations({ organizationId, userId: user.id }),
-    listProjectFiles(owner),
-  ]);
+  const [project, projectChats, chats, files, projectMemories] =
+    await Promise.all([
+      getProject(owner),
+      listProjectConversations(owner),
+      listConversations({ organizationId, userId: user.id }),
+      listProjectFiles(owner),
+      listProjectMemories(organizationId, user.id, projectId),
+    ]);
   if (!project) notFound();
 
   return (
@@ -123,6 +127,13 @@ export default async function ProjectPage({
       </Card>
 
       <ProjectFiles files={files} projectId={project.id} />
+      <MemorySection
+        description="Facts an agent is given as context in every conversation in this project."
+        memories={projectMemories}
+        projectId={project.id}
+        scope="project"
+        title="Project memory"
+      />
       <ProjectConversations
         candidates={chats}
         members={projectChats}

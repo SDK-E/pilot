@@ -15,6 +15,7 @@ export interface CustomOAuthStatePayload {
   organizationId: string;
   userId: string;
   connectorDefinitionId: string;
+  scope: "organization" | "personal";
 }
 
 interface SignedCustomOAuthState extends CustomOAuthStatePayload {
@@ -56,6 +57,7 @@ function isSignedCustomOAuthState(
     typeof candidate.organizationId === "string" &&
     typeof candidate.userId === "string" &&
     typeof candidate.connectorDefinitionId === "string" &&
+    (candidate.scope === "organization" || candidate.scope === "personal") &&
     typeof candidate.issuedAt === "number"
   );
 }

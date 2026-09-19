@@ -54,9 +54,11 @@ export async function POST(request: Request) {
 
   return dispatchCustomConnector({
     organizationId: input.organizationId,
+    actingUserId: execution.userId,
     action: input.action,
     params: input.params,
     connectorSlug: input.connectorSlug,
     confirm: input.confirm,
+    requestedSlugs: execution.requestedConnectorSlugs ?? null,
   });
 }

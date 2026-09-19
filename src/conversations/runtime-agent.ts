@@ -19,6 +19,7 @@ export interface RuntimeAgent {
   baseAgentId: AgentKindId;
   enabledToolIds: string[];
   enabledSkillIds: string[];
+  enabledPluginIds: string[];
 }
 
 export async function loadRuntimeAgent(
@@ -38,5 +39,6 @@ export async function loadRuntimeAgent(
     baseAgentId: agent.baseAgentId,
     enabledToolIds: agent.enabledToolIds,
     enabledSkillIds: agent.enabledSkillIds,
+    enabledPluginIds: agent.enabledPluginIds,
   };
 }

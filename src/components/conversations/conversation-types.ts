@@ -24,8 +24,14 @@ export interface PersistedMessage {
  */
 export interface MessageSendOptions {
   connectorToolIds?: string[];
+  /**
+   * Which individual connector slugs may be used this turn. Omitted means
+   * every connector the acting user can use stays available.
+   */
+  connectorSlugs?: string[];
   skillIds?: string[];
   attachmentIds?: string[];
+  requestedModelId?: string;
 }
 
 export type PersistedActivity = TimelineActivity & {

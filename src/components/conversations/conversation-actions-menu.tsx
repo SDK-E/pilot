@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  RiBrainLine,
   RiCloseLine,
   RiDeleteBinLine,
   RiDownloadLine,
@@ -10,39 +11,15 @@ import {
   RiPencilLine,
 } from "@remixicon/react";
 import { useRouter } from "next/navigation";
-import {
-  startTransition,
-  useActionState,
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useState, useTransition } from "react";
 
-import {
-  deleteConversationAction,
-  renameConversationAction,
-  type ActionState,
-} from "@/app/(workspace)/[mode]/[conversationId]/actions";
 import { setConversationProjectAction } from "@/app/(workspace)/projects/actions";
 import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  DeleteDialog,
+  RenameDialog,
+} from "@/components/conversations/conversation-lifecycle-dialogs";
+import { ConversationMemoryDialog } from "@/components/conversations/conversation-memory-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,113 +33,10 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-
-const initialState: ActionState = { status: "idle" };
 
 interface Project {
   id: string;
   name: string;
-}
-
-function RenameDialog({
-  conversationId,
-  title,
-  isOpen,
-  onOpenChange,
-}: {
-  conversationId: string;
-  title: string;
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-}) {
-  const form = useRef<HTMLFormElement>(null);
-  const [state, action, pending] = useActionState(
-    renameConversationAction,
-    initialState,
-  );
-
-  useEffect(() => {
-    if (state.status !== "success") return;
-    form.current?.reset();
-    startTransition(() => {
-      onOpenChange(false);
-    });
-  }, [state.status, onOpenChange]);
-
-  return (
-    <Dialog onOpenChange={onOpenChange} open={isOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Rename conversation</DialogTitle>
-          <DialogDescription>
-            Choose a name that makes this private chat easier to find.
-          </DialogDescription>
-        </DialogHeader>
-        <form action={action} className="space-y-4" ref={form}>
-          <input name="conversationId" type="hidden" value={conversationId} />
-          <Input
-            aria-label="Conversation title"
-            defaultValue={title}
-            maxLength={200}
-            name="title"
-            required
-          />
-          {state.status === "error" ? (
-            <p className="text-xs text-destructive">{state.message}</p>
-          ) : null}
-          <DialogFooter>
-            <Button disabled={pending} type="submit">
-              {pending ? "Saving…" : "Save title"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function DeleteDialog({
-  conversationId,
-  isOpen,
-  onOpenChange,
-}: {
-  conversationId: string;
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-}) {
-  const [state, action, pending] = useActionState(
-    deleteConversationAction,
-    initialState,
-  );
-
-  return (
-    <AlertDialog onOpenChange={onOpenChange} open={isOpen}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This permanently deletes this private chat, its messages, and its
-            saved working context. This cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        {state.status === "error" ? (
-          <p aria-live="polite" className="text-sm text-destructive">
-            {state.message}
-          </p>
-        ) : null}
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
-          <form action={action}>
-            <input name="conversationId" type="hidden" value={conversationId} />
-            <Button disabled={pending} type="submit" variant="destructive">
-              {pending ? "Deleting…" : "Delete conversation"}
-            </Button>
-          </form>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
 }
 
 function ProjectSubmenu({
@@ -248,6 +122,7 @@ export function ConversationActionsMenu({
 }) {
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isMemoryOpen, setIsMemoryOpen] = useState(false);
   const exportHref = (format: "md" | "pdf") =>
     `/api/conversations/${conversationId}/export?format=${format}`;
 
@@ -272,6 +147,13 @@ export function ConversationActionsMenu({
             currentProject={project}
             projects={projects}
           />
+          <DropdownMenuItem
+            onSelect={() => {
+              setIsMemoryOpen(true);
+            }}
+          >
+            <RiBrainLine aria-hidden="true" /> Memory & instructions
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <a href={exportHref("md")}>
               <RiDownloadLine aria-hidden="true" /> Download as Markdown
@@ -303,6 +185,11 @@ export function ConversationActionsMenu({
         conversationId={conversationId}
         isOpen={isDeleteOpen}
         onOpenChange={setIsDeleteOpen}
+      />
+      <ConversationMemoryDialog
+        conversationId={conversationId}
+        isOpen={isMemoryOpen}
+        onOpenChange={setIsMemoryOpen}
       />
     </>
   );

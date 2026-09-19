@@ -4,6 +4,7 @@
 import { sql } from "drizzle-orm";
 import {
   index,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -29,6 +30,14 @@ export const executions = pgTable(
       .notNull()
       .references(() => conversations.id, { onDelete: "cascade" }),
     runtimeRunId: text("runtime_run_id"),
+    // The composer's per-message connector-slug picker (null = every
+    // connector the acting user can use stays available for this turn) —
+    // read at dispatch time by `/api/runtime/connectors/execute` via
+    // `getRuntimeConversation`, since that's the only place per-call
+    // connector dispatch can look this turn's restriction back up.
+    requestedConnectorSlugs: jsonb("requested_connector_slugs").$type<
+      string[]
+    >(),
     status: text("status")
       .$type<"running" | "completed" | "failed">()
       .notNull(),

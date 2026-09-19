@@ -7,7 +7,7 @@ import {
 } from "@/connectors/base-connector";
 import {
   getDecryptedConnectorDefinition,
-  saveConnectorDefinitionConnection,
+  saveConnectorConnection,
 } from "@/connectors/connector-definition-repository";
 import { verifyCustomOAuthState } from "@/connectors/oauth-state";
 import { requireWorkspaceSession } from "@/organizations/workspace-session";
@@ -72,9 +72,11 @@ export async function GET(
       definition,
       result.accessToken,
     );
-    await saveConnectorDefinitionConnection({
+    await saveConnectorConnection({
       organizationId: payload.organizationId,
-      id: definitionId,
+      connectorDefinitionId: definitionId,
+      scope: payload.scope,
+      ownerWorkosUserId: payload.scope === "personal" ? payload.userId : null,
       accountIdentifier,
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,

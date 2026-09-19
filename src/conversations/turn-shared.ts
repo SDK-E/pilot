@@ -21,6 +21,16 @@ export interface TurnInput {
    */
   requestedConnectorToolIds?: readonly string[];
   /**
+   * The message's explicit connector *slug* on-set (the composer's
+   * per-connector picker) — which individual connectors (GitHub, Slack, a
+   * custom one, ...) may be used this turn. `undefined` means every
+   * connector the acting user can use stays available. Independent of
+   * `requestedConnectorToolIds`, which turns the whole connector tool on or
+   * off; this narrows *which* connectors once it's on. See
+   * `executions.requestedConnectorSlugs` and `dispatch-custom-connector.ts`.
+   */
+  requestedConnectorSlugs?: readonly string[];
+  /**
    * Skills active for this message, resolved into extra instructions and
    * tool grants before the runtime request is built.
    */

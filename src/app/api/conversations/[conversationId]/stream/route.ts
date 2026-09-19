@@ -46,6 +46,10 @@ const promptField = z.string().trim().min(1).max(10_000);
 // connectorToolIds means every available connector stays on; see
 // `MessageToolOverrides` in tool-authorization.ts.
 const connectorToolIdsField = z.array(z.string()).max(20).optional();
+// The composer's per-connector picker — which individual connector slugs
+// may be used this turn. Omitted means every connector the acting user can
+// use stays available; see `TurnInput.requestedConnectorSlugs`.
+const connectorSlugsField = z.array(z.string()).max(50).optional();
 const skillIdsField = z.array(z.uuid()).max(10).optional();
 const attachmentIdsField = z.array(z.uuid()).max(20).optional();
 // The composer's model picker — a selector string (`gw:...`, `byok:...`, or
@@ -58,6 +62,7 @@ const inputSchema = z.discriminatedUnion("mode", [
     mode: z.literal("send"),
     prompt: promptField,
     connectorToolIds: connectorToolIdsField,
+    connectorSlugs: connectorSlugsField,
     skillIds: skillIdsField,
     attachmentIds: attachmentIdsField,
     requestedModelId: requestedModelIdField,
@@ -67,6 +72,7 @@ const inputSchema = z.discriminatedUnion("mode", [
     messageId: z.uuid(),
     prompt: promptField,
     connectorToolIds: connectorToolIdsField,
+    connectorSlugs: connectorSlugsField,
     skillIds: skillIdsField,
     attachmentIds: attachmentIdsField,
     requestedModelId: requestedModelIdField,
@@ -98,6 +104,7 @@ interface EditRequest {
   messageId: string;
   prompt: string;
   connectorToolIds?: readonly string[];
+  connectorSlugs?: readonly string[];
   skillIds?: readonly string[];
   attachmentIds?: readonly string[];
   requestedModelId?: string;
@@ -131,6 +138,7 @@ async function startEdit(
       ...turn,
       message: edit.prompt,
       requestedConnectorToolIds: edit.connectorToolIds,
+      requestedConnectorSlugs: edit.connectorSlugs,
       activeSkillIds: edit.skillIds,
       attachmentIds: edit.attachmentIds,
       requestedModelId: edit.requestedModelId,
@@ -233,6 +241,7 @@ function runTurn(
         ...turn,
         message: input.prompt,
         requestedConnectorToolIds: input.connectorToolIds,
+        requestedConnectorSlugs: input.connectorSlugs,
         activeSkillIds: input.skillIds,
         attachmentIds: input.attachmentIds,
         requestedModelId: input.requestedModelId,
@@ -246,6 +255,7 @@ function runTurn(
         messageId: input.messageId,
         prompt: input.prompt,
         connectorToolIds: input.connectorToolIds,
+        connectorSlugs: input.connectorSlugs,
         skillIds: input.skillIds,
         attachmentIds: input.attachmentIds,
         requestedModelId: input.requestedModelId,
@@ -304,7 +314,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   return new Response(result, {
     headers: {
       "cache-control": "no-cache, no-transform",
-      "content-type": "text/plain; charset=utf-8",
+      "content-type": "text/event-stream; charset=utf-8",
     },
   });
 }

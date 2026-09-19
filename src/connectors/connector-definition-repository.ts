@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 
 import {
   connectorDefinitionSummaryColumns,
@@ -12,7 +12,7 @@ import {
 } from "@/connectors/connector-definition-types";
 import { encryptToken } from "@/connectors/token-encryption";
 import { db } from "@/db/client";
-import { connectorDefinitions } from "@/db/schema";
+import { connectorConnections, connectorDefinitions } from "@/db/schema";
 
 import type { ConnectorDefinitionAction } from "@/db/schema/connector-definitions";
 
@@ -22,13 +22,15 @@ export type {
   ConnectorDefinitionSummary,
 } from "@/connectors/connector-definition-types";
 export {
-  disconnectConnectorDefinition,
+  disconnectConnectorConnection,
   getDecryptedConnectorDefinition,
-  markConnectorDefinitionError,
-  resolveConnectorDefinitionConnection,
-  saveConnectorDefinitionConnection,
-  touchConnectorDefinitionLastUsed,
-} from "@/connectors/connector-definition-connection-repository";
+  listConnectionSummaries,
+  markConnectorConnectionError,
+  saveConnectorConnection,
+  touchConnectorConnectionLastUsed,
+  type ConnectionSummary,
+} from "@/connectors/connector-connection-repository";
+export { resolveConnectorConnection } from "@/connectors/connector-connection-resolve";
 
 export async function listConnectorDefinitions(
   organizationId: string,
@@ -62,19 +64,36 @@ export async function listConnectorDefinitionsForSettings(
 }
 
 /**
- * Active custom connectors this org can currently use in a conversation.
+ * Whether this user could use the connector tool right now: an active
+ * definition with either an active org-wide connection, or (when the
+ * definition allows it) their own active personal connection.
  */
 export async function hasActiveCustomConnector(
   organizationId: string,
+  actingUserId: string,
 ): Promise<boolean> {
   const [row] = await db
-    .select({ id: connectorDefinitions.id })
-    .from(connectorDefinitions)
+    .select({ id: connectorConnections.id })
+    .from(connectorConnections)
+    .innerJoin(
+      connectorDefinitions,
+      eq(connectorConnections.connectorDefinitionId, connectorDefinitions.id),
+    )
     .where(
       and(
         eq(connectorDefinitions.organizationId, organizationId),
         eq(connectorDefinitions.definitionStatus, "active"),
-        eq(connectorDefinitions.connectionStatus, "active"),
+        eq(connectorConnections.connectionStatus, "active"),
+        or(
+          and(
+            eq(connectorConnections.scope, "organization"),
+            isNull(connectorConnections.ownerWorkosUserId),
+          ),
+          and(
+            eq(connectorConnections.scope, "personal"),
+            eq(connectorConnections.ownerWorkosUserId, actingUserId),
+          ),
+        ),
       ),
     )
     .limit(1);
@@ -104,6 +123,7 @@ export async function createConnectorDefinition(
     accountIdentifierUrl: input.accountIdentifierUrl,
     accountIdentifierField: input.accountIdentifierField,
     actions: input.actions,
+    allowPersonalConnections: input.allowPersonalConnections,
     createdByWorkosUserId: input.createdByWorkosUserId,
   });
   return id;
@@ -129,6 +149,7 @@ export async function updateConnectorDefinition(input: {
   accountIdentifierUrl: string | null;
   accountIdentifierField: string | null;
   actions: ConnectorDefinitionAction[];
+  allowPersonalConnections: boolean;
 }): Promise<void> {
   const secret = input.clientSecret ? encryptToken(input.clientSecret) : null;
   await db
@@ -150,6 +171,7 @@ export async function updateConnectorDefinition(input: {
       accountIdentifierUrl: input.accountIdentifierUrl,
       accountIdentifierField: input.accountIdentifierField,
       actions: input.actions,
+      allowPersonalConnections: input.allowPersonalConnections,
       updatedAt: new Date(),
     })
     .where(
@@ -177,7 +199,8 @@ export async function setConnectorDefinitionStatus(input: {
 }
 
 /**
- * Deletes a definition entirely, including its connection state.
+ * Deletes a definition entirely, including every connection state row
+ * (`connector_connections.connectorDefinitionId` cascades).
  */
 export async function deleteConnectorDefinition(input: {
   organizationId: string;

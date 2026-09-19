@@ -2,10 +2,12 @@
 
 import {
   RiFolder3Line,
+  RiPuzzle2Line,
   RiRobot2Line,
   RiSettings3Line,
   RiShieldStarLine,
   RiSparklingLine,
+  RiTerminalBoxLine,
 } from "@remixicon/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -64,6 +66,8 @@ const SECONDARY_LINKS = [
   { href: "/projects", label: "Projects", icon: RiFolder3Line },
   { href: "/agents", label: "Agents", icon: RiRobot2Line },
   { href: "/skills", label: "Skills", icon: RiSparklingLine },
+  { href: "/commands", label: "Commands", icon: RiTerminalBoxLine },
+  { href: "/plugins", label: "Plugins", icon: RiPuzzle2Line },
 ] as const;
 
 function currentMode(pathname: string): AgentKindId | undefined {

@@ -1,39 +1,32 @@
 import "server-only";
 
 import {
-  isHtmlDocumentText,
   PilotAiRuntimeError,
   streamReply,
-  type CompletedReply,
-  type RuntimeEvent,
   type RuntimeRequest,
 } from "@/ai/pilot-ai-client";
 import { hasActiveCustomConnector } from "@/connectors/connector-definition-repository";
 import { attachConversationAttachmentsToMessage } from "@/conversations/attachment-repository";
-import { appendConversationMessageContent } from "@/conversations/conversation-message-repository";
 import { createConversationMessage } from "@/conversations/conversation-repository";
 import {
   handleStreamFailure,
   StreamAttemptError,
 } from "@/conversations/conversation-turn-failure";
 import {
-  sanitizeWebResponse,
-  saveMessageSources,
-} from "@/conversations/message-sources";
+  persistQuestion,
+  persistReply,
+} from "@/conversations/conversation-turn-persistence";
 import { resolveModelPlan } from "@/conversations/model-plan";
 import { buildRuntimeRequest } from "@/conversations/runtime-request";
-import {
-  finishTurnAgentRun,
-  owner,
-  storedCount,
-  type TurnInput,
-} from "@/conversations/turn-shared";
+import { encodeStreamEvent } from "@/conversations/stream-protocol";
+import { owner, type TurnInput } from "@/conversations/turn-shared";
 import { startAgentRun } from "@/executions/agent-run-repository";
 import {
   finishExecution,
   startExecution,
 } from "@/executions/execution-repository";
 import { getOrganizationPreferences } from "@/organizations/organization-preference-repository";
+import { resolveUsageFallbackModelId } from "@/usage/usage-limit-repository";
 
 import type { OrganizationCapabilities } from "@/conversations/tool-authorization";
 
@@ -61,6 +54,7 @@ async function beginTurn(input: TurnInput, reuseUserMessageId?: string) {
     organizationId: input.organizationId,
     workerId: input.agent.id,
     conversationId: input.conversationId,
+    requestedConnectorSlugs: input.requestedConnectorSlugs,
   });
   if (!execution) throw new Error("Pilot could not start this turn.");
   // Every agent kind gets a durable run record now — see ADR-0025/ADR-0026.
@@ -108,84 +102,6 @@ async function beginTurn(input: TurnInput, reuseUserMessageId?: string) {
 
 export type Turn = Awaited<ReturnType<typeof beginTurn>>;
 
-async function persistQuestion(
-  input: TurnInput,
-  turn: Turn,
-  event: Extract<RuntimeEvent, { type: "user_input_required" }>,
-  modelId: string,
-) {
-  const message = await createConversationMessage(owner(input), {
-    conversationId: input.conversationId,
-    role: "worker",
-    content: event.question,
-    userQuestionOptions: event.options,
-    userQuestionSelectionMode: event.selectionMode,
-    modelId,
-    runtimeRunId: event.runId,
-    latencyMs: storedCount(Math.round(performance.now() - turn.startedAt)),
-  });
-  if (!message) throw new Error("This conversation is unavailable.");
-  await finishExecution({
-    organizationId: input.organizationId,
-    executionId: turn.execution.id,
-    conversationMessageId: message.id,
-    runtimeRunId: event.runId,
-  });
-  await finishTurnAgentRun(input, turn);
-  return message;
-}
-
-async function persistReply(
-  input: TurnInput,
-  turn: Turn,
-  reply: CompletedReply,
-  hasWebAccess: boolean,
-) {
-  const cleaned = hasWebAccess
-    ? sanitizeWebResponse(reply.text)
-    : { text: reply.text, hasInvalidToolSyntax: false, sources: [] };
-  if (
-    cleaned.hasInvalidToolSyntax ||
-    !cleaned.text ||
-    isHtmlDocumentText(cleaned.text)
-  ) {
-    throw new Error("Pilot returned an invalid response.");
-  }
-  const message = input.appendToMessageId
-    ? await appendConversationMessageContent(
-        owner(input),
-        input.appendToMessageId,
-        ` ${cleaned.text}`,
-        false,
-      )
-    : await createConversationMessage(owner(input), {
-        conversationId: input.conversationId,
-        role: "worker",
-        content: cleaned.text,
-        modelId: reply.modelId,
-        runtimeRunId: reply.runId ?? undefined,
-        latencyMs: storedCount(Math.round(performance.now() - turn.startedAt)),
-        inputTokens: storedCount(reply.usage.inputTokens),
-        outputTokens: storedCount(reply.usage.outputTokens),
-        totalTokens: storedCount(reply.usage.totalTokens),
-      });
-  if (!message) throw new Error("This conversation is unavailable.");
-  await saveMessageSources({
-    ...owner(input),
-    conversationId: input.conversationId,
-    messageId: message.id,
-    sources: cleaned.sources,
-  });
-  await finishExecution({
-    organizationId: input.organizationId,
-    executionId: turn.execution.id,
-    conversationMessageId: message.id,
-    runtimeRunId: reply.runId,
-  });
-  await finishTurnAgentRun(input, turn);
-  return { message, text: cleaned.text };
-}
-
 /**
  * Runs one attempt of a streaming turn. Returns the terminal event, and the
  * accumulated text for a completion. On any failure (an error or an abort),
@@ -223,10 +139,16 @@ async function runStreamingTurn(
   signal: AbortSignal,
   write: (text: string) => void,
 ) {
-  const [policy, customConnectorActive] = await Promise.all([
-    getOrganizationPreferences(input.organizationId),
-    hasActiveCustomConnector(input.organizationId),
-  ]);
+  const [policy, customConnectorActive, usageFallbackModelId] =
+    await Promise.all([
+      getOrganizationPreferences(input.organizationId),
+      hasActiveCustomConnector(input.organizationId, input.userId),
+      // Only relevant once there is no explicit per-message pick — skip the
+      // usage-window read entirely otherwise.
+      input.requestedModelId
+        ? undefined
+        : resolveUsageFallbackModelId(input.organizationId, input.userId),
+    ]);
   const capabilities: OrganizationCapabilities = {
     ...policy,
     hasActiveCustomConnector: customConnectorActive,
@@ -234,6 +156,7 @@ async function runStreamingTurn(
   const models = resolveModelPlan({
     policy,
     requestedModelId: input.requestedModelId,
+    usageFallbackModelId,
   });
 
   for (const [attempt, modelId] of models.entries()) {
@@ -263,7 +186,10 @@ async function runStreamingTurn(
         input,
         turn,
         { ...result.event, text: result.text },
-        isUsesWeb,
+        {
+          hasWebAccess: isUsesWeb,
+          usageSource: modelId.startsWith("byok:") ? "byok" : "platform",
+        },
       );
       if (isUsesWeb || !canStreamLive) write(saved.text);
       return;
@@ -274,9 +200,10 @@ async function runStreamingTurn(
 }
 
 /**
- * A follow-up message streamed to the browser as plain text. The runtime's
- * terminal event decides what is persisted; the transcript is re-fetched by
- * the browser when the stream closes.
+ * A follow-up message streamed to the browser as real `text/event-stream`
+ * framing (see `stream-protocol.ts`, ADR-0029) — never plain, structure-less
+ * text. The runtime's terminal event decides what is persisted; the
+ * transcript is re-fetched by the browser when the stream closes.
  */
 export async function streamMessage(
   input: TurnInput,
@@ -284,7 +211,6 @@ export async function streamMessage(
   reuseUserMessageId?: string,
 ): Promise<ReadableStream<Uint8Array>> {
   const turn = await beginTurn(input, reuseUserMessageId);
-  const encoder = new TextEncoder();
   const controller = new AbortController();
   let didTimeout = false;
   const abort = () => {
@@ -300,7 +226,7 @@ export async function streamMessage(
     async start(stream) {
       try {
         await runStreamingTurn(input, turn, controller.signal, (text) => {
-          stream.enqueue(encoder.encode(text));
+          stream.enqueue(encodeStreamEvent({ type: "text", text }));
         });
         stream.close();
       } catch (error) {
@@ -315,15 +241,16 @@ export async function streamMessage(
           stream.close();
           return;
         }
-        stream.error(
+        // A graceful error frame, not `stream.error()` — the latter resets
+        // the HTTP connection outright, losing the message the client would
+        // otherwise show. Next's own server-side logging still gets the
+        // real cause via console.error in handleStreamFailure.
+        const message =
           cause instanceof PilotAiRuntimeError
-            ? cause
-            : // The client only ever sees this generic message; keep the
-              // real cause on the error so Next's own server-side logging
-              // (which prints the `.cause` chain) still shows what actually
-              // failed instead of the failure being undebuggable.
-              new Error("Pilot could not complete this message.", { cause }),
-        );
+            ? cause.message
+            : "Pilot could not complete this message.";
+        stream.enqueue(encodeStreamEvent({ type: "error", message }));
+        stream.close();
       } finally {
         clearTimeout(timeout);
         clientSignal.removeEventListener("abort", abort);

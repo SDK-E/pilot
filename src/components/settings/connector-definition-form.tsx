@@ -1,20 +1,12 @@
 import {
-  createCustomConnectorAction,
-  updateCustomConnectorAction,
-} from "@/app/(workspace)/settings/connector-actions";
-import { FormSubmitToast } from "@/components/settings/form-submit-toast";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldTitle,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import type { ConnectorDefinitionForSettings } from "@/connectors/connector-definition-repository";
@@ -227,7 +219,33 @@ function ActionsField({
   );
 }
 
-function DefinitionFormFields({
+function PersonalConnectionsField({
+  definition,
+}: {
+  definition?: ConnectorDefinitionForSettings;
+}) {
+  const isAllowed = definition?.allowPersonalConnections ?? false;
+  return (
+    <Field orientation="horizontal">
+      <FieldContent>
+        <FieldTitle>Allow personal connections</FieldTitle>
+        <FieldDescription>
+          When on, any member can connect their own account to this connector in
+          addition to the shared connection above.
+        </FieldDescription>
+      </FieldContent>
+      <Switch
+        aria-label="Allow personal connections"
+        defaultChecked={isAllowed}
+        key={String(isAllowed)}
+        name="allowPersonalConnections"
+        value="true"
+      />
+    </Field>
+  );
+}
+
+export function DefinitionFormFields({
   definition,
 }: {
   definition?: ConnectorDefinitionForSettings;
@@ -237,68 +255,8 @@ function DefinitionFormFields({
       <IdentityFields definition={definition} />
       <BasicFields definition={definition} />
       <OAuthFields definition={definition} />
+      <PersonalConnectionsField definition={definition} />
       <ActionsField definition={definition} />
     </div>
-  );
-}
-
-export function CreateCustomConnectorDialog() {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
-          Add custom connector
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
-        <form action={createCustomConnectorAction}>
-          <DialogHeader>
-            <DialogTitle>Add a custom connector</DialogTitle>
-            <DialogDescription>
-              A generic OAuth2 + REST integration your agents can call,
-              configured here instead of shipped as code.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <DefinitionFormFields />
-          </div>
-          <DialogFooter>
-            <Button type="submit">Create connector</Button>
-            <FormSubmitToast message="Custom connector created" />
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-export function EditCustomConnectorDialog({
-  definition,
-}: {
-  definition: ConnectorDefinitionForSettings;
-}) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="ghost">
-          Edit
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
-        <form action={updateCustomConnectorAction}>
-          <input name="id" type="hidden" value={definition.id} />
-          <DialogHeader>
-            <DialogTitle>Edit {definition.displayName}</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <DefinitionFormFields definition={definition} />
-          </div>
-          <DialogFooter>
-            <Button type="submit">Save changes</Button>
-            <FormSubmitToast message="Custom connector updated" />
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 }

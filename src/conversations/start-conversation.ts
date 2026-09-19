@@ -56,6 +56,7 @@ export async function startConversation(input: {
       baseAgentId: agent.baseAgentId,
       enabledToolIds: agent.enabledToolIds,
       enabledSkillIds: agent.enabledSkillIds,
+      enabledPluginIds: agent.enabledPluginIds,
     },
   };
 }

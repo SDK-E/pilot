@@ -107,6 +107,48 @@ function SkillRules({
   );
 }
 
+function PluginRules({
+  plugins,
+  agent,
+}: {
+  plugins: { id: string; name: string; description: string }[];
+  agent?: Agent;
+}) {
+  if (plugins.length === 0) return null;
+  return (
+    <div className="space-y-3">
+      <Label>Plugins</Label>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {plugins.map((plugin) => {
+          const isEnabled = agent
+            ? agent.enabledPluginIds.includes(plugin.id)
+            : false;
+          return (
+            <div
+              className="flex items-start gap-2 rounded-xl border border-border p-3 text-sm"
+              key={plugin.id}
+            >
+              <input
+                className="mt-0.5 size-4 accent-primary"
+                defaultChecked={isEnabled}
+                name="enabledPluginIds"
+                type="checkbox"
+                value={plugin.id}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium">{plugin.name}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {plugin.description || "No description yet."}
+                </span>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ToolRules({ kind, agent }: { kind: AgentKindId; agent?: Agent }) {
   return (
     <div className="space-y-3">
@@ -153,10 +195,12 @@ export function AgentForm({
   agent,
   defaultKind,
   skills = [],
+  plugins = [],
 }: {
   agent?: Agent;
   defaultKind: AgentKindId;
   skills?: { id: string; name: string; description: string }[];
+  plugins?: { id: string; name: string; description: string }[];
 }) {
   const router = useRouter();
   const [kind, setKind] = useState<AgentKindId>(defaultKind);
@@ -176,6 +220,7 @@ export function AgentForm({
       <PersonaFields agent={agent} kind={kind} />
       <ToolRules agent={agent} kind={kind} />
       <SkillRules agent={agent} skills={skills} />
+      <PluginRules agent={agent} plugins={plugins} />
       {state.message ? (
         <p
           aria-live="polite"

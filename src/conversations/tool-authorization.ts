@@ -31,6 +31,13 @@ export interface MessageToolOverrides {
    * a skill can never bypass an org capability or an unconnected provider.
    */
   activeSkillToolIds?: readonly ToolId[];
+  /**
+   * Tool ids granted by the agent's granted plugins — unioned in the same
+   * way as `activeSkillToolIds`, but standing rather than per-message (a
+   * plugin grant works like `enabledToolIds` itself, not a composer
+   * toggle). See `resolvePluginsToolIds`.
+   */
+  activePluginToolIds?: readonly ToolId[];
 }
 
 /**
@@ -45,6 +52,8 @@ export function allowedToolIds(
   const granted = new Set(grantedToolIds(agent));
   const activeSkillToolIds = overrides.activeSkillToolIds ?? [];
   for (const toolId of activeSkillToolIds) granted.add(toolId);
+  const activePluginToolIds = overrides.activePluginToolIds ?? [];
+  for (const toolId of activePluginToolIds) granted.add(toolId);
   return [...granted].filter((toolId) => {
     if (toolId === "web-search") return capabilities.webSearchEnabled;
     if (toolId === "code-sandbox") return capabilities.codeSandboxEnabled;

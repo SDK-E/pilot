@@ -104,6 +104,31 @@ export async function getConversation(owner: Owner, conversationId: string) {
   return conversation;
 }
 
+export async function getConversationInstructions(
+  owner: Owner,
+  conversationId: string,
+): Promise<string | null> {
+  const [row] = await db
+    .select({ instructions: conversations.instructions })
+    .from(conversations)
+    .where(owned(owner, conversationId))
+    .limit(1);
+  return row?.instructions ?? null;
+}
+
+export async function updateConversationInstructions(
+  owner: Owner,
+  conversationId: string,
+  instructions: string | null,
+) {
+  const [updated] = await db
+    .update(conversations)
+    .set({ instructions, updatedAt: new Date() })
+    .where(owned(owner, conversationId))
+    .returning({ id: conversations.id });
+  return updated;
+}
+
 export async function deleteConversation(owner: Owner, conversationId: string) {
   const [deleted] = await db
     .delete(conversations)

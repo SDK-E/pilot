@@ -5,6 +5,12 @@ Status: implemented on 2026-09-17. Supersedes
 it introduced (`src/connectors/providers/*`, `src/connectors/adapters/{github,
 gmail,google-drive,linear,monday,notion,slack,vercel}.ts`), the 8 fixed
 connector tool ids, and the `connector_connections` table are all removed.
+The org-wide-only claim below and the removal of `connector_connections` are
+partly superseded by [ADR-0030](./0030-personal-connector-connections.md),
+which reintroduces a `connector_connections` table (now supporting personal
+connections too) once a connector could have more than one connection at
+once — everything else here (one dynamic `connector_definitions` engine,
+generic OAuth2 + REST, no per-provider code) still stands.
 
 ## Decision
 

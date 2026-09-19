@@ -16,9 +16,8 @@ export async function GET(request: Request) {
     return Response.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const { syncModelsCatalog } = await import(
-    "@/models-catalog/sync-models-catalog"
-  );
+  const { syncModelsCatalog } =
+    await import("@/models-catalog/sync-models-catalog");
   const result = await syncModelsCatalog();
 
   return Response.json(result);

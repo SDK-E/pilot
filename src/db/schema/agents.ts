@@ -39,6 +39,10 @@ export const workers = pgTable(
       .$type<string[]>()
       .notNull()
       .default([]),
+    enabledPluginIds: jsonb("enabled_plugin_ids")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
     knowledgeSourceIds: jsonb("knowledge_source_ids")
       .$type<string[]>()
       .notNull()
@@ -77,6 +81,10 @@ export const organizationPreferences = pgTable("organization_preferences", {
   retryEnabled: boolean("retry_enabled").notNull().default(true),
   webSearchEnabled: boolean("web_search_enabled").notNull().default(true),
   codeSandboxEnabled: boolean("code_sandbox_enabled").notNull().default(true),
+  // Org-wide instructions an admin sets once, appended to every agent's own
+  // instructions for every conversation in the organization — the broadest
+  // instruction tier, above project/user/conversation ones.
+  standingInstructions: text("standing_instructions"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

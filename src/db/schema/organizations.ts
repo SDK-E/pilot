@@ -91,6 +91,9 @@ export const userPreferences = pgTable("user_preferences", {
    * per-user "Settings > Cowork" template. Never used for Chat or Code.
    */
   workInstructions: text("work_instructions"),
+  // Unlike workInstructions, reaches every agent kind (Chat, Work, Code) —
+  // the user's own broadest personal instruction tier.
+  generalInstructions: text("general_instructions"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

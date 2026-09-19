@@ -11,6 +11,7 @@ interface OrganizationPreferences {
   retryEnabled: boolean;
   webSearchEnabled: boolean;
   codeSandboxEnabled: boolean;
+  standingInstructions: string | null;
 }
 
 const defaults: OrganizationPreferences = {
@@ -19,6 +20,7 @@ const defaults: OrganizationPreferences = {
   retryEnabled: true,
   webSearchEnabled: true,
   codeSandboxEnabled: true,
+  standingInstructions: null,
 };
 
 export async function getOrganizationPreferences(organizationId: string) {
@@ -29,11 +31,32 @@ export async function getOrganizationPreferences(organizationId: string) {
       retryEnabled: organizationPreferences.retryEnabled,
       webSearchEnabled: organizationPreferences.webSearchEnabled,
       codeSandboxEnabled: organizationPreferences.codeSandboxEnabled,
+      standingInstructions: organizationPreferences.standingInstructions,
     })
     .from(organizationPreferences)
     .where(eq(organizationPreferences.organizationId, organizationId))
     .limit(1);
   return preferences ?? defaults;
+}
+
+export async function updateOrganizationStandingInstructions(input: {
+  organizationId: string;
+  standingInstructions: string | null;
+}) {
+  const [preferences] = await db
+    .insert(organizationPreferences)
+    .values(input)
+    .onConflictDoUpdate({
+      target: organizationPreferences.organizationId,
+      set: {
+        standingInstructions: input.standingInstructions,
+        updatedAt: new Date(),
+      },
+    })
+    .returning({
+      standingInstructions: organizationPreferences.standingInstructions,
+    });
+  return preferences;
 }
 
 export async function updateOrganizationDefaultWorker(input: {

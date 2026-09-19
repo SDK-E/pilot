@@ -29,6 +29,9 @@ export const conversations = pgTable(
       .references(() => workers.id, { onDelete: "cascade" }),
     createdByWorkosUserId: text("created_by_workos_user_id").notNull(),
     title: text("title"),
+    // Instructions scoped to just this conversation — the narrowest
+    // instruction tier, appended on top of organization/user/project ones.
+    instructions: text("instructions"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

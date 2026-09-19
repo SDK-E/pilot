@@ -11,6 +11,7 @@ import {
   deleteConversation,
   getConversation,
   renameConversation,
+  updateConversationInstructions,
 } from "@/conversations/conversation-repository";
 import {
   getWorkspaceSession,
@@ -59,6 +60,33 @@ export async function renameConversationAction(
   if (!renamed) return error("This conversation is unavailable.");
   revalidatePath("/", "layout");
   return { status: "success", message: "Conversation renamed." };
+}
+
+const instructionsSchema = z.object({
+  conversationId: z.uuid(),
+  instructions: z.string().trim().max(4000),
+});
+
+export async function updateConversationInstructionsAction(
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const input = instructionsSchema.safeParse({
+    conversationId: formData.get("conversationId"),
+    instructions: formData.get("instructions"),
+  });
+  if (!input.success) return error("This conversation is unavailable.");
+  const owner = await ownerOrError();
+  if ("status" in owner) return owner;
+
+  const updated = await updateConversationInstructions(
+    owner,
+    input.data.conversationId,
+    input.data.instructions || null,
+  );
+  if (!updated) return error("This conversation is unavailable.");
+  revalidatePath("/", "layout");
+  return { status: "success", message: "Instructions saved." };
 }
 
 export async function deleteConversationAction(
